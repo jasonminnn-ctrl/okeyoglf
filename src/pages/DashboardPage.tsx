@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Megaphone, ClipboardList, TrendingUp, TrendingDown, Users, DollarSign, Target, Calendar, AlertTriangle, CheckCircle } from "lucide-react";
+import { Brain, FileText, Megaphone, TrendingUp, TrendingDown, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { ConsultantCTA } from "@/components/ConsultantCTA";
 
 const kpiData = [
   { label: "이번 주 AI 분석", value: "12", change: "+3", trend: "up", icon: Brain },
   { label: "생성된 보고서", value: "8", change: "+2", trend: "up", icon: FileText },
   { label: "마케팅 카피", value: "24", change: "+7", trend: "up", icon: Megaphone },
-  { label: "직원 지시서", value: "15", change: "+4", trend: "up", icon: ClipboardList },
+  { label: "전담 요청", value: "2", change: "+1", trend: "up", icon: MessageSquare },
 ];
 
 const businessMetrics = [
@@ -18,23 +19,22 @@ const businessMetrics = [
 ];
 
 const urgentIssues = [
-  { title: "주중 오전 가동률 35% 미달", priority: "긴급", type: "operations" },
-  { title: "3월 재등록 대상 47명 미접촉", priority: "높음", type: "sales" },
-  { title: "레슨 프로 휴가 대체 인력 필요", priority: "보통", type: "hr" },
+  { title: "주중 오전 가동률 35% 미달", priority: "긴급" },
+  { title: "3월 재등록 대상 47명 미접촉", priority: "높음" },
+  { title: "레슨 프로 휴가 대체 인력 필요", priority: "보통" },
 ];
 
-const quickActions = [
-  { title: "AI 진단 시작", desc: "비즈니스 현황 분석", icon: Brain, url: "/diagnosis", color: "bg-primary/10 text-primary" },
-  { title: "보고서 생성", desc: "대표/사장 보고서", icon: FileText, url: "/reports", color: "bg-blue-500/10 text-blue-400" },
-  { title: "마케팅 카피", desc: "캠페인 문구 생성", icon: Megaphone, url: "/marketing", color: "bg-amber-500/10 text-amber-400" },
-  { title: "직원 지시서", desc: "업무 지시 작성", icon: ClipboardList, url: "/instructions", color: "bg-violet-500/10 text-violet-400" },
+const recentOutputs = [
+  { text: "AI 진단 완료 - 매출 하락 원인 분석", time: "2시간 전", type: "진단" },
+  { text: "마케팅 카피 생성 - 봄 시즌 프로모션", time: "4시간 전", type: "마케팅" },
+  { text: "직원 지시서 작성 - 레슨 프로 업무 가이드", time: "어제", type: "지시서" },
 ];
 
-const recentActivity = [
-  { text: "AI 진단 완료 - 매출 하락 원인 분석", time: "2시간 전", type: "diagnosis" },
-  { text: "마케팅 카피 생성 - 봄 시즌 프로모션", time: "4시간 전", type: "marketing" },
-  { text: "직원 지시서 작성 - 레슨 프로 업무 가이드", time: "어제", type: "instruction" },
-  { text: "운영 보고서 생성 - 3월 월간 보고", time: "2일 전", type: "report" },
+const recommendedActions = [
+  { action: "주중 오전 할인 프로모션 문구 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+  { action: "재등록 대상 회원 접촉 지시서 작성", tool: "AI 운영팀", url: "/ai-operations" },
+  { action: "대표님 보고용 3월 현황 보고서", tool: "보고서 생성", url: "/reports" },
+  { action: "가동률 개선을 위한 AI 진단", tool: "AI 진단실", url: "/ai-operations/diagnosis" },
 ];
 
 export default function DashboardPage() {
@@ -48,13 +48,20 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">운영 관제 센터</h1>
           <p className="text-muted-foreground text-sm mt-1">AI 운영 매니저가 비즈니스 현황을 분석하고 있습니다</p>
         </div>
-        <div className="text-right">
+        <div className="text-right space-y-1">
           <p className="text-sm font-medium">2026년 3월 9일</p>
-          <p className="text-xs text-muted-foreground">일요일 오후</p>
+          <div className="flex items-center gap-2 justify-end">
+            <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary flex items-center gap-1">
+              <Building2 className="h-3 w-3" /> 실내연습장
+            </span>
+            <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 flex items-center gap-1">
+              <Crown className="h-3 w-3" /> 프로 멤버십
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* AI Usage KPIs */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi) => (
           <Card key={kpi.label} className="bg-card/50 border-border/50">
@@ -69,14 +76,8 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-2">
-                {kpi.trend === "up" ? (
-                  <TrendingUp className="h-3 w-3 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-red-400" />
-                )}
-                <span className={`text-xs ${kpi.trend === "up" ? "text-emerald-400" : "text-red-400"}`}>
-                  {kpi.change} 이번 주
-                </span>
+                <TrendingUp className="h-3 w-3 text-emerald-400" />
+                <span className="text-xs text-emerald-400">{kpi.change} 이번 주</span>
               </div>
             </CardContent>
           </Card>
@@ -89,25 +90,21 @@ export default function DashboardPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
-              핵심 지표 현황
+              핵심 KPI
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              {businessMetrics.map((metric) => (
-                <div key={metric.label} className="p-3 rounded-lg bg-muted/30">
+              {businessMetrics.map((m) => (
+                <div key={m.label} className="p-3 rounded-lg bg-muted/30">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs text-muted-foreground">{metric.label}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      metric.status === "good" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"
-                    }`}>
-                      목표 {metric.target}
+                    <span className="text-xs text-muted-foreground">{m.label}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${m.status === "good" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>
+                      목표 {m.target}
                     </span>
                   </div>
-                  <div className="flex items-end gap-2">
-                    <span className="text-xl font-bold">{metric.value}</span>
-                  </div>
-                  <Progress value={metric.progress} className="h-1.5 mt-2" />
+                  <span className="text-xl font-bold">{m.value}</span>
+                  <Progress value={m.progress} className="h-1.5 mt-2" />
                 </div>
               ))}
             </div>
@@ -125,10 +122,8 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {urgentIssues.map((issue, i) => (
-                <div key={i} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate("/diagnosis")}>
-                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                    issue.priority === "긴급" ? "bg-red-400" : issue.priority === "높음" ? "bg-amber-400" : "bg-blue-400"
-                  }`} />
+                <div key={i} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate("/ai-operations/diagnosis")}>
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${issue.priority === "긴급" ? "bg-destructive" : issue.priority === "높음" ? "bg-amber-400" : "bg-blue-400"}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">{issue.title}</p>
                     <p className="text-xs text-muted-foreground">{issue.priority}</p>
@@ -140,43 +135,18 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-          <span className="w-1 h-4 rounded-full bg-primary" />
-          AI 도구 빠른 실행
-        </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {quickActions.map((action) => (
-            <Card
-              key={action.title}
-              className="cursor-pointer hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 bg-card/50 border-border/50"
-              onClick={() => navigate(action.url)}
-            >
-              <CardContent className="pt-5">
-                <div className={`w-9 h-9 rounded-lg ${action.color} flex items-center justify-center mb-3`}>
-                  <action.icon className="h-4 w-4" />
-                </div>
-                <h3 className="font-medium text-sm">{action.title}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Activity */}
+      {/* Recent + Recommended */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card/50 border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
-              최근 활동
+              최근 생성 결과
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {recentActivity.map((item, i) => (
+              {recentOutputs.map((item, i) => (
                 <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-3.5 w-3.5 text-primary/50" />
@@ -198,22 +168,50 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { action: "주중 오전 할인 프로모션 문구 생성", tool: "마케팅 카피", url: "/marketing" },
-                { action: "재등록 대상 회원 접촉 지시서 작성", tool: "직원 지시서", url: "/instructions" },
-                { action: "대표님 보고용 3월 현황 보고서", tool: "보고서 생성", url: "/reports" },
-                { action: "가동률 개선을 위한 AI 진단", tool: "AI 진단실", url: "/diagnosis" },
-              ].map((item, i) => (
-                <div 
-                  key={i} 
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => navigate(item.url)}
-                >
+              {recommendedActions.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => navigate(item.url)}>
                   <span className="text-sm">{item.action}</span>
                   <span className="text-xs text-primary px-2 py-0.5 rounded bg-primary/10">{item.tool}</span>
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Placeholders */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Search className="h-4 w-4 text-primary" />
+              최근 시장조사
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">아직 진행된 시장조사가 없습니다</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              최근 전담 컨설턴트 요청
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">아직 요청 이력이 없습니다</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              크레딧 요약
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">크레딧 시스템 준비 중</p>
           </CardContent>
         </Card>
       </div>

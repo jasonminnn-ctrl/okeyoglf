@@ -1,6 +1,7 @@
 import {
-  LayoutDashboard, Brain, FileText, Megaphone, ClipboardList,
-  Bookmark, Settings, LogOut
+  LayoutDashboard, Bot, Settings2, TrendingUp, Megaphone, Palette,
+  Briefcase, Search, MessageSquare, Bookmark, Settings, LogOut,
+  Shield, Building
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -9,25 +10,47 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
   { title: "대시보드", url: "/dashboard", icon: LayoutDashboard },
-  { title: "AI 진단실", url: "/diagnosis", icon: Brain },
-  { title: "보고서 생성기", url: "/reports", icon: FileText },
-  { title: "마케팅 카피 생성기", url: "/marketing", icon: Megaphone },
-  { title: "직원 지시서 생성기", url: "/instructions", icon: ClipboardList },
-  { title: "저장된 결과", url: "/saved", icon: Bookmark },
+  { title: "AI 비서", url: "/ai-assistant", icon: Bot },
+  { title: "AI 운영팀", url: "/ai-operations", icon: Settings2 },
+  { title: "AI 영업팀", url: "/ai-sales", icon: TrendingUp },
+  { title: "AI 마케팅팀", url: "/ai-marketing", icon: Megaphone },
+  { title: "AI 디자인팀", url: "/ai-design", icon: Palette },
+  { title: "AI 경영지원", url: "/ai-business-support", icon: Briefcase },
+  { title: "시장조사", url: "/market-research", icon: Search },
+  { title: "전담 컨설턴트", url: "/consultant", icon: MessageSquare },
 ];
 
-const settingsItems = [
+const utilItems = [
+  { title: "저장된 결과", url: "/saved", icon: Bookmark },
   { title: "관리자 설정", url: "/settings", icon: Settings },
+];
+
+const internalItems = [
+  { title: "운영자 관리", url: "/operator", icon: Shield },
+  { title: "엔터프라이즈", url: "/enterprise", icon: Building },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname.startsWith(path);
+
+  const renderMenuItems = (items: typeof mainItems) =>
+    items.map((item) => (
+      <SidebarMenuItem key={item.url}>
+        <SidebarMenuButton asChild isActive={isActive(item.url)}>
+          <NavLink to={item.url} activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
+            <item.icon className="h-4 w-4" />
+            {!collapsed && <span>{item.title}</span>}
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -55,36 +78,21 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider">메인 메뉴</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarMenu>{renderMenuItems(mainItems)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider">시스템</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarMenu>{renderMenuItems(utilItems)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider opacity-50">내부 관리</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderMenuItems(internalItems)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
