@@ -7,6 +7,7 @@ import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, Fil
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
