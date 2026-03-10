@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip, Loader2 } from "lucide-react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip, Loader2, Lock, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
+import { useMembership } from "@/contexts/MembershipContext";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { buildContextSummary } from "@/lib/ai-generation";
 import { toast } from "@/hooks/use-toast";
 
