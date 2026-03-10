@@ -57,7 +57,7 @@ export default function OperatorPage() {
         </h2>
         <MenuLandingGrid columns={3}>
           {consultantOps.map((s) => (
-            <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge={s.badge} />
+          <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} />
           ))}
         </MenuLandingGrid>
       </div>

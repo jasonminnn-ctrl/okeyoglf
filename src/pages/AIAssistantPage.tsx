@@ -23,6 +23,8 @@ export default function AIAssistantPage() {
         <p className="text-muted-foreground text-sm mt-1">AI가 오늘 해야 할 일과 놓치고 있는 항목을 정리합니다</p>
       </div>
 
+      <BusinessContextBanner module="AI 비서" />
+
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
           <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge="준비 중" />
