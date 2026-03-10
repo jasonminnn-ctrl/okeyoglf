@@ -3,15 +3,16 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { TrendingUp, Users, RefreshCcw, UserX, ShoppingBag, Crown, Package, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const sections = [
-  { key: "고객관리", icon: Users, color: "bg-primary/10 text-primary", badge: "준비 중" },
-  { key: "재등록 관리", icon: RefreshCcw, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
-  { key: "미방문 관리", icon: UserX, color: "bg-red-500/10 text-red-400", badge: "준비 중" },
-  { key: "판매 제안", icon: ShoppingBag, color: "bg-blue-500/10 text-blue-400", badge: "준비 중" },
-  { key: "VIP 관리", icon: Crown, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
-  { key: "패키지 제안", icon: Package, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
-  { key: "응대 문안", icon: MessageCircle, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중" },
+  { key: "고객관리", icon: Users, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "재등록 관리", icon: RefreshCcw, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "미방문 관리", icon: UserX, color: "bg-red-500/10 text-red-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "판매 제안", icon: ShoppingBag, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "VIP 관리", icon: Crown, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "패키지 제안", icon: Package, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "응대 문안", icon: MessageCircle, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
 ];
 
 export default function AISalesPage() {
@@ -38,7 +39,16 @@ export default function AISalesPage() {
             icon={s.icon}
             color={s.color}
             badge={s.badge}
-          />
+          >
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                기대 결과: {config.resultTypeHints[s.key] || "제안 요약"}
+              </Badge>
+              <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                저장 → {s.saveCategory}
+              </Badge>
+            </div>
+          </MenuLandingCard>
         ))}
       </MenuLandingGrid>
 

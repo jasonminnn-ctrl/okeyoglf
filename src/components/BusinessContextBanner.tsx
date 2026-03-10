@@ -7,7 +7,11 @@ interface BusinessContextBannerProps {
 }
 
 export function BusinessContextBanner({ module }: BusinessContextBannerProps) {
-  const { label } = useBusinessContext();
+  const { label, config } = useBusinessContext();
+  const bannerMsg = module ? config.bannerMessages[module] : config.bannerMessages["대시보드"];
+  const fallback = module
+    ? `${module} 결과는 설정된 운영 프로필 기준으로 생성됩니다`
+    : "관리자 설정에서 입력한 업종·운영 프로필이 AI 모듈에 자동 반영됩니다";
 
   return (
     <Card className="bg-muted/30 border-border/30">
@@ -24,11 +28,7 @@ export function BusinessContextBanner({ module }: BusinessContextBannerProps) {
           </div>
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Info className="h-3 w-3" />
-            <span>
-              {module
-                ? `${module} 결과는 설정된 운영 프로필 기준으로 생성됩니다 · 업종별 운영 기준 연동 중`
-                : "관리자 설정에서 입력한 업종·운영 프로필이 AI 모듈에 자동 반영됩니다"}
-            </span>
+            <span>{bannerMsg || fallback}</span>
           </div>
         </div>
       </CardContent>
