@@ -151,6 +151,9 @@ export const FEATURE_KEYS = {
   RESULT_COPY: "result.copy",
   RESULT_REGENERATE: "result.regenerate",
   RESULT_CONSULTANT_TRANSFER: "result.consultant_transfer",
+  RESULT_EXPORT: "result.export",
+  RESULT_SHARE: "result.share",
+  RESULT_DELIVER: "result.deliver",
 } as const;
 
 export type FeatureKey = typeof FEATURE_KEYS[keyof typeof FEATURE_KEYS];
