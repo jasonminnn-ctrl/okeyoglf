@@ -233,7 +233,7 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className={`text-[9px] ${accessModeBadge[o.accessMode]}`}>{accessModeLabel[o.accessMode]}</Badge>
                       <button
-                        onClick={() => removeOverride(o.featureKey)}
+                        onClick={() => removeOverride(o.featureKey, o.membershipCode)}
                         className="text-[9px] text-destructive hover:underline"
                       >
                         제거
