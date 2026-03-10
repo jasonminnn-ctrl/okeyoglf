@@ -31,6 +31,7 @@ export default function WeeklyActionsPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-assistant/weekly-actions"
+      featureKey={FEATURE_KEYS.ASSISTANT_WEEKLY}
       title="이번 주 추천 액션"
       description="이번 주에 집중해야 할 핵심 액션을 AI가 제안합니다"
       icon={<Zap className="h-6 w-6 text-primary" />}

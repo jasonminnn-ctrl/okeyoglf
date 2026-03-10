@@ -34,6 +34,7 @@ export default function DocumentDraftPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-support/document-draft"
+      featureKey={FEATURE_KEYS.SUPPORT_DOCUMENT}
       title="내부 서식 초안"
       description="내부 문서와 서식을 AI가 초안을 작성합니다"
       icon={<FileSpreadsheet className="h-6 w-6 text-primary" />}

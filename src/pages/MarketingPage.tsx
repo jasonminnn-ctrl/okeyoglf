@@ -60,6 +60,7 @@ export default function MarketingPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-marketing/copy"
+      featureKey={FEATURE_KEYS.MARKETING_COPY}
       title="마케팅 카피 생성기"
       description="다양한 채널에 맞는 마케팅 문구를 한 번에 생성합니다"
       icon={<Megaphone className="h-6 w-6 text-primary" />}

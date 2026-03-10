@@ -31,6 +31,7 @@ export default function ContractOrderPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-support/contract-order"
+      featureKey={FEATURE_KEYS.SUPPORT_CONTRACT}
       title="계약/발주/구매 정리"
       description="계약서, 발주서, 구매 내역을 AI가 정리합니다"
       icon={<FileSignature className="h-6 w-6 text-primary" />}

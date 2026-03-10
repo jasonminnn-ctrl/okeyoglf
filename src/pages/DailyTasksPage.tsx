@@ -31,6 +31,7 @@ export default function DailyTasksPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-assistant/daily-tasks"
+      featureKey={FEATURE_KEYS.ASSISTANT_DAILY}
       title="오늘의 할 일"
       description="비즈니스 현황 기반으로 오늘 우선 처리할 항목을 AI가 정리합니다"
       icon={<ListChecks className="h-6 w-6 text-primary" />}

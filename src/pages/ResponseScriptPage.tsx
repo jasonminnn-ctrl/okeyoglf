@@ -34,6 +34,7 @@ export default function ResponseScriptPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-sales/response-script"
+      featureKey={FEATURE_KEYS.SALES_RESPONSE}
       title="응대 문안"
       description="상황별 고객 응대 스크립트를 AI가 생성합니다"
       icon={<MessageCircle className="h-6 w-6 text-primary" />}

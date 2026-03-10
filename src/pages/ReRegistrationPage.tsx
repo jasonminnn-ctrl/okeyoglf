@@ -31,6 +31,7 @@ export default function ReRegistrationPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-sales/re-registration"
+      featureKey={FEATURE_KEYS.SALES_REREGISTRATION}
       title="재등록 관리"
       description="재등록 대상 고객 분석 및 유도 전략을 AI가 제안합니다"
       icon={<RefreshCcw className="h-6 w-6 text-primary" />}

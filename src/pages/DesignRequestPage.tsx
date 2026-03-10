@@ -14,6 +14,7 @@ export default function DesignRequestPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-design/request"
+      featureKey={FEATURE_KEYS.DESIGN_REQUEST}
       title="디자인 요청"
       description="홍보물 디자인 브리프를 AI가 작성합니다"
       icon={<PenTool className="h-6 w-6 text-primary" />}

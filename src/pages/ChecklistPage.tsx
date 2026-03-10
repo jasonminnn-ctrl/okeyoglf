@@ -13,6 +13,7 @@ export default function ChecklistPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-assistant/checklist"
+      featureKey={FEATURE_KEYS.ASSISTANT_CHECKLIST}
       title="업종별 체크리스트"
       description="업종에 맞는 운영 체크리스트를 AI가 생성합니다"
       icon={<ClipboardCheck className="h-6 w-6 text-primary" />}
