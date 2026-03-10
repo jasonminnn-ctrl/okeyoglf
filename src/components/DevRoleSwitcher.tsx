@@ -11,9 +11,9 @@ import { Shield, User } from "lucide-react";
 const IS_DEV = import.meta.env.DEV;
 
 export function DevRoleSwitcher() {
-  if (!IS_DEV) return null;
-
   const { role, login } = useAuth();
+
+  if (!IS_DEV) return null;
 
   const switchTo = (target: UserRole) => {
     if (role === target) return;
