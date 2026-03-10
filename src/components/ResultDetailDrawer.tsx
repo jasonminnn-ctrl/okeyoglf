@@ -27,8 +27,50 @@ const statusColors: Record<string, string> = {
   "보관됨": "bg-muted text-muted-foreground",
 };
 
+const categoryPlaceholders: Record<string, { body: string; summary: string }> = {
+  "AI 비서 결과": {
+    body: "AI 비서가 생성한 추천 문안, 체크리스트, 또는 요약 결과가 여기에 표시됩니다.",
+    summary: "오늘의 추천 항목 및 운영 체크리스트 요약이 표시됩니다.",
+  },
+  "AI 운영팀 결과": {
+    body: "운영 분석 리포트, 점검표, 또는 KPI 진단 결과가 여기에 표시됩니다.",
+    summary: "운영 지표 분석 및 개선 포인트 요약이 표시됩니다.",
+  },
+  "AI 영업팀 결과": {
+    body: "고객 관리 제안, 응대 문안, 또는 판매 전략 요약이 여기에 표시됩니다.",
+    summary: "영업 액션 및 고객 접촉 결과 요약이 표시됩니다.",
+  },
+  "AI 마케팅팀 결과": {
+    body: "마케팅 카피, 캠페인 기획안, 또는 채널 전략 초안이 여기에 표시됩니다.",
+    summary: "프로모션 문안 및 캠페인 핵심 포인트 요약이 표시됩니다.",
+  },
+  "AI 디자인팀 결과": {
+    body: "디자인 시안, 홍보물 초안, 또는 템플릿 결과가 여기에 표시됩니다.",
+    summary: "제작된 홍보물 및 디자인 요청 결과 요약이 표시됩니다.",
+  },
+  "AI 경영지원 결과": {
+    body: "문서 초안, 계약서 정리, 또는 업무 체크리스트가 여기에 표시됩니다.",
+    summary: "경영지원 문서 및 반복 업무 점검 요약이 표시됩니다.",
+  },
+  "시장조사 결과": {
+    body: "조사 요약, 경쟁사 리스트, 또는 인사이트 분석이 여기에 표시됩니다.",
+    summary: "시장조사 조건, 경쟁 현황, 추천 액션 요약이 표시됩니다.",
+  },
+  "전담 컨설턴트 결과": {
+    body: "컨설턴트 검토 결과, 전달 문서, 또는 회신 내용이 여기에 표시됩니다.",
+    summary: "컨설팅 요청 사항 및 전문가 회신 요약이 표시됩니다.",
+  },
+};
+
+const defaultPlaceholder = {
+  body: "결과 본문이 여기에 표시됩니다. 실제 AI 생성 결과가 연동되면 전체 내용을 확인할 수 있습니다.",
+  summary: "결과 요약이 여기에 표시됩니다.",
+};
+
 export function ResultDetailDrawer({ open, onOpenChange, item }: ResultDetailDrawerProps) {
   if (!item) return null;
+
+  const placeholder = categoryPlaceholders[item.category] || defaultPlaceholder;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -68,7 +110,7 @@ export function ResultDetailDrawer({ open, onOpenChange, item }: ResultDetailDra
           {/* Result body placeholder */}
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="pt-4 pb-4">
-              <p className="text-sm text-muted-foreground">결과 본문이 여기에 표시됩니다. 실제 AI 생성 결과가 연동되면 전체 내용을 확인할 수 있습니다.</p>
+              <p className="text-sm text-muted-foreground">{placeholder.body}</p>
             </CardContent>
           </Card>
 
@@ -76,7 +118,7 @@ export function ResultDetailDrawer({ open, onOpenChange, item }: ResultDetailDra
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="pt-4 pb-4">
               <p className="text-xs font-medium mb-1">요약</p>
-              <p className="text-xs text-muted-foreground">결과 요약이 여기에 표시됩니다.</p>
+              <p className="text-xs text-muted-foreground">{placeholder.summary}</p>
             </CardContent>
           </Card>
 
