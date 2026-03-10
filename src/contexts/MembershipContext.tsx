@@ -126,8 +126,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  const removeOverride = useCallback((featureKey: FeatureKey) => {
-    setOverrides(prev => prev.filter(o => o.featureKey !== featureKey));
+  const removeOverride = useCallback((featureKey: FeatureKey, membershipCode?: MembershipCode) => {
+    setOverrides(prev => prev.filter(o => {
+      if (o.featureKey !== featureKey) return true;
+      if (membershipCode && o.membershipCode !== membershipCode) return true;
+      return false;
+    }));
   }, []);
 
   return (
