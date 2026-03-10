@@ -139,7 +139,7 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
 
   // Resolve effective access mode for a feature key
   const getEffective = (key: FeatureKey): { mode: AccessMode; isOverridden: boolean } => {
-    const override = overrides.find(o => o.featureKey === key && o.isActive);
+    const override = overrides.find(o => o.featureKey === key && o.membershipCode === editingTier && o.isActive);
     if (override) return { mode: override.accessMode, isOverridden: true };
     const base = defaultFeaturePolicies.find(p => p.featureKey === key && p.membershipCode === editingTier && p.isActive);
     return { mode: base?.accessMode ?? "hidden", isOverridden: false };
