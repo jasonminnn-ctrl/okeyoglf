@@ -4,20 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Building2, Users, Eye, MessageSquare, Image, Briefcase, FileText, MapPin, Phone, Mail, Tag, Upload, Clock, UserCheck, LayoutGrid, GraduationCap, DollarSign, ShoppingBag, Wrench, Globe } from "lucide-react";
-import { useState } from "react";
+import { Settings, Building2, Users, Eye, Image, Briefcase, FileText, MapPin, Phone, Mail, Upload, LayoutGrid } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
 
-const businessTypes = [
-  { value: "indoor", label: "실내연습장" },
-  { value: "course", label: "골프장" },
-  { value: "academy", label: "골프아카데미" },
-  { value: "shop", label: "골프샵" },
-  { value: "fitting", label: "피팅샵" },
-  { value: "company", label: "골프회사" },
-];
-
-const businessTypeFields: Record<string, { label: string; placeholder?: string; type?: string }[]> = {
+const businessTypeFields: Record<string, { label: string; placeholder?: string }[]> = {
   indoor: [
     { label: "타석 수", placeholder: "예: 60" },
     { label: "운영시간", placeholder: "예: 06:00 ~ 24:00" },
@@ -76,9 +67,8 @@ const businessTypeFields: Record<string, { label: string; placeholder?: string; 
 };
 
 export default function SettingsPage() {
-  const [selectedType, setSelectedType] = useState("indoor");
-  const currentLabel = businessTypes.find(b => b.value === selectedType)?.label || "실내연습장";
-  const fields = businessTypeFields[selectedType] || [];
+  const { businessType, setBusinessType, label } = useBusinessContext();
+  const fields = businessTypeFields[businessType] || [];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -90,7 +80,6 @@ export default function SettingsPage() {
         <p className="text-muted-foreground text-sm mt-1">사업체 기본정보와 운영 환경을 설정하세요. 입력된 정보는 AI 모듈의 기본 맥락으로 활용됩니다.</p>
       </div>
 
-      {/* Context Banner */}
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="pt-4 pb-4">
           <p className="text-xs text-primary">💡 이곳에서 입력한 조직 정보와 운영 기준은 AI 비서, AI 운영팀 등 각 모듈에서 자동으로 참조됩니다. AI 정책·프롬프트·엔진 설정은 OkeyGolf 내부 운영팀이 관리합니다.</p>
@@ -158,17 +147,17 @@ export default function SettingsPage() {
             <Briefcase className="h-4 w-4 text-primary" />
             업종 및 운영 형태 설정
           </CardTitle>
-          <CardDescription>대표 업종과 운영 방식을 선택하세요</CardDescription>
+          <CardDescription>대표 업종과 운영 방식을 선택하세요. 선택한 업종에 따라 모든 AI 모듈의 예시·KPI·추천이 자동 변경됩니다.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>대표 업종 선택</Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
+              <Select value={businessType} onValueChange={(v) => setBusinessType(v as BusinessType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {businessTypes.map(bt => (
-                    <SelectItem key={bt.value} value={bt.value}>{bt.label}</SelectItem>
+                  {(Object.entries(businessTypeLabels) as [BusinessType, string][]).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -198,12 +187,6 @@ export default function SettingsPage() {
               <Input placeholder="예약제 / 선착순" disabled className="opacity-60" />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>회원제 / 시간권 / 패키지 여부 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-              <Input placeholder="예: 월정액 + 시간권" disabled className="opacity-60" />
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -213,9 +196,9 @@ export default function SettingsPage() {
           <CardTitle className="text-base flex items-center gap-2">
             <LayoutGrid className="h-4 w-4 text-primary" />
             업종별 운영 기본정보
-            <Badge className="ml-2 bg-primary/10 text-primary text-[10px]">{currentLabel}</Badge>
+            <Badge className="ml-2 bg-primary/10 text-primary text-[10px]">{label}</Badge>
           </CardTitle>
-          <CardDescription>선택한 업종({currentLabel})에 맞는 운영 기본 정보를 입력하세요. AI 모듈이 이 정보를 기반으로 분석합니다.</CardDescription>
+          <CardDescription>선택한 업종({label})에 맞는 운영 기본 정보를 입력하세요. AI 모듈이 이 정보를 기반으로 분석합니다.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -224,7 +207,7 @@ export default function SettingsPage() {
               return (
                 <div key={f.label} className="space-y-2">
                   <Label>{f.label} {isPlaceholder && <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge>}</Label>
-                  <Input placeholder={f.placeholder} disabled={isPlaceholder} className={isPlaceholder ? "opacity-60" : ""} />
+                  <Input placeholder={f.placeholder} disabled={!!isPlaceholder} className={isPlaceholder ? "opacity-60" : ""} />
                 </div>
               );
             })}
