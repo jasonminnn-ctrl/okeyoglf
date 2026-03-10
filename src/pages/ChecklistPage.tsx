@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
 import { ClipboardCheck, Loader2 } from "lucide-react";
+import { FEATURE_KEYS } from "@/lib/membership";
 
 export default function ChecklistPage() {
   const [form, setForm] = useState({ scope: "daily", focus: "" });
