@@ -1,16 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare } from "lucide-react";
+import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Wallet, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
-
-const kpiIcons = [Brain, FileText, Megaphone, MessageSquare];
+import { useMembership } from "@/contexts/MembershipContext";
+import { Badge } from "@/components/ui/badge";
+import { getMembershipTier, ledgerTypeLabels } from "@/lib/membership";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { config, label } = useBusinessContext();
+  const { membershipCode, membershipName, creditBalance, ledger } = useMembership();
+  const tier = getMembershipTier(membershipCode);
 
   const usageKpis = [
     { label: "이번 주 AI 분석", value: "12", change: "+3", icon: Brain },
@@ -18,6 +21,15 @@ export default function DashboardPage() {
     { label: "마케팅 카피", value: "24", change: "+7", icon: Megaphone },
     { label: "전담 요청", value: "2", change: "+1", icon: MessageSquare },
   ];
+
+  const tierBadgeColor: Record<string, string> = {
+    trial: "bg-muted/50 text-muted-foreground",
+    standard: "bg-blue-500/10 text-blue-400",
+    pro: "bg-amber-500/10 text-amber-400",
+    enterprise: "bg-violet-500/10 text-violet-400",
+  };
+
+  const recentLedger = ledger.slice(0, 5);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -33,14 +45,73 @@ export default function DashboardPage() {
             <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary flex items-center gap-1">
               <Building2 className="h-3 w-3" /> {label}
             </span>
-            <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 flex items-center gap-1">
-              <Crown className="h-3 w-3" /> 프로 멤버십
+            <span className={`text-xs px-2 py-0.5 rounded flex items-center gap-1 ${tierBadgeColor[membershipCode]}`}>
+              <Crown className="h-3 w-3" /> {membershipName} 멤버십
             </span>
           </div>
         </div>
       </div>
 
       <BusinessContextBanner />
+
+      {/* Membership + Credit Summary Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Membership Card */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">현재 멤버십</p>
+                <p className="text-xl font-bold mt-1">{membershipName}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{tier.description}</p>
+              </div>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tierBadgeColor[membershipCode]}`}>
+                <Crown className="h-5 w-5" />
+              </div>
+            </div>
+            {membershipCode !== "enterprise" && (
+              <div className="mt-3 flex items-center gap-1.5">
+                <ArrowUpRight className="h-3 w-3 text-primary" />
+                <span className="text-[11px] text-primary cursor-pointer hover:underline">플랜 업그레이드 안내</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Credit Balance Card */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">크레딧 잔액</p>
+                <p className="text-xl font-bold mt-1">{creditBalance.toLocaleString()}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">월 기본 {tier.defaultCredits.toLocaleString()} 크레딧</p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <Progress value={(creditBalance / tier.defaultCredits) * 100} className="h-1.5 mt-3" />
+          </CardContent>
+        </Card>
+
+        {/* Recent Credit Usage */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-5">
+            <p className="text-xs text-muted-foreground mb-3">최근 크레딧 사용</p>
+            <div className="space-y-1.5">
+              {recentLedger.slice(0, 3).map(entry => (
+                <div key={entry.id} className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground truncate mr-2">{entry.reason}</span>
+                  <span className={entry.amountDelta < 0 ? "text-destructive flex-shrink-0" : "text-emerald-400 flex-shrink-0"}>
+                    {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Usage KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -197,11 +268,23 @@ export default function DashboardPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
-              크레딧 요약
+              크레딧 사용 내역
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">크레딧 시스템 준비 중</p>
+            <div className="space-y-1.5">
+              {recentLedger.slice(0, 3).map(entry => (
+                <div key={entry.id} className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Badge variant="outline" className="text-[9px] flex-shrink-0">{ledgerTypeLabels[entry.type]}</Badge>
+                    <span className="text-muted-foreground truncate">{entry.relatedModule || "시스템"}</span>
+                  </div>
+                  <span className={entry.amountDelta < 0 ? "text-destructive" : "text-emerald-400"}>
+                    {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
+                  </span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
