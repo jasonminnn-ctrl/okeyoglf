@@ -180,12 +180,20 @@ export default function MarketResearchPage() {
 
           {/* Save + handoff CTAs */}
           <div className="flex items-center gap-2 pt-1">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult} onClick={handleSave}>
-              <Bookmark className="h-3 w-3" /> 결과 저장
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult}>
-              <MessageSquare className="h-3 w-3" /> 전담 컨설턴트 전환
-            </Button>
+            {resultActions.save.visible && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.save.enabled} onClick={handleSave}>
+                <Bookmark className="h-3 w-3" /> 결과 저장
+              </Button>
+            )}
+            {resultActions.consultantTransfer.visible && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.consultantTransfer.enabled}>
+                {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                전담 컨설턴트 전환
+                {!resultActions.consultantTransfer.enabled && (
+                  <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.consultantTransfer.lockReason}</span>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
