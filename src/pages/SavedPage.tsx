@@ -30,6 +30,26 @@ const categoryDescriptions: Record<string, string> = {
   "전담 컨설턴트 결과": "전담 컨설턴트 요청 결과물 및 회신 리포트",
 };
 
+const statusColors: Record<string, string> = {
+  "임시 저장": "bg-muted text-muted-foreground",
+  "검토 필요": "bg-amber-500/20 text-amber-400",
+  "완료": "bg-emerald-500/20 text-emerald-400",
+  "전달 완료": "bg-blue-500/20 text-blue-400",
+  "보관됨": "bg-muted text-muted-foreground",
+};
+
+const typeLabels: Record<string, string> = {
+  generation: "생성",
+  research: "조사",
+  consultant: "컨설턴트",
+  manual: "수동",
+};
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
 export default function SavedPage() {
   const { label } = useBusinessContext();
   const { getResultsByCategory, countByCategory } = useResultStore();
@@ -39,19 +59,6 @@ export default function SavedPage() {
   const handleOpenDetail = (id: string) => {
     setSelectedResultId(id);
     setDrawerOpen(true);
-  };
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  };
-
-  const statusColors: Record<string, string> = {
-    "임시 저장": "bg-muted text-muted-foreground",
-    "검토 필요": "bg-amber-500/20 text-amber-400",
-    "완료": "bg-emerald-500/20 text-emerald-400",
-    "전달 완료": "bg-blue-500/20 text-blue-400",
-    "보관됨": "bg-muted text-muted-foreground",
   };
 
   return (
@@ -117,11 +124,13 @@ export default function SavedPage() {
                           <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                           <div className="min-w-0">
                             <p className="text-sm truncate">{r.title}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-muted-foreground">{r.subtool}</span>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="text-[10px] text-muted-foreground">{r.subtool || r.sourceTool || ""}</span>
                               <span className="text-[10px] text-muted-foreground">·</span>
-                              <span className="text-[10px] text-muted-foreground">{formatDate(r.createdAt)}</span>
+                              <span className="text-[10px] text-muted-foreground">{formatDate(r.updatedAt)}</span>
                               <Badge className={`${statusColors[r.status] || ""} text-[9px] h-4`} variant="outline">{r.status}</Badge>
+                              {r.type && <Badge variant="outline" className="text-[9px] h-4">{typeLabels[r.type] || r.type}</Badge>}
+                              {r.version && r.version > 1 && <Badge variant="outline" className="text-[9px] h-4">v{r.version}</Badge>}
                             </div>
                           </div>
                         </div>
