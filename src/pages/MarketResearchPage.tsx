@@ -12,16 +12,19 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { buildContextSummary } from "@/lib/ai-generation";
 import { toast } from "@/hooks/use-toast";
 
 export default function MarketResearchPage() {
-  const { config, label, businessType } = useBusinessContext();
+  const { config, label, businessType, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
+  const { saveResult } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [hasResult, setHasResult] = useState(false);
-  const contextSummary = buildContextSummary(businessType, label);
+  const [resultId] = useState(`research-${Date.now()}`);
+  const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
   const generateAccess = checkAccess(FEATURE_KEYS.RESEARCH_BASIC);
   const resultActions = getResultActions();
@@ -42,7 +45,26 @@ export default function MarketResearchPage() {
   };
 
   const handleSave = () => {
-    toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다 (데모)" });
+    saveResult({
+      id: resultId,
+      title: `시장조사 — ${label}`,
+      module: "시장조사",
+      subtool: "기본 조사",
+      category: "시장조사 결과",
+      businessType: label,
+      sections: [
+        { title: "조사 요약", type: "summary", content: `${label} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` },
+        { title: "경쟁사 리스트", type: "detail", content: `반경 5km 내 ${label} 3곳 확인. 가격대/서비스 비교 완료.` },
+        { title: "인사이트", type: "recommendation", content: "비수요 시간대 활용, 차별화 포인트 2건, 가격 경쟁력 우위 확인." },
+        { title: "추천 액션", type: "action", content: "프로모션 기획 연계, 채널 전략 수립, 가격 조정 검토 권장." },
+      ],
+      contextSummary,
+      createdAt: new Date().toISOString(),
+      status: "임시 저장",
+      sourceNote: "OkeyGolf AI 리서치 엔진 기반 생성",
+      referenceNote: "고객 운영 프로필 + 업종별 시장조사 레퍼런스 참조",
+    });
+    toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다" });
   };
 
   return (
@@ -124,7 +146,6 @@ export default function MarketResearchPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Condition summary */}
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="pt-3 pb-3">
               <p className="text-[11px] font-medium mb-1">조사 조건 요약</p>
@@ -157,17 +178,6 @@ export default function MarketResearchPage() {
             </div>
           ))}
 
-          {/* Attachment placeholder */}
-          <div className="mt-2">
-            <p className="text-[11px] text-muted-foreground font-medium mb-2 flex items-center gap-1">
-              <Paperclip className="h-3 w-3" /> 첨부파일 / 조사 원본
-            </p>
-            <div className="h-14 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">
-              조사 원본 파일 · PDF · 스프레드시트 (준비 중)
-            </div>
-          </div>
-
-          {/* Source/Reference Note */}
           {hasResult && (
             <Card className="bg-muted/20 border-border/30">
               <CardContent className="pt-3 pb-3">
@@ -178,7 +188,6 @@ export default function MarketResearchPage() {
 
           <Separator />
 
-          {/* Save + handoff CTAs */}
           <div className="flex items-center gap-2 pt-1">
             {resultActions.save.visible && (
               <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.save.enabled} onClick={handleSave}>
@@ -189,9 +198,6 @@ export default function MarketResearchPage() {
               <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.consultantTransfer.enabled}>
                 {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                 전담 컨설턴트 전환
-                {!resultActions.consultantTransfer.enabled && (
-                  <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.consultantTransfer.lockReason}</span>
-                )}
               </Button>
             )}
           </div>

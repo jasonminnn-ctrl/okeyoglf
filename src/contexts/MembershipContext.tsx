@@ -120,7 +120,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   }, [membershipCode, creditBalance, overrides]);
 
   const addOverride = useCallback((override: OrganizationFeatureOverride) => {
-    setOverrides(prev => [...prev.filter(o => o.featureKey !== override.featureKey), override]);
+    setOverrides(prev => [
+      ...prev.filter(o => !(o.featureKey === override.featureKey && o.membershipCode === override.membershipCode)),
+      override,
+    ]);
   }, []);
 
   const removeOverride = useCallback((featureKey: FeatureKey) => {

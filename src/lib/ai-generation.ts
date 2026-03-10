@@ -157,6 +157,7 @@ export const pipelineConfigs: Record<string, PipelineConfig> = {
 export function buildContextSummary(
   businessType: BusinessType,
   businessLabel: string,
+  orgProfile?: import("@/contexts/BusinessContext").OrgProfile,
 ): BusinessContextSummary {
   const contextDefaults: Record<BusinessType, Partial<BusinessContextSummary>> = {
     indoor: { organizationName: "OkeyGolf 연습장", location: "경기도 용인시", operatingHours: "06:00 ~ 24:00", keyMetrics: ["타석 60개", "회원 300명", "레슨 프로 5명"], internalNotes: ["주중 오전 할인 안내 필수", "VIP 회원 별도 관리"] },
@@ -168,13 +169,46 @@ export function buildContextSummary(
   };
 
   const defaults = contextDefaults[businessType] || {};
+
+  // Org profile values take priority over hardcoded defaults
+  const orgName = orgProfile?.companyName || orgProfile?.brandName || defaults.organizationName || "OkeyGolf";
+  const location = orgProfile?.address || defaults.location || "";
+  const hours = orgProfile?.operatingHours || defaults.operatingHours || "";
+
+  // Build internal notes from org profile + defaults
+  const notes: string[] = [...(defaults.internalNotes || [])];
+  if (orgProfile?.internalNotes) {
+    notes.unshift(...orgProfile.internalNotes.split("\n").filter(Boolean));
+  }
+  if (orgProfile?.internalTerms) {
+    notes.unshift(`용어: ${orgProfile.internalTerms}`);
+  }
+
+  // Build key metrics from operation fields if available
+  const metrics = defaults.keyMetrics || [];
+  if (orgProfile?.operationFields) {
+    const fieldValues = Object.entries(orgProfile.operationFields)
+      .filter(([_, v]) => v.trim())
+      .map(([k, v]) => `${k}: ${v}`);
+    if (fieldValues.length > 0) {
+      return {
+        organizationName: orgName,
+        businessType: businessLabel,
+        location,
+        operatingHours: hours,
+        keyMetrics: fieldValues.length > 0 ? fieldValues : metrics,
+        internalNotes: notes,
+      };
+    }
+  }
+
   return {
-    organizationName: defaults.organizationName || "OkeyGolf",
+    organizationName: orgName,
     businessType: businessLabel,
-    location: defaults.location || "",
-    operatingHours: defaults.operatingHours || "",
-    keyMetrics: defaults.keyMetrics || [],
-    internalNotes: defaults.internalNotes || [],
+    location,
+    operatingHours: hours,
+    keyMetrics: metrics,
+    internalNotes: notes,
   };
 }
 

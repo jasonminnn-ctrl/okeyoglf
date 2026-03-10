@@ -8,7 +8,7 @@ import { Building2, Phone, Mail, MapPin } from "lucide-react";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
 
 export default function SettingsCompanyTab() {
-  const { businessType, setBusinessType } = useBusinessContext();
+  const { businessType, setBusinessType, orgProfile, updateOrgProfile } = useBusinessContext();
 
   return (
     <div className="space-y-6">
@@ -25,34 +25,57 @@ export default function SettingsCompanyTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>회사명 / 사업장명</Label>
-              <Input placeholder="OkeyGolf 연습장" />
+              <Input
+                placeholder="OkeyGolf 연습장"
+                value={orgProfile.companyName}
+                onChange={e => updateOrgProfile({ companyName: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
-              <Label>대표자명 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-              <Input placeholder="홍길동" disabled className="opacity-60" />
+              <Label>대표자명</Label>
+              <Input
+                placeholder="홍길동"
+                value={orgProfile.representative}
+                onChange={e => updateOrgProfile({ representative: e.target.value })}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><Phone className="h-3 w-3" /> 연락처</Label>
-              <Input placeholder="031-XXX-XXXX" />
+              <Input
+                placeholder="031-XXX-XXXX"
+                value={orgProfile.phone}
+                onChange={e => updateOrgProfile({ phone: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><Mail className="h-3 w-3" /> 이메일</Label>
-              <Input placeholder="info@okeygolf.com" />
+              <Input
+                placeholder="info@okeygolf.com"
+                value={orgProfile.email}
+                onChange={e => updateOrgProfile({ email: e.target.value })}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" /> 주소</Label>
-              <Input placeholder="경기도 용인시 ..." />
+              <Input
+                placeholder="경기도 용인시 ..."
+                value={orgProfile.address}
+                onChange={e => updateOrgProfile({ address: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>지점명 / 조직명</Label>
-              <Input placeholder="본점" />
+              <Input
+                placeholder="본점"
+                value={orgProfile.branchName}
+                onChange={e => updateOrgProfile({ branchName: e.target.value })}
+              />
             </div>
           </div>
-          <Button>저장</Button>
         </CardContent>
       </Card>
 
@@ -102,7 +125,6 @@ export default function SettingsCompanyTab() {
               <Input placeholder="예약제 / 선착순" disabled className="opacity-60" />
             </div>
           </div>
-          <Button>저장</Button>
         </CardContent>
       </Card>
     </div>

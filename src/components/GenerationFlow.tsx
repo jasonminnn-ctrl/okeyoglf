@@ -7,6 +7,7 @@ import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, Fil
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
@@ -88,14 +89,15 @@ function ResultSectionCard({ section }: { section: GenerationResultSection }) {
 
 export function GenerationFlow({ pipelineKey, featureKey, title, description, icon, backUrl, children }: GenerationFlowProps) {
   const navigate = useNavigate();
-  const { businessType, label } = useBusinessContext();
+  const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
+  const { saveResult } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [isRegenerate, setIsRegenerate] = useState(false);
 
   const config = pipelineConfigs[pipelineKey];
-  const contextSummary = buildContextSummary(businessType, label);
+  const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
   // Check feature access
   const generateAccess = checkAccess(featureKey);
@@ -137,7 +139,23 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   };
 
   const handleSave = () => {
-    toast({ title: "저장 완료", description: `${config?.saveCategory || "결과"}에 저장되었습니다 (데모)` });
+    if (result && config) {
+      saveResult({
+        id: result.id,
+        title: result.title,
+        module: result.module,
+        subtool: result.subtool,
+        category: config.saveCategory,
+        businessType: result.businessType,
+        sections: result.sections,
+        contextSummary: result.contextSummary,
+        createdAt: result.createdAt,
+        status: "임시 저장",
+        sourceNote: result.sourceNote,
+        referenceNote: result.referenceNote,
+      });
+      toast({ title: "저장 완료", description: `${config.saveCategory}에 저장되었습니다` });
+    }
   };
 
   const handleCopyAll = async () => {

@@ -287,6 +287,7 @@ export const defaultFeaturePolicies: FeaturePolicy[] = buildDefaultPolicies();
 export interface OrganizationFeatureOverride {
   organizationId: string;
   featureKey: FeatureKey;
+  membershipCode: MembershipCode; // scoped to specific tier
   accessMode: AccessMode;
   requiresCredit?: boolean;
   creditCost?: number;
