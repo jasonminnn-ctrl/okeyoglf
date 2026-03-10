@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { promptRegistry } from "@/lib/prompt-registry";
 import { rosRoutes } from "@/lib/ros-routing";
-import { membershipTiers, ledgerTypeLabels, type MembershipCode } from "@/lib/membership";
+import { membershipTiers, ledgerTypeLabels, defaultFeaturePolicies, FEATURE_KEYS, type MembershipCode, type FeatureKey, type AccessMode } from "@/lib/membership";
 import { useMembership } from "@/contexts/MembershipContext";
 import { toast } from "@/hooks/use-toast";
 
