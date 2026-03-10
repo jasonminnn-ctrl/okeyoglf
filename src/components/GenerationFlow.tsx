@@ -142,9 +142,12 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     if (result && config) {
       saveResult({
         id: result.id,
+        type: "generation",
         title: result.title,
         module: result.module,
         subtool: result.subtool,
+        sourceTool: config.module,
+        sourceMenu: config.module,
         category: config.saveCategory,
         businessType: result.businessType,
         sections: result.sections,
