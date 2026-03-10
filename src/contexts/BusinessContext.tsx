@@ -640,22 +640,68 @@ export const businessConfigs: Record<BusinessType, BusinessTypeConfig> = {
   },
 };
 
+export interface OrgProfile {
+  companyName: string;
+  representative: string;
+  phone: string;
+  email: string;
+  address: string;
+  branchName: string;
+  operatingHours: string;
+  brandName: string;
+  slogan: string;
+  internalTerms: string;
+  internalNotes: string;
+  // business-type-specific fields stored as key-value
+  operationFields: Record<string, string>;
+}
+
+const defaultOrgProfile: OrgProfile = {
+  companyName: "",
+  representative: "",
+  phone: "",
+  email: "",
+  address: "",
+  branchName: "",
+  operatingHours: "",
+  brandName: "",
+  slogan: "",
+  internalTerms: "",
+  internalNotes: "",
+  operationFields: {},
+};
+
 interface BusinessContextValue {
   businessType: BusinessType;
   setBusinessType: (type: BusinessType) => void;
   config: BusinessTypeConfig;
   label: string;
+  orgProfile: OrgProfile;
+  updateOrgProfile: (updates: Partial<OrgProfile>) => void;
+  updateOperationField: (key: string, value: string) => void;
 }
 
 const BusinessContext = createContext<BusinessContextValue | null>(null);
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [businessType, setBusinessType] = useState<BusinessType>("indoor");
+  const [orgProfile, setOrgProfile] = useState<OrgProfile>(defaultOrgProfile);
   const config = businessConfigs[businessType];
   const label = businessTypeLabels[businessType];
 
+  const updateOrgProfile = (updates: Partial<OrgProfile>) => {
+    setOrgProfile(prev => ({ ...prev, ...updates }));
+  };
+
+  const updateOperationField = (key: string, value: string) => {
+    setOrgProfile(prev => ({
+      ...prev,
+      operationFields: { ...prev.operationFields, [key]: value },
+    }));
+  };
+
   return (
-    <BusinessContext.Provider value={{ businessType, setBusinessType, config, label }}>
+    <BusinessContext.Provider value={{ businessType, setBusinessType, config, label, orgProfile, updateOrgProfile, updateOperationField }}>
       {children}
     </BusinessContext.Provider>
   );
