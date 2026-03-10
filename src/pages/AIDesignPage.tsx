@@ -1,5 +1,6 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { Palette, PenTool, LayoutTemplate, Image, FileImage, Upload, FolderOpen } from "lucide-react";
 
 const sections = [
@@ -21,6 +22,8 @@ export default function AIDesignPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">디자인 제작과 홍보물 관리를 AI가 지원합니다</p>
       </div>
+
+      <BusinessContextBanner module="AI 디자인팀" />
 
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (

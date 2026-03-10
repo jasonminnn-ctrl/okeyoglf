@@ -1,7 +1,7 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const sections = [
   { title: "오늘의 할 일", desc: "AI가 분석한 오늘의 우선 업무 목록", icon: ListChecks, color: "bg-primary/10 text-primary" },
@@ -22,6 +22,8 @@ export default function AIAssistantPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">AI가 오늘 해야 할 일과 놓치고 있는 항목을 정리합니다</p>
       </div>
+
+      <BusinessContextBanner module="AI 비서" />
 
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (

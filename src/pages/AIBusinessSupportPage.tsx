@@ -1,5 +1,6 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert, FileText } from "lucide-react";
 
 const sections = [
@@ -21,6 +22,8 @@ export default function AIBusinessSupportPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">경영 관리와 내부 업무를 AI가 효율화합니다</p>
       </div>
+
+      <BusinessContextBanner module="AI 경영지원" />
 
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
