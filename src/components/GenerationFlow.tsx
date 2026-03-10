@@ -132,6 +132,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
       toast({ title: "기능 제한", description: resultActions.regenerate.lockReason || "재생성이 제한됩니다", variant: "destructive" });
       return;
     }
+    setIsRegenerate(true);
     setResult(null);
   };
 
