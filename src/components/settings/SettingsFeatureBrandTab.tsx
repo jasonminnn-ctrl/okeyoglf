@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Palette, Upload, ToggleRight } from "lucide-react";
+import { useBusinessContext } from "@/contexts/BusinessContext";
 
 export default function SettingsFeatureBrandTab() {
+  const { orgProfile, updateOrgProfile } = useBusinessContext();
+
   return (
     <div className="space-y-6">
       {/* 기능 및 이용 설정 */}
@@ -64,11 +66,19 @@ export default function SettingsFeatureBrandTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>브랜드명</Label>
-              <Input placeholder="OkeyGolf" />
+              <Input
+                placeholder="OkeyGolf"
+                value={orgProfile.brandName}
+                onChange={e => updateOrgProfile({ brandName: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
-              <Label>슬로건 / 캐치프레이즈 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-              <Input placeholder="예: 골프의 시작과 끝" disabled className="opacity-60" />
+              <Label>슬로건 / 캐치프레이즈</Label>
+              <Input
+                placeholder="예: 골프의 시작과 끝"
+                value={orgProfile.slogan}
+                onChange={e => updateOrgProfile({ slogan: e.target.value })}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -81,7 +91,6 @@ export default function SettingsFeatureBrandTab() {
               <div className="h-10 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">가이드 파일 업로드 (준비 중)</div>
             </div>
           </div>
-          <Button>저장</Button>
         </CardContent>
       </Card>
     </div>
