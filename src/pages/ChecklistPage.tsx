@@ -40,7 +40,7 @@ export default function ChecklistPage() {
                 <Select value={form.focus} onValueChange={v => setForm(p => ({ ...p, focus: v }))}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="전체" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">전체</SelectItem>
+                    <SelectItem value="all">전체</SelectItem>
                     <SelectItem value="facility">시설 관리</SelectItem>
                     <SelectItem value="customer">고객 관리</SelectItem>
                     <SelectItem value="sales">매출 관리</SelectItem>
