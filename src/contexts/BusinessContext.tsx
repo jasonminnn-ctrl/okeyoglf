@@ -278,7 +278,7 @@ export const businessConfigs: Record<BusinessType, BusinessTypeConfig> = {
       "시장조사 결과": ["지역 골프장 조사 요약", "티타임·패키지 비교"],
       "전담 컨설턴트 결과": ["판매 구조 분석 요청 결과", "채널 최적화 컨설팅 결과"],
     },
-    bannerMessages: baseBannerMessages,
+    bannerMessages: bannerMessagesByType.course,
     resultTypeHints: {
       "고객관리": "분석 요약", "재등록 관리": "문안 초안", "미방문 관리": "문안 초안",
       "판매 제안": "제안 요약", "VIP 관리": "분석 요약", "패키지 제안": "제안 요약", "응대 문안": "문안 초안",
