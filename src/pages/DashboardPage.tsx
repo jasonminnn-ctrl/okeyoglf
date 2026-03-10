@@ -50,12 +50,15 @@ export default function DashboardPage() {
   const todayStr = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">운영 관제 센터</h1>
-          <p className="text-muted-foreground text-sm mt-1">AI 운영 매니저가 비즈니스 현황을 분석하고 있습니다</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">AI 운영 매니저가 비즈니스 현황을 분석하고 있습니다</p>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground">운영 프로필 반영 중</span>
+          </div>
         </div>
         <div className="text-right space-y-1">
           <p className="text-sm font-medium">{todayStr}</p>
@@ -69,8 +72,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      <BusinessContextBanner />
 
       {/* Top 3 summary cards: Industry / Membership / Credit */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
