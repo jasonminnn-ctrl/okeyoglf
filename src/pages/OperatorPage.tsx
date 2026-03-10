@@ -63,7 +63,7 @@ export default function OperatorPage() {
   const activePrompts = promptRegistry.filter(p => p.status === "active").length;
   const testingPrompts = promptRegistry.filter(p => p.status === "testing").length;
   const routeEntries = Object.values(rosRoutes);
-  const { membershipCode, setMembershipCode, membershipName, creditBalance, ledger, grantCredit } = useMembership();
+  const { membershipCode, setMembershipCode, membershipName, creditBalance, ledger, grantCredit, overrides, addOverride, removeOverride } = useMembership();
 
   const [grantAmount, setGrantAmount] = useState("");
   const [grantReason, setGrantReason] = useState("");
