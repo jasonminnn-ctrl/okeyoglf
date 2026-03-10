@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { FileImage, Loader2 } from "lucide-react";
 
 export default function CopyLayoutPage() {
@@ -14,6 +15,7 @@ export default function CopyLayoutPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-design/copy-layout"
+      featureKey={FEATURE_KEYS.DESIGN_COPY_LAYOUT}
       title="홍보물 문안 + 레이아웃"
       description="홍보물의 문안과 레이아웃 구성을 AI가 함께 제안합니다"
       icon={<FileImage className="h-6 w-6 text-primary" />}

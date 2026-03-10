@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { PresetGroup } from "@/components/PresetButton";
 import { Calendar, Loader2, Sparkles } from "lucide-react";
 
@@ -34,6 +35,7 @@ export default function PromotionPlanPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-marketing/promotion"
+      featureKey={FEATURE_KEYS.MARKETING_PROMOTION}
       title="프로모션 기획"
       description="프로모션 기획안을 AI가 구조화하여 제안합니다"
       icon={<Calendar className="h-6 w-6 text-primary" />}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { PresetGroup } from "@/components/PresetButton";
 import { MessageCircle, Loader2, Sparkles } from "lucide-react";
 
@@ -34,6 +35,7 @@ export default function ResponseScriptPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-sales/response-script"
+      featureKey={FEATURE_KEYS.SALES_RESPONSE}
       title="응대 문안"
       description="상황별 고객 응대 스크립트를 AI가 생성합니다"
       icon={<MessageCircle className="h-6 w-6 text-primary" />}

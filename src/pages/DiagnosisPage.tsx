@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { PresetGroup } from "@/components/PresetButton";
 import { Brain, Loader2, Sparkles } from "lucide-react";
 
@@ -68,6 +69,7 @@ export default function DiagnosisPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-operations/diagnosis"
+      featureKey={FEATURE_KEYS.OPERATIONS_DIAGNOSIS}
       title="AI 진단실"
       description="비즈니스 현황을 분석하고 실행 계획을 제안하는 AI 컨설턴트"
       icon={<Brain className="h-6 w-6 text-primary" />}

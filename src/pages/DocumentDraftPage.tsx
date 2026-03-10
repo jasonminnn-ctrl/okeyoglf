@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { FileSpreadsheet, Loader2 } from "lucide-react";
 import { PresetGroup } from "@/components/PresetButton";
 
@@ -34,6 +35,7 @@ export default function DocumentDraftPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-support/document-draft"
+      featureKey={FEATURE_KEYS.SUPPORT_DOCUMENT}
       title="내부 서식 초안"
       description="내부 문서와 서식을 AI가 초안을 작성합니다"
       icon={<FileSpreadsheet className="h-6 w-6 text-primary" />}

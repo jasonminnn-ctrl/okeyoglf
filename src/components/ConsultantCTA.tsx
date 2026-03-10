@@ -1,16 +1,22 @@
-import { MessageSquare, Lock, ArrowRight } from "lucide-react";
+import { MessageSquare, Lock, ArrowRight, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useMembership } from "@/contexts/MembershipContext";
+import { FEATURE_KEYS } from "@/lib/membership";
 
 interface ConsultantCTAProps {
   category?: string;
-  status?: "active" | "inactive" | "locked";
   className?: string;
 }
 
-export function ConsultantCTA({ category = "전문 지원", status = "locked", className }: ConsultantCTAProps) {
-  const isLocked = status === "locked";
+export function ConsultantCTA({ category = "전문 지원", className }: ConsultantCTAProps) {
+  const { checkAccess } = useMembership();
+  const access = checkAccess(FEATURE_KEYS.RESULT_CONSULTANT_TRANSFER);
+
+  if (!access.visible) return null;
+
+  const isLocked = !access.enabled;
 
   return (
     <Card className={cn(
@@ -37,11 +43,7 @@ export function ConsultantCTA({ category = "전문 지원", status = "locked", c
               </p>
               {isLocked ? (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  프로 멤버십 이상에서 이용 가능한 기능입니다
-                </p>
-              ) : status === "inactive" ? (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  업그레이드 후 전담 컨설턴트 요청이 가능합니다
+                  {access.lockReason || "현재 플랜에서는 이 기능이 제한됩니다"}
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground mt-0.5">

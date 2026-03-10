@@ -3,16 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard } from "lucide-react";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
+import { useMembership } from "@/contexts/MembershipContext";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
+import type { FeatureKey } from "@/lib/membership";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 interface GenerationFlowProps {
   pipelineKey: string;
+  featureKey: FeatureKey;
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -83,40 +86,73 @@ function ResultSectionCard({ section }: { section: GenerationResultSection }) {
   );
 }
 
-export function GenerationFlow({ pipelineKey, title, description, icon, backUrl, children }: GenerationFlowProps) {
+export function GenerationFlow({ pipelineKey, featureKey, title, description, icon, backUrl, children }: GenerationFlowProps) {
   const navigate = useNavigate();
   const { businessType, label } = useBusinessContext();
+  const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
 
   const config = pipelineConfigs[pipelineKey];
   const contextSummary = buildContextSummary(businessType, label);
 
+  // Check feature access
+  const generateAccess = checkAccess(featureKey);
+  const resultActions = getResultActions();
+
   const handleGenerate = useCallback(async (inputs: Record<string, string>) => {
     if (!config) return;
+    if (!generateAccess.enabled) {
+      toast({ title: "기능 제한", description: generateAccess.lockReason || "이 기능을 사용할 수 없습니다", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const genResult = await generateMockResult(
         { businessType, businessLabel: label, module: config.module, subtool: config.subtool, userInputs: inputs, contextSummary },
         config,
       );
+      // Deduct credit on successful generation
+      if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
+        deductCredit(generateAccess.creditCost, "generate", `${config.module} — ${config.subtool} 생성`, config.module, genResult.id);
+      }
       setResult(genResult);
     } finally {
       setLoading(false);
     }
-  }, [businessType, label, config, contextSummary]);
+  }, [businessType, label, config, contextSummary, generateAccess, deductCredit]);
 
   const handleRegenerate = () => {
+    if (!resultActions.regenerate.enabled) {
+      toast({ title: "기능 제한", description: resultActions.regenerate.lockReason || "재생성이 제한됩니다", variant: "destructive" });
+      return;
+    }
     setResult(null);
-    // User needs to click generate again
   };
 
   const handleSave = () => {
     toast({ title: "저장 완료", description: `${config?.saveCategory || "결과"}에 저장되었습니다 (데모)` });
   };
 
+  const handleCopyAll = async () => {
+    if (!resultActions.copy.enabled) {
+      toast({ title: "기능 제한", description: resultActions.copy.lockReason || "복사가 제한됩니다", variant: "destructive" });
+      return;
+    }
+    if (result) {
+      const text = result.sections.map(s => `${s.title}\n${s.content}`).join("\n\n");
+      await navigator.clipboard.writeText(text);
+      toast({ title: "전체 복사 완료" });
+    }
+  };
+
   const handleConsultant = () => {
-    toast({ title: "전담 컨설턴트 전환", description: "프로 멤버십에서 이용 가능합니다 (데모)" });
+    if (!resultActions.consultantTransfer.enabled) {
+      toast({ title: "기능 제한", description: resultActions.consultantTransfer.lockReason || "전환이 제한됩니다", variant: "destructive" });
+      return;
+    }
+    toast({ title: "전담 컨설턴트 전환", description: "전담 컨설턴트에게 요청이 전달되었습니다 (데모)" });
   };
 
   return (
@@ -133,7 +169,24 @@ export function GenerationFlow({ pipelineKey, title, description, icon, backUrl,
           </h1>
           <p className="text-muted-foreground text-sm mt-1">{description}</p>
         </div>
+        {generateAccess.requiresCredit && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CreditCard className="h-3 w-3" />
+            <span>생성 시 {generateAccess.creditCost} 크레딧 차감</span>
+            <span className="text-primary font-medium">· 잔액 {creditBalance}</span>
+          </div>
+        )}
       </div>
+
+      {/* Access Lock Banner */}
+      {!generateAccess.enabled && generateAccess.visible && (
+        <Card className="bg-muted/20 border-border/30">
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">{generateAccess.lockReason}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Context Summary */}
       <ContextSummary context={contextSummary} />
@@ -186,17 +239,33 @@ export function GenerationFlow({ pipelineKey, title, description, icon, backUrl,
 
               <Separator />
 
-              {/* Action Buttons */}
+              {/* Action Buttons - only in result area */}
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave}>
-                  <Bookmark className="h-3 w-3" /> 결과 저장
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleRegenerate}>
-                  <RefreshCw className="h-3 w-3" /> 다시 생성
-                </Button>
-                {config?.allowConsultantEscalation && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleConsultant}>
-                    <MessageSquare className="h-3 w-3" /> 전담 컨설턴트 전환
+                {resultActions.save.visible && (
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled}>
+                    <Bookmark className="h-3 w-3" /> 결과 저장
+                  </Button>
+                )}
+                {resultActions.copy.visible && (
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
+                    {resultActions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                    전체 복사
+                    {!resultActions.copy.enabled && <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.copy.lockReason}</span>}
+                  </Button>
+                )}
+                {resultActions.regenerate.visible && (
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleRegenerate} disabled={!resultActions.regenerate.enabled}>
+                    {resultActions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                    다시 생성
+                    {resultActions.regenerate.requiresCredit && resultActions.regenerate.enabled && (
+                      <span className="text-[9px] text-muted-foreground">({resultActions.regenerate.creditCost})</span>
+                    )}
+                  </Button>
+                )}
+                {resultActions.consultantTransfer.visible && (
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleConsultant} disabled={!resultActions.consultantTransfer.enabled}>
+                    {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                    전담 컨설턴트 전환
                   </Button>
                 )}
               </div>

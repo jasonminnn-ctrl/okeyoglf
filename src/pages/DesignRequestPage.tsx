@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerationFlow } from "@/components/GenerationFlow";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { PenTool, Loader2 } from "lucide-react";
 
 export default function DesignRequestPage() {
@@ -14,6 +15,7 @@ export default function DesignRequestPage() {
   return (
     <GenerationFlow
       pipelineKey="ai-design/request"
+      featureKey={FEATURE_KEYS.DESIGN_REQUEST}
       title="디자인 요청"
       description="홍보물 디자인 브리프를 AI가 작성합니다"
       icon={<PenTool className="h-6 w-6 text-primary" />}
