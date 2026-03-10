@@ -1,77 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Building2, Briefcase, MapPin, Phone, Mail, Upload, LayoutGrid, Users, Shield, UserPlus, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
-
-const businessTypeFields: Record<string, { label: string; placeholder?: string }[]> = {
-  indoor: [
-    { label: "타석 수", placeholder: "예: 60" },
-    { label: "운영시간", placeholder: "예: 06:00 ~ 24:00" },
-    { label: "휴무일", placeholder: "예: 연중무휴" },
-    { label: "레슨 운영 여부", placeholder: "예: 운영 중" },
-    { label: "프로/강사 수", placeholder: "예: 5명" },
-    { label: "회원권 운영 여부", placeholder: "예: 월정액 회원권" },
-    { label: "시간권 운영 여부", placeholder: "예: 1시간권 / 30분권" },
-    { label: "주요 고객층", placeholder: "예: 30~50대 직장인 (준비 중)" },
-    { label: "예약 운영 여부", placeholder: "예: 앱 예약 (준비 중)" },
-  ],
-  course: [
-    { label: "코스 수", placeholder: "예: 18홀 (준비 중)" },
-    { label: "운영시간 / 티타임 운영 시간", placeholder: "예: 06:00 ~ 18:00" },
-    { label: "주중/주말 운영 구분", placeholder: "예: 요금 차등 (준비 중)" },
-    { label: "부대시설 여부", placeholder: "예: 클럽하우스, 사우나 (준비 중)" },
-    { label: "패키지 운영 여부", placeholder: "예: 숙박+라운드 패키지" },
-    { label: "판매 채널 구조", placeholder: "예: 자체+OTA (준비 중)" },
-    { label: "주요 고객층", placeholder: "예: 40~60대 동호회 (준비 중)" },
-  ],
-  academy: [
-    { label: "강사 수", placeholder: "예: 3명" },
-    { label: "수업 운영 시간", placeholder: "예: 10:00 ~ 21:00" },
-    { label: "반 운영 여부", placeholder: "예: 초급/중급/상급반" },
-    { label: "체험레슨 여부", placeholder: "예: 무료 체험 1회" },
-    { label: "정규반 여부", placeholder: "예: 주 2회 정규반" },
-    { label: "주요 대상군", placeholder: "예: 입문자, 주부 (준비 중)" },
-    { label: "교육 프로그램 요약", placeholder: "예: 8주 커리큘럼 (준비 중)" },
-    { label: "상담/등록 운영 방식", placeholder: "예: 전화+방문 상담 (준비 중)" },
-  ],
-  shop: [
-    { label: "주요 판매 카테고리", placeholder: "예: 클럽, 의류, 용품" },
-    { label: "온라인/오프라인 운영 여부", placeholder: "예: 온+오프라인" },
-    { label: "브랜드 취급 현황", placeholder: "예: 캘러웨이, 타이틀리스트" },
-    { label: "시즌 기획 운영 여부", placeholder: "예: 분기별 기획전" },
-    { label: "평균 판매가", placeholder: "예: 35만원 (준비 중)" },
-    { label: "주요 고객층", placeholder: "예: 30~50대 (준비 중)" },
-    { label: "대표 상품군", placeholder: "예: 드라이버, 아이언세트 (준비 중)" },
-  ],
-  fitting: [
-    { label: "예약 운영 여부", placeholder: "예: 온라인 예약제" },
-    { label: "피팅 가능 인원/슬롯", placeholder: "예: 일 8슬롯 (준비 중)" },
-    { label: "브랜드 취급 현황", placeholder: "예: 핑, 미즈노, 타이틀리스트" },
-    { label: "상담 프로세스 요약", placeholder: "예: 상담→분석→피팅→주문 (준비 중)" },
-    { label: "구매 전환 추적 여부", placeholder: "예: 추적 중 (준비 중)" },
-    { label: "후기 수집 운영 여부", placeholder: "예: 카카오 후기 (준비 중)" },
-  ],
-  company: [
-    { label: "회사 유형", placeholder: "예: 브랜드사/유통사/회원권사 (준비 중)" },
-    { label: "주요 상품/서비스", placeholder: "예: 골프용품 유통" },
-    { label: "B2B / B2C 여부", placeholder: "예: B2B + B2C" },
-    { label: "거래처/파트너 운영 여부", placeholder: "예: 거래처 50개" },
-    { label: "제안서 운영 여부", placeholder: "예: 분기별 제안" },
-    { label: "영업 프로세스 요약", placeholder: "예: 리드→미팅→제안→계약 (준비 중)" },
-  ],
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Settings, Building2, Briefcase, Users, Palette, BarChart3 } from "lucide-react";
+import SettingsCompanyTab from "@/components/settings/SettingsCompanyTab";
+import SettingsOperationsTab from "@/components/settings/SettingsOperationsTab";
+import SettingsUsersTab from "@/components/settings/SettingsUsersTab";
+import SettingsFeatureBrandTab from "@/components/settings/SettingsFeatureBrandTab";
+import SettingsUsageTab from "@/components/settings/SettingsUsageTab";
 
 export default function SettingsPage() {
-  const { businessType, setBusinessType, label } = useBusinessContext();
-  const fields = businessTypeFields[businessType] || [];
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -88,283 +24,30 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="basic" className="space-y-6">
-        <TabsList className="bg-muted/30 p-1">
-          <TabsTrigger value="basic" className="text-xs px-4 py-1.5 gap-1.5">
-            <Building2 className="h-3 w-3" />회사 기본정보
+      <Tabs defaultValue="company" className="space-y-6">
+        <TabsList className="bg-muted/30 p-1 flex-wrap h-auto gap-1">
+          <TabsTrigger value="company" className="text-xs px-3 py-1.5 gap-1.5">
+            <Building2 className="h-3 w-3" />회사/업종
           </TabsTrigger>
-          <TabsTrigger value="operations" className="text-xs px-4 py-1.5 gap-1.5">
+          <TabsTrigger value="operations" className="text-xs px-3 py-1.5 gap-1.5">
             <Briefcase className="h-3 w-3" />운영정보
           </TabsTrigger>
-          <TabsTrigger value="users" className="text-xs px-4 py-1.5 gap-1.5">
+          <TabsTrigger value="users" className="text-xs px-3 py-1.5 gap-1.5">
             <Users className="h-3 w-3" />사용자/권한
+          </TabsTrigger>
+          <TabsTrigger value="feature-brand" className="text-xs px-3 py-1.5 gap-1.5">
+            <Palette className="h-3 w-3" />기능/브랜드
+          </TabsTrigger>
+          <TabsTrigger value="usage" className="text-xs px-3 py-1.5 gap-1.5">
+            <BarChart3 className="h-3 w-3" />이용현황
           </TabsTrigger>
         </TabsList>
 
-        {/* 회사 기본정보 탭 */}
-        <TabsContent value="basic" className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                조직 기본정보
-              </CardTitle>
-              <CardDescription>사업체의 기본 정보를 입력하세요</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>회사명 / 사업장명</Label>
-                  <Input placeholder="OkeyGolf 연습장" />
-                </div>
-                <div className="space-y-2">
-                  <Label>대표자명 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <Input placeholder="홍길동" disabled className="opacity-60" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><Phone className="h-3 w-3" /> 연락처</Label>
-                  <Input placeholder="031-XXX-XXXX" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><Mail className="h-3 w-3" /> 이메일</Label>
-                  <Input placeholder="info@okeygolf.com" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" /> 주소</Label>
-                  <Input placeholder="경기도 용인시 ..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>지점명 / 조직명</Label>
-                  <Input placeholder="본점" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>브랜드명 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <Input placeholder="OkeyGolf" disabled className="opacity-60" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><Upload className="h-3 w-3" /> 로고/브랜드 파일 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <div className="h-10 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">파일 업로드 영역 (준비 중)</div>
-                </div>
-              </div>
-              <Button>저장</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 운영정보 탭 */}
-        <TabsContent value="operations" className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-primary" />
-                업종 및 운영 형태 설정
-              </CardTitle>
-              <CardDescription>대표 업종과 운영 방식을 선택하세요. 선택한 업종에 따라 모든 AI 모듈의 예시·KPI·추천이 자동 변경됩니다.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>대표 업종 선택</Label>
-                  <Select value={businessType} onValueChange={(v) => setBusinessType(v as BusinessType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(Object.entries(businessTypeLabels) as [BusinessType, string][]).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>다중 업종 여부 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <Input placeholder="해당 시 복수 선택" disabled className="opacity-60" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>운영 형태 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <Input placeholder="B2C / B2B / 혼합" disabled className="opacity-60" />
-                </div>
-                <div className="space-y-2">
-                  <Label>지점 형태</Label>
-                  <Select defaultValue="single">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">단일 지점</SelectItem>
-                      <SelectItem value="multi">다지점</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>예약 운영 여부 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                  <Input placeholder="예약제 / 선착순" disabled className="opacity-60" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4 text-primary" />
-                업종별 운영 기본정보
-                <Badge className="ml-2 bg-primary/10 text-primary text-[10px]">{label}</Badge>
-              </CardTitle>
-              <CardDescription>선택한 업종({label})에 맞는 운영 기본 정보를 입력하세요. AI 모듈이 이 정보를 기반으로 분석합니다.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {fields.map((f) => {
-                  const isPlaceholder = f.placeholder?.includes("준비 중");
-                  return (
-                    <div key={f.label} className="space-y-2">
-                      <Label>{f.label} {isPlaceholder && <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge>}</Label>
-                      <Input placeholder={f.placeholder} disabled={!!isPlaceholder} className={isPlaceholder ? "opacity-60" : ""} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Upload className="h-3 w-3" /> 가격표 업로드 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                <div className="h-16 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">가격표 파일 업로드 영역 (준비 중)</div>
-              </div>
-              <Button>저장</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                내부 실무 기준정보
-              </CardTitle>
-              <CardDescription>사업장에서 자주 쓰는 용어, 운영 메모, 반드시 반영할 기준 등을 입력하세요. AI가 결과 생성 시 참조합니다.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>자주 쓰는 용어 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                <Textarea placeholder="예: 타석 → 베이, 프론트 → 접수 데스크" disabled className="opacity-60 min-h-[60px]" />
-              </div>
-              <div className="space-y-2">
-                <Label>내부 운영 메모 <Badge variant="outline" className="ml-1 text-[10px]">준비 중</Badge></Label>
-                <Textarea placeholder="예: 주중 오전 할인은 반드시 안내, VIP 고객 별도 관리" disabled className="opacity-60 min-h-[60px]" />
-              </div>
-              <Card className="bg-muted/30 border-border/30">
-                <CardContent className="pt-3 pb-3">
-                  <p className="text-[11px] text-muted-foreground">ℹ️ 이 항목들은 프롬프트 규칙이 아닌 사업장 맥락 정보입니다. AI 정책 및 프롬프트 규칙은 OkeyGolf 운영팀이 내부적으로 관리합니다.</p>
-                </CardContent>
-              </Card>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* 사용자/권한 탭 */}
-        <TabsContent value="users" className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    사용자 관리
-                  </CardTitle>
-                  <CardDescription>조직 내 사용자 계정을 관리하세요</CardDescription>
-                </div>
-                <Button size="sm" className="gap-1.5 text-xs">
-                  <UserPlus className="h-3.5 w-3.5" />사용자 추가
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-border/50 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/30 text-muted-foreground text-xs">
-                      <th className="text-left px-4 py-2.5 font-medium">이름</th>
-                      <th className="text-left px-4 py-2.5 font-medium">이메일</th>
-                      <th className="text-left px-4 py-2.5 font-medium">역할</th>
-                      <th className="text-left px-4 py-2.5 font-medium">상태</th>
-                      <th className="text-right px-4 py-2.5 font-medium">관리</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    <tr>
-                      <td className="px-4 py-3 font-medium">관리자</td>
-                      <td className="px-4 py-3 text-muted-foreground">admin@okeygolf.com</td>
-                      <td className="px-4 py-3"><Badge className="bg-primary/10 text-primary text-[10px]">관리자</Badge></td>
-                      <td className="px-4 py-3"><Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">활성</Badge></td>
-                      <td className="px-4 py-3 text-right text-muted-foreground text-xs">—</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium">김매니저</td>
-                      <td className="px-4 py-3 text-muted-foreground">manager@okeygolf.com</td>
-                      <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">매니저</Badge></td>
-                      <td className="px-4 py-3"><Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">활성</Badge></td>
-                      <td className="px-4 py-3 text-right">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium">박직원</td>
-                      <td className="px-4 py-3 text-muted-foreground">staff@okeygolf.com</td>
-                      <td className="px-4 py-3"><Badge variant="outline" className="text-[10px]">직원</Badge></td>
-                      <td className="px-4 py-3"><Badge variant="outline" className="text-[10px] text-yellow-500 border-yellow-500/30">초대 중</Badge></td>
-                      <td className="px-4 py-3 text-right">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                역할별 권한 설정
-              </CardTitle>
-              <CardDescription>각 역할이 접근할 수 있는 기능 범위를 설정하세요</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-border/50 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted/30 text-muted-foreground text-xs">
-                      <th className="text-left px-4 py-2.5 font-medium">기능</th>
-                      <th className="text-center px-4 py-2.5 font-medium">관리자</th>
-                      <th className="text-center px-4 py-2.5 font-medium">매니저</th>
-                      <th className="text-center px-4 py-2.5 font-medium">직원</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {[
-                      { name: "AI 생성 실행", admin: true, manager: true, staff: true },
-                      { name: "결과 저장/복사", admin: true, manager: true, staff: true },
-                      { name: "결과 재생성", admin: true, manager: true, staff: false },
-                      { name: "전담 컨설턴트 전환", admin: true, manager: false, staff: false },
-                      { name: "사용자 관리", admin: true, manager: false, staff: false },
-                      { name: "관리자 설정 변경", admin: true, manager: false, staff: false },
-                    ].map((row) => (
-                      <tr key={row.name}>
-                        <td className="px-4 py-3 font-medium">{row.name}</td>
-                        <td className="px-4 py-3 text-center"><Switch checked={row.admin} disabled className="scale-75" /></td>
-                        <td className="px-4 py-3 text-center"><Switch checked={row.manager} className="scale-75" /></td>
-                        <td className="px-4 py-3 text-center"><Switch checked={row.staff} className="scale-75" /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Button className="mt-4">저장</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <TabsContent value="company"><SettingsCompanyTab /></TabsContent>
+        <TabsContent value="operations"><SettingsOperationsTab /></TabsContent>
+        <TabsContent value="users"><SettingsUsersTab /></TabsContent>
+        <TabsContent value="feature-brand"><SettingsFeatureBrandTab /></TabsContent>
+        <TabsContent value="usage"><SettingsUsageTab /></TabsContent>
       </Tabs>
     </div>
   );
