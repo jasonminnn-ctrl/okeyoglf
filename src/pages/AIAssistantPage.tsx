@@ -46,6 +46,7 @@ export default function AIAssistantPage() {
             description={config.assistantExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
+            badge="준비중"
           />
         ))}
       </MenuLandingGrid>
