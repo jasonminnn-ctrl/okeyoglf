@@ -41,10 +41,7 @@ export default function AIDesignPage() {
           >
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                기대 결과: {config.resultTypeHints[s.key] || "홍보물 초안"}
-              </Badge>
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                저장 → {s.saveCategory}
+                결과 유형: {config.resultTypeHints[s.key] || "홍보물 초안"}
               </Badge>
             </div>
           </MenuLandingCard>
