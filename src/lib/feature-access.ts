@@ -94,6 +94,9 @@ export interface ResultActionsAccess {
   copy: FeatureAccessResult;
   regenerate: FeatureAccessResult;
   consultantTransfer: FeatureAccessResult;
+  export: FeatureAccessResult;
+  share: FeatureAccessResult;
+  deliver: FeatureAccessResult;
 }
 
 export function checkResultActions(
@@ -106,6 +109,9 @@ export function checkResultActions(
     copy: checkFeatureAccess("result.copy", membershipCode, creditBalance, overrides),
     regenerate: checkFeatureAccess("result.regenerate", membershipCode, creditBalance, overrides),
     consultantTransfer: checkFeatureAccess("result.consultant_transfer", membershipCode, creditBalance, overrides),
+    export: checkFeatureAccess("result.export", membershipCode, creditBalance, overrides),
+    share: checkFeatureAccess("result.share", membershipCode, creditBalance, overrides),
+    deliver: checkFeatureAccess("result.deliver", membershipCode, creditBalance, overrides),
   };
 }
 

@@ -66,9 +66,15 @@ export function ShareDialog({ open, onOpenChange, result }: ShareDialogProps) {
       await navigator.clipboard.writeText(text);
     }
 
+    const methodMap: Record<ShareMethod, string> = {
+      copy: "copy_text",
+      link: "link_placeholder",
+      internal: "internal_placeholder",
+    };
+
     markResultShared(result.id, {
       id: `sh-${Date.now()}`,
-      method: selectedMethod === "copy" ? "link" : selectedMethod === "link" ? "link" : "internal",
+      method: methodMap[selectedMethod] as "link" | "email" | "kakao" | "internal",
       sharedAt: new Date().toISOString(),
       sharedTo: selectedMethod === "internal" ? "내부 구성원" : undefined,
       note: selectedMethod === "copy"

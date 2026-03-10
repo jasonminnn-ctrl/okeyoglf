@@ -269,6 +269,9 @@ function buildDefaultPolicies(): FeaturePolicy[] {
       { featureKey: FEATURE_KEYS.RESULT_COPY, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
       { featureKey: FEATURE_KEYS.RESULT_REGENERATE, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: true, creditCost: 3, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
       { featureKey: FEATURE_KEYS.RESULT_CONSULTANT_TRANSFER, membershipCode: tier, accessMode: tier === "pro" || tier === "enterprise" ? "enabled" : "locked", requiresCredit: false, creditCost: 0, upsellLabel: tier !== "pro" && tier !== "enterprise" ? "Pro 플랜에서 사용 가능" : undefined, isActive: true },
+      { featureKey: FEATURE_KEYS.RESULT_EXPORT, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
+      { featureKey: FEATURE_KEYS.RESULT_SHARE, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
+      { featureKey: FEATURE_KEYS.RESULT_DELIVER, membershipCode: tier, accessMode: tier === "trial" || tier === "standard" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" || tier === "standard" ? "Pro 플랜에서 사용 가능" : undefined, isActive: true },
     );
 
     // Dashboard views

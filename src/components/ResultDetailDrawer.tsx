@@ -250,15 +250,24 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
 
             {/* Delivery actions — download, share, deliver */}
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
-                <Download className="h-3 w-3" /> 내보내기
-              </Button>
-              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setShareOpen(true)}>
-                <Share2 className="h-3 w-3" /> 공유
-              </Button>
-              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setDeliverOpen(true)}>
-                <Send className="h-3 w-3" /> 전달
-              </Button>
+              {actions.export.visible && (
+                <Button variant="secondary" size="sm" className="text-xs gap-1.5" disabled={!actions.export.enabled} onClick={() => actions.export.enabled && setExportOpen(true)}>
+                  {actions.export.enabled ? <Download className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 내보내기
+                  {!actions.export.enabled && actions.export.lockReason && <span className="text-[9px] text-muted-foreground ml-0.5">{actions.export.lockReason}</span>}
+                </Button>
+              )}
+              {actions.share.visible && (
+                <Button variant="secondary" size="sm" className="text-xs gap-1.5" disabled={!actions.share.enabled} onClick={() => actions.share.enabled && setShareOpen(true)}>
+                  {actions.share.enabled ? <Share2 className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 공유
+                  {!actions.share.enabled && actions.share.lockReason && <span className="text-[9px] text-muted-foreground ml-0.5">{actions.share.lockReason}</span>}
+                </Button>
+              )}
+              {actions.deliver.visible && (
+                <Button variant="secondary" size="sm" className="text-xs gap-1.5" disabled={!actions.deliver.enabled} onClick={() => actions.deliver.enabled && setDeliverOpen(true)}>
+                  {actions.deliver.enabled ? <Send className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 전달
+                  {!actions.deliver.enabled && actions.deliver.lockReason && <span className="text-[9px] text-muted-foreground ml-0.5">{actions.deliver.lockReason}</span>}
+                </Button>
+              )}
             </div>
           </div>
         </SheetContent>
