@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
@@ -37,13 +37,7 @@ export default function AIBusinessSupportPage() {
             icon={s.icon}
             color={s.color}
             badge={s.badge}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {config.resultTypeHints[s.key] || "문서 초안"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 

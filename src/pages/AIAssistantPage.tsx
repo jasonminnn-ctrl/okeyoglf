@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sectionKeys = [
   { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", saveCategory: "AI 비서 결과" },
@@ -46,14 +46,7 @@ export default function AIAssistantPage() {
             description={config.assistantExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
-            badge={`저장 → ${s.saveCategory}`}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {resultTypeMap[s.key] || "요약 결과"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 

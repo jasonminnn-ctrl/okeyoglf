@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Megaphone, PenTool, Calendar, PartyPopper, Share2, BarChart2, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "마케팅 카피 생성기", icon: PenTool, color: "bg-primary/10 text-primary", url: "/ai-marketing/copy", saveCategory: "AI 마케팅팀 결과" },
@@ -48,13 +48,7 @@ export default function AIMarketingPage() {
             color={s.color}
             url={s.url}
             badge={s.badge}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {resultTypeMap[s.key] || "마케팅 초안"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 
