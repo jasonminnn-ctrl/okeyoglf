@@ -92,6 +92,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
+  const [isRegenerate, setIsRegenerate] = useState(false);
 
   const config = pipelineConfigs[pipelineKey];
   const contextSummary = buildContextSummary(businessType, label);
