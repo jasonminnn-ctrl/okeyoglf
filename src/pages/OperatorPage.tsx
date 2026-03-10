@@ -1,6 +1,9 @@
-import { Shield, Inbox, FileText, StickyNote, Upload, Users, Clock, Settings2, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, CreditCard, LayoutTemplate, MessageSquare, Wrench } from "lucide-react";
+import { Shield, Inbox, FileText, StickyNote, Upload, Users, Clock, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, CreditCard, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity } from "lucide-react";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { promptRegistry } from "@/lib/prompt-registry";
+import { rosRoutes } from "@/lib/ros-routing";
 
 const consultantOps = [
   { title: "컨설턴트 요청 접수함", desc: "고객 요청 목록 확인 및 처리", icon: Inbox, color: "bg-primary/10 text-primary" },
@@ -12,27 +15,39 @@ const consultantOps = [
 ];
 
 const aiPolicyOps = [
-  { title: "프롬프트 운영", desc: "AI 프롬프트 작성·편집·테스트·버전 관리", icon: FileText, color: "bg-pink-500/10 text-pink-400", badge: "준비 중" },
-  { title: "업종별 지침 운영", desc: "업종별 AI 응답 지침 관리", icon: BookOpen, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
-  { title: "출력 기준 운영", desc: "AI 출력물 형식·길이·톤앤매너 정책", icon: Eye, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
-  { title: "금지 규칙 운영", desc: "AI 사용 금지 표현·내용 정책 관리", icon: ShieldCheck, color: "bg-red-500/10 text-red-400", badge: "준비 중" },
-  { title: "지식베이스 운영", desc: "텍스트·파일·PDF 등 지식 자료 관리", icon: Database, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중" },
-  { title: "참고자료/출처 운영", desc: "AI 참조 자료 및 출처 관리", icon: Globe, color: "bg-pink-500/10 text-pink-400", badge: "준비 중" },
-  { title: "AI 참조 허용 범위 운영", desc: "AI가 참조할 수 있는 데이터 범위 정책", icon: Lock, color: "bg-orange-500/10 text-orange-400", badge: "준비 중" },
+  { title: "프롬프트 운영", desc: "AI 프롬프트 작성·편집·테스트·버전 관리", icon: FileText, color: "bg-pink-500/10 text-pink-400" },
+  { title: "업종별 지침 운영", desc: "업종별 AI 응답 지침 관리", icon: BookOpen, color: "bg-violet-500/10 text-violet-400" },
+  { title: "출력 기준 운영", desc: "AI 출력물 형식·길이·톤앤매너 정책", icon: Eye, color: "bg-emerald-500/10 text-emerald-400" },
+  { title: "금지 규칙 운영", desc: "AI 사용 금지 표현·내용 정책 관리", icon: ShieldCheck, color: "bg-red-500/10 text-red-400" },
+  { title: "지식베이스 운영", desc: "텍스트·파일·PDF 등 지식 자료 관리", icon: Database, color: "bg-cyan-500/10 text-cyan-400" },
+  { title: "참고자료/출처 운영", desc: "AI 참조 자료 및 출처 관리", icon: Globe, color: "bg-pink-500/10 text-pink-400" },
+  { title: "AI 참조 허용 범위 운영", desc: "AI가 참조할 수 있는 데이터 범위 정책", icon: Lock, color: "bg-orange-500/10 text-orange-400" },
 ];
 
 const systemOps = [
-  { title: "엔진 운영", desc: "ROS 엔진 상태 확인 및 파라미터 설정", icon: Cpu, color: "bg-orange-500/10 text-orange-400", badge: "준비 중" },
-  { title: "ROS 정책 운영", desc: "ROS 엔진 정책 및 실행 규칙 관리", icon: Wrench, color: "bg-lime-500/10 text-lime-400", badge: "준비 중" },
-  { title: "전담 컨설턴트 전환 규칙 운영", desc: "AI→컨설턴트 에스컬레이션 규칙 관리", icon: MessageSquare, color: "bg-rose-500/10 text-rose-400", badge: "준비 중" },
+  { title: "엔진 운영", desc: "ROS 엔진 상태 확인 및 파라미터 설정", icon: Cpu, color: "bg-orange-500/10 text-orange-400" },
+  { title: "ROS 정책 운영", desc: "ROS 엔진 정책 및 실행 규칙 관리", icon: Wrench, color: "bg-lime-500/10 text-lime-400" },
+  { title: "전담 컨설턴트 전환 규칙 운영", desc: "AI→컨설턴트 에스컬레이션 규칙 관리", icon: MessageSquare, color: "bg-rose-500/10 text-rose-400" },
   { title: "크레딧 정책 운영", desc: "크레딧 차감 정책 및 요금제 관리", icon: CreditCard, color: "bg-yellow-500/10 text-yellow-400", badge: "준비 중" },
-  { title: "템플릿 운영", desc: "출력 템플릿 생성·편집·관리", icon: LayoutTemplate, color: "bg-fuchsia-500/10 text-fuchsia-400", badge: "준비 중" },
-  { title: "기능 정책 운영", desc: "메뉴·기능 마스터 노출 정책 관리", icon: ToggleRight, color: "bg-sky-500/10 text-sky-400", badge: "준비 중" },
-  { title: "변경 이력", desc: "전체 설정 변경 이력 조회", icon: History, color: "bg-slate-500/10 text-slate-400", badge: "준비 중" },
-  { title: "태그 관리", desc: "지식베이스·프롬프트 태그 체계 관리", icon: Tag, color: "bg-zinc-500/10 text-zinc-400", badge: "준비 중" },
+  { title: "템플릿 운영", desc: "출력 템플릿 생성·편집·관리", icon: LayoutTemplate, color: "bg-fuchsia-500/10 text-fuchsia-400" },
+  { title: "기능 정책 운영", desc: "메뉴·기능 마스터 노출 정책 관리", icon: ToggleRight, color: "bg-sky-500/10 text-sky-400" },
+  { title: "변경 이력", desc: "전체 설정 변경 이력 조회", icon: History, color: "bg-slate-500/10 text-slate-400" },
+  { title: "태그 관리", desc: "지식베이스·프롬프트 태그 체계 관리", icon: Tag, color: "bg-zinc-500/10 text-zinc-400" },
 ];
 
+const statusColor: Record<string, string> = {
+  active: "bg-emerald-500/20 text-emerald-400",
+  testing: "bg-amber-500/20 text-amber-400",
+  inactive: "bg-muted text-muted-foreground",
+  deprecated: "bg-red-500/20 text-red-400",
+};
+const statusLabel: Record<string, string> = { active: "활성", testing: "테스트 중", inactive: "비활성", deprecated: "폐기" };
+
 export default function OperatorPage() {
+  const activePrompts = promptRegistry.filter(p => p.status === "active").length;
+  const testingPrompts = promptRegistry.filter(p => p.status === "testing").length;
+  const routeEntries = Object.values(rosRoutes);
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
@@ -49,6 +64,124 @@ export default function OperatorPage() {
         </CardContent>
       </Card>
 
+      {/* AI System Status Dashboard */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">활성 프롬프트</p>
+                <p className="text-2xl font-bold mt-1">{activePrompts}</p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">테스트 중</p>
+                <p className="text-2xl font-bold mt-1">{testingPrompts}</p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">엔진 라우트</p>
+                <p className="text-2xl font-bold mt-1">{routeEntries.length}</p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">시스템 상태</p>
+                <p className="text-sm font-medium mt-2 text-emerald-400">정상 운영</p>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-emerald-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Prompt Registry Summary */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              프롬프트 레지스트리 현황
+            </CardTitle>
+            <Badge variant="outline" className="text-[10px]">{promptRegistry.length}건 등록</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 max-h-[280px] overflow-y-auto">
+            {promptRegistry.map(p => (
+              <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{p.module} — {p.subtool}</p>
+                    <p className="text-[10px] text-muted-foreground">{p.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge variant="outline" className="text-[9px]">{p.version}</Badge>
+                  <Badge className={`text-[9px] ${statusColor[p.status]}`} variant="outline">{statusLabel[p.status]}</Badge>
+                  <span className="text-[9px] text-muted-foreground">{p.lastTested || "-"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ROS Routing Summary */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-primary" />
+              ROS 엔진 라우팅 현황
+            </CardTitle>
+            <Badge variant="outline" className="text-[10px]">{routeEntries.length}개 모듈</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {routeEntries.map(r => (
+              <div key={r.module} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20">
+                <div>
+                  <p className="text-xs font-medium">{r.module}</p>
+                  <p className="text-[10px] text-muted-foreground">{r.engineLabel} · {r.outputStyle}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={`text-[9px] ${r.riskLevel === "low" ? "text-emerald-400" : r.riskLevel === "medium" ? "text-amber-400" : "text-red-400"}`}>
+                    위험도: {r.riskLevel}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Consultant Operations */}
       <div>
         <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -57,7 +190,7 @@ export default function OperatorPage() {
         </h2>
         <MenuLandingGrid columns={3}>
           {consultantOps.map((s) => (
-          <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} />
+            <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} />
           ))}
         </MenuLandingGrid>
       </div>
@@ -70,7 +203,7 @@ export default function OperatorPage() {
         </h2>
         <MenuLandingGrid columns={3}>
           {aiPolicyOps.map((s) => (
-            <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge={s.badge} />
+            <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} />
           ))}
         </MenuLandingGrid>
       </div>

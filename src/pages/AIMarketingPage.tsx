@@ -4,24 +4,14 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Megaphone, PenTool, Calendar, PartyPopper, Share2, BarChart2, Search } from "lucide-react";
 
-
 const sections = [
-  { key: "마케팅 카피 생성기", icon: PenTool, color: "bg-primary/10 text-primary", url: "/ai-marketing/copy", saveCategory: "AI 마케팅팀 결과" },
-  { key: "이벤트 생성기", icon: PartyPopper, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 마케팅팀 결과" },
-  { key: "프로모션 기획", icon: Calendar, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 마케팅팀 결과" },
-  { key: "채널 운영안", icon: Share2, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 마케팅팀 결과" },
-  { key: "시즌 캠페인 제안", icon: BarChart2, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중", saveCategory: "AI 마케팅팀 결과" },
-  { key: "시장조사 연계", icon: Search, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중", saveCategory: "AI 마케팅팀 결과" },
+  { key: "마케팅 카피 생성기", icon: PenTool, color: "bg-primary/10 text-primary", url: "/ai-marketing/copy" },
+  { key: "이벤트 생성기", icon: PartyPopper, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
+  { key: "프로모션 기획", icon: Calendar, color: "bg-blue-500/10 text-blue-400", url: "/ai-marketing/promotion" },
+  { key: "채널 운영안", icon: Share2, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
+  { key: "시즌 캠페인 제안", icon: BarChart2, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
+  { key: "시장조사 연계", icon: Search, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중" },
 ];
-
-const resultTypeMap: Record<string, string> = {
-  "마케팅 카피 생성기": "프로모션 카피",
-  "이벤트 생성기": "이벤트 기획안",
-  "프로모션 기획": "프로모션 초안",
-  "채널 운영안": "채널 전략 요약",
-  "시즌 캠페인 제안": "캠페인 초안",
-  "시장조사 연계": "조사 연계 요약",
-};
 
 export default function AIMarketingPage() {
   const { config } = useBusinessContext();
@@ -47,7 +37,7 @@ export default function AIMarketingPage() {
             icon={s.icon}
             color={s.color}
             url={s.url}
-            badge={s.badge}
+            badge={s.url ? undefined : s.badge}
           />
         ))}
       </MenuLandingGrid>

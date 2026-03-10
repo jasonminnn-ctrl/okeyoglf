@@ -4,15 +4,14 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { TrendingUp, Users, RefreshCcw, UserX, ShoppingBag, Crown, Package, MessageCircle } from "lucide-react";
 
-
 const sections = [
-  { key: "고객관리", icon: Users, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "재등록 관리", icon: RefreshCcw, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "미방문 관리", icon: UserX, color: "bg-red-500/10 text-red-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "판매 제안", icon: ShoppingBag, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "VIP 관리", icon: Crown, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "패키지 제안", icon: Package, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
-  { key: "응대 문안", icon: MessageCircle, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중", saveCategory: "AI 영업팀 결과" },
+  { key: "고객관리", icon: Users, color: "bg-primary/10 text-primary", badge: "준비 중" },
+  { key: "재등록 관리", icon: RefreshCcw, color: "bg-amber-500/10 text-amber-400", url: "/ai-sales/re-registration" },
+  { key: "미방문 관리", icon: UserX, color: "bg-red-500/10 text-red-400", badge: "준비 중" },
+  { key: "판매 제안", icon: ShoppingBag, color: "bg-blue-500/10 text-blue-400", badge: "준비 중" },
+  { key: "VIP 관리", icon: Crown, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
+  { key: "패키지 제안", icon: Package, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
+  { key: "응대 문안", icon: MessageCircle, color: "bg-cyan-500/10 text-cyan-400", url: "/ai-sales/response-script" },
 ];
 
 export default function AISalesPage() {
@@ -38,7 +37,8 @@ export default function AISalesPage() {
             description={config.salesExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
-            badge={s.badge}
+            url={s.url}
+            badge={s.url ? undefined : s.badge}
           />
         ))}
       </MenuLandingGrid>

@@ -4,14 +4,13 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Palette, PenTool, LayoutTemplate, Image, FileImage, Upload, FolderOpen } from "lucide-react";
 
-
 const sections = [
-  { key: "디자인 요청", icon: PenTool, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
-  { key: "템플릿 디자인 센터", icon: LayoutTemplate, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
-  { key: "홍보물 문안 + 레이아웃", icon: FileImage, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
-  { key: "배너/포스터 요청", icon: Image, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
-  { key: "업로드 폼 기반 제작", icon: Upload, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
-  { key: "결과물 관리", icon: FolderOpen, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
+  { key: "디자인 요청", icon: PenTool, color: "bg-primary/10 text-primary", url: "/ai-design/request" },
+  { key: "템플릿 디자인 센터", icon: LayoutTemplate, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
+  { key: "홍보물 문안 + 레이아웃", icon: FileImage, color: "bg-blue-500/10 text-blue-400", url: "/ai-design/copy-layout" },
+  { key: "배너/포스터 요청", icon: Image, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
+  { key: "업로드 폼 기반 제작", icon: Upload, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
+  { key: "결과물 관리", icon: FolderOpen, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중" },
 ];
 
 export default function AIDesignPage() {
@@ -37,7 +36,8 @@ export default function AIDesignPage() {
             description={config.designExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
-            badge={s.badge}
+            url={s.url}
+            badge={s.url ? undefined : s.badge}
           />
         ))}
       </MenuLandingGrid>
