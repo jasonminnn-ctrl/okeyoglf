@@ -328,66 +328,13 @@ export default function OperatorPage() {
 
         {/* Feature Visibility Tab */}
         <TabsContent value="feature" className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2"><ToggleRight className="h-4 w-4 text-primary" />기능 노출 제어 정책</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-xs text-muted-foreground">멤버십별 기능 노출/잠금/숨김 정책을 관리합니다. 조직별 override도 지원됩니다.</p>
-              
-              <div className="space-y-3">
-                {[
-                  { category: "메뉴/카드 진입", items: ["대시보드", "AI 비서", "AI 운영팀", "AI 영업팀", "AI 마케팅팀", "AI 디자인팀", "AI 경영지원", "시장조사", "전담 컨설턴트"] },
-                  { category: "생성 실행", items: ["오늘의 할 일", "AI 진단실", "응대 문안", "마케팅 카피", "디자인 요청", "내부 서식 초안", "시장조사 기본"] },
-                  { category: "결과 액션", items: ["저장", "복사", "재생성", "전담 컨설턴트 전환"] },
-                ].map(group => (
-                  <div key={group.category}>
-                    <p className="text-xs font-medium mb-2">{group.category}</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {group.items.map(item => (
-                        <div key={item} className="p-2 rounded bg-muted/20 text-[11px] flex items-center justify-between">
-                          <span>{item}</span>
-                          <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400">활성</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-xs font-medium mb-2">조직별 Override</p>
-                <div className="h-20 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">
-                  조직별 기능 override 관리 (준비 중) — 특정 조직의 기능 접근을 개별 제어합니다
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Membership-specific visibility */}
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2"><Crown className="h-4 w-4 text-primary" />멤버십별 노출 정책 요약</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {membershipTiers.map(tier => (
-                  <div key={tier.code} className="p-3 rounded-lg bg-muted/20 space-y-2">
-                    <Badge className={`text-[10px] ${tierBadgeColor[tier.code]}`} variant="outline">{tier.name}</Badge>
-                    <div className="space-y-1 text-[10px] text-muted-foreground">
-                      <p>• 메뉴 접근: {tier.code === "trial" ? "일부" : "전체"}</p>
-                      <p>• 생성 기능: {tier.code === "trial" ? "제한" : tier.code === "standard" ? "일반" : "전체"}</p>
-                      <p>• 결과 복사: {tier.code === "trial" ? "제한" : "허용"}</p>
-                      <p>• 재생성: {tier.code === "trial" ? "제한" : "허용"}</p>
-                      <p>• 컨설턴트: {tier.code === "pro" || tier.code === "enterprise" ? "허용" : "제한"}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <FeatureVisibilityEditor
+            membershipCode={membershipCode}
+            overrides={overrides}
+            addOverride={addOverride}
+            removeOverride={removeOverride}
+            tierBadgeColor={tierBadgeColor}
+          />
         </TabsContent>
 
         {/* AI Policy Tab */}
