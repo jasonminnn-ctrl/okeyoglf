@@ -12,9 +12,10 @@ interface MenuLandingCardProps {
   onClick?: () => void;
   badge?: string;
   locked?: boolean;
+  children?: React.ReactNode;
 }
 
-export function MenuLandingCard({ title, description, icon: Icon, color = "bg-primary/10 text-primary", url, onClick, badge, locked }: MenuLandingCardProps) {
+export function MenuLandingCard({ title, description, icon: Icon, color = "bg-primary/10 text-primary", url, onClick, badge, locked, children }: MenuLandingCardProps) {
   const navigate = useNavigate();
   const handleClick = () => {
     if (locked) return;
@@ -41,6 +42,7 @@ export function MenuLandingCard({ title, description, icon: Icon, color = "bg-pr
         </div>
         <h3 className="font-medium text-sm">{title}</h3>
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
+        {children}
       </CardContent>
     </Card>
   );

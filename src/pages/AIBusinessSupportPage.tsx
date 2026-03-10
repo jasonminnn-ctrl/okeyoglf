@@ -2,14 +2,15 @@ import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
-import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert, FileText } from "lucide-react";
+import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const sections = [
-  { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", badge: "준비 중" },
-  { key: "정산/협력사 커뮤니케이션", icon: Calculator, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
-  { key: "내부 서식 초안", icon: FileSpreadsheet, color: "bg-blue-500/10 text-blue-400", badge: "준비 중" },
-  { key: "반복 업무 체크리스트", icon: ListChecks, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
-  { key: "리스크 검토 포인트", icon: ShieldAlert, color: "bg-red-500/10 text-red-400", badge: "준비 중" },
+  { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
+  { key: "정산/협력사 커뮤니케이션", icon: Calculator, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
+  { key: "내부 서식 초안", icon: FileSpreadsheet, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
+  { key: "반복 업무 체크리스트", icon: ListChecks, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
+  { key: "리스크 검토 포인트", icon: ShieldAlert, color: "bg-red-500/10 text-red-400", badge: "준비 중", saveCategory: "AI 경영지원 결과" },
 ];
 
 export default function AIBusinessSupportPage() {
@@ -36,7 +37,16 @@ export default function AIBusinessSupportPage() {
             icon={s.icon}
             color={s.color}
             badge={s.badge}
-          />
+          >
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                기대 결과: {config.resultTypeHints[s.key] || "문서 초안"}
+              </Badge>
+              <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                저장 → {s.saveCategory}
+              </Badge>
+            </div>
+          </MenuLandingCard>
         ))}
       </MenuLandingGrid>
 

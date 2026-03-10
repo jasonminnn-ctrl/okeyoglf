@@ -1,9 +1,10 @@
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare } from "lucide-react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
@@ -87,27 +88,64 @@ export default function MarketResearchPage() {
         </CardContent>
       </Card>
 
-      {/* Future-ready result structure */}
+      {/* Result structure - storage-ready */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">조사 결과</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">조사 결과</CardTitle>
+            <Badge variant="outline" className="text-[10px]">저장 → 시장조사 결과</Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Condition summary */}
+          <Card className="bg-muted/20 border-border/30">
+            <CardContent className="pt-3 pb-3">
+              <p className="text-[11px] font-medium mb-1">조사 조건 요약</p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-[10px]">업종: {label}</Badge>
+                <Badge variant="outline" className="text-[10px]">지역: {config.researchExamples.region}</Badge>
+                <Badge variant="outline" className="text-[10px]">키워드: {config.researchExamples.keyword}</Badge>
+                <Badge variant="outline" className="text-[10px]">수집: 20건</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
           {[
-            { icon: FileText, label: "조사 요약", desc: "수집된 데이터 요약 리포트" },
-            { icon: Target, label: "경쟁사 리스트", desc: "주요 경쟁사 현황 정리" },
-            { icon: Lightbulb, label: "인사이트", desc: "데이터 기반 핵심 인사이트" },
-            { icon: MessageSquare, label: "추천 액션", desc: "조사 결과 기반 실행 제안" },
+            { icon: FileText, label: "조사 요약", desc: "수집된 데이터 요약 리포트", resultType: "조사 결과" },
+            { icon: Target, label: "경쟁사 리스트", desc: "주요 경쟁사 현황 정리", resultType: "분석 요약" },
+            { icon: Lightbulb, label: "인사이트", desc: "데이터 기반 핵심 인사이트", resultType: "분석 요약" },
+            { icon: MessageSquare, label: "추천 액션", desc: "조사 결과 기반 실행 제안", resultType: "제안 요약" },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20">
               <item.icon className="h-4 w-4 text-muted-foreground" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium">{item.label}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
-              <span className="ml-auto text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/30">준비 중</span>
+              <Badge variant="outline" className="text-[9px] text-muted-foreground">{item.resultType}</Badge>
+              <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/30">준비 중</span>
             </div>
           ))}
+
+          {/* Attachment placeholder */}
+          <div className="mt-2">
+            <p className="text-[11px] text-muted-foreground font-medium mb-2 flex items-center gap-1">
+              <Paperclip className="h-3 w-3" /> 첨부파일 / 조사 원본
+            </p>
+            <div className="h-14 rounded-md border border-dashed border-border/50 flex items-center justify-center text-xs text-muted-foreground">
+              조사 원본 파일 · PDF · 스프레드시트 (준비 중)
+            </div>
+          </div>
+
+          {/* Save + handoff CTAs */}
+          <div className="flex items-center gap-2 pt-2">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
+              <Bookmark className="h-3 w-3" /> 결과 저장
+            </Button>
+            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
+              <MessageSquare className="h-3 w-3" /> 전담 컨설턴트 전환
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
