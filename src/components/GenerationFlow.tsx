@@ -139,7 +139,23 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   };
 
   const handleSave = () => {
-    toast({ title: "저장 완료", description: `${config?.saveCategory || "결과"}에 저장되었습니다 (데모)` });
+    if (result && config) {
+      saveResult({
+        id: result.id,
+        title: result.title,
+        module: result.module,
+        subtool: result.subtool,
+        category: config.saveCategory,
+        businessType: result.businessType,
+        sections: result.sections,
+        contextSummary: result.contextSummary,
+        createdAt: result.createdAt,
+        status: "임시 저장",
+        sourceNote: result.sourceNote,
+        referenceNote: result.referenceNote,
+      });
+      toast({ title: "저장 완료", description: `${config.saveCategory}에 저장되었습니다` });
+    }
   };
 
   const handleCopyAll = async () => {
