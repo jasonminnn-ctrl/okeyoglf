@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Copy, RefreshCw, MessageSquare, Calendar, Clock, Tag, FolderOpen, Lock, FileText, Download, Share2, Send, History } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Copy, RefreshCw, MessageSquare, Calendar, Clock, Tag, FolderOpen, Lock, FileText, Download, Share2, Send, History, ChevronDown, ChevronUp } from "lucide-react";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { toast } from "@/hooks/use-toast";
+import { ExportDialog } from "@/components/ExportDialog";
+import { ShareDialog } from "@/components/ShareDialog";
+import { DeliverDialog } from "@/components/DeliverDialog";
 
 interface ResultDetailDrawerProps {
   open: boolean;
@@ -24,7 +29,12 @@ const statusColors: Record<string, string> = {
 
 export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetailDrawerProps) {
   const { getResultActions } = useMembership();
-  const { getResultById, markResultExported, markResultShared, markResultDelivered, markConsultantTransferred, markResultRegenerated } = useResultStore();
+  const { getResultById, markResultRegenerated, markConsultantTransferred } = useResultStore();
+
+  const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [deliverOpen, setDeliverOpen] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   const item = resultId ? getResultById(resultId) : undefined;
   if (!item) return null;
@@ -65,161 +75,199 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
     toast({ title: "전담 컨설턴트 전환 완료", description: "요청이 접수되었습니다" });
   };
 
-  // Phase 6 placeholder actions
-  const handleExport = () => {
-    markResultExported(item.id, {
-      id: `exp-${Date.now()}`,
-      format: "pdf",
-      fileName: `${item.title}.pdf`,
-      exportedAt: new Date().toISOString(),
-    });
-    toast({ title: "내보내기 준비", description: "PDF 내보내기 기능은 다음 업데이트에서 제공됩니다" });
-  };
-
-  const handleShare = () => {
-    markResultShared(item.id, {
-      id: `sh-${Date.now()}`,
-      method: "link",
-      sharedAt: new Date().toISOString(),
-      note: "공유 링크 생성",
-    });
-    toast({ title: "공유 준비", description: "공유 기능은 다음 업데이트에서 제공됩니다" });
-  };
-
-  const handleDeliver = () => {
-    markResultDelivered(item.id, {
-      id: `dl-${Date.now()}`,
-      channel: "internal",
-      deliveredAt: new Date().toISOString(),
-      status: "sent",
-      note: "내부 전달",
-    });
-    toast({ title: "전달 준비", description: "전달 기능은 다음 업데이트에서 제공됩니다" });
-  };
-
   const formatDate = (iso: string) => new Date(iso).toLocaleString("ko-KR");
 
-  const historyCount =
-    (item.exportFiles?.length ?? 0) +
-    (item.shareHistory?.length ?? 0) +
-    (item.deliveryHistory?.length ?? 0) +
-    (item.consultantTransferHistory?.length ?? 0);
+  const exportCount = item.exportFiles?.length ?? 0;
+  const shareCount = item.shareHistory?.length ?? 0;
+  const deliveryCount = item.deliveryHistory?.length ?? 0;
+  const consultantCount = item.consultantTransferHistory?.length ?? 0;
+  const historyCount = exportCount + shareCount + deliveryCount + consultantCount;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="pb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={statusColors[item.status] || "bg-muted text-muted-foreground"} variant="outline">{item.status}</Badge>
-            <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
-            {item.type && <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">{item.type}</Badge>}
-            {item.version && item.version > 1 && <Badge variant="outline" className="text-[10px]">v{item.version}</Badge>}
-          </div>
-          <SheetTitle className="text-lg">{item.title}</SheetTitle>
-          <SheetDescription>{item.module || item.sourceMenu} · {item.subtool || item.sourceTool} · {item.businessType}</SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-4">
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3 w-3" /> <span>생성: {formatDate(item.createdAt)}</span></div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="h-3 w-3" /> <span>수정: {formatDate(item.updatedAt)}</span></div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Tag className="h-3 w-3" /> <span>업종: {item.businessType}</span></div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><FolderOpen className="h-3 w-3" /> <span>{item.category}</span></div>
-          </div>
-
-          {/* Tags */}
-          {item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {item.tags.map((tag, i) => (
-                <Badge key={i} variant="outline" className="text-[9px] bg-muted/30">{tag}</Badge>
-              ))}
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader className="pb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className={statusColors[item.status] || "bg-muted text-muted-foreground"} variant="outline">{item.status}</Badge>
+              <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
+              {item.type && <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">{item.type}</Badge>}
+              {item.version && item.version > 1 && <Badge variant="outline" className="text-[10px]">v{item.version}</Badge>}
             </div>
-          )}
+            <SheetTitle className="text-lg">{item.title}</SheetTitle>
+            <SheetDescription>{item.module || item.sourceMenu} · {item.subtool || item.sourceTool} · {item.businessType}</SheetDescription>
+          </SheetHeader>
 
-          <Separator />
+          <div className="space-y-4">
+            {/* Metadata */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3 w-3" /> <span>생성: {formatDate(item.createdAt)}</span></div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="h-3 w-3" /> <span>수정: {formatDate(item.updatedAt)}</span></div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Tag className="h-3 w-3" /> <span>업종: {item.businessType}</span></div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><FolderOpen className="h-3 w-3" /> <span>{item.category}</span></div>
+            </div>
 
-          {/* Sections */}
-          {item.sections.map((section, i) => (
-            <Card key={i} className="bg-muted/20 border-border/30">
-              <CardContent className="pt-4 pb-4">
-                <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
-                  <FileText className="h-3 w-3 text-primary" />
-                  {section.title}
-                </p>
-                <div className="space-y-1">
-                  {section.content.split("\n").map((line, j) => {
-                    const trimmed = line.trim();
-                    if (!trimmed) return <div key={j} className="h-1.5" />;
-                    return <p key={j} className="text-xs text-muted-foreground leading-relaxed">{trimmed}</p>;
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Source / Reference */}
-          {(item.sourceNote || item.referenceNote) && (
-            <Card className="bg-muted/10 border-border/20">
-              <CardContent className="pt-3 pb-3 space-y-1">
-                {item.sourceNote && <p className="text-[10px] text-muted-foreground">📋 {item.sourceNote}</p>}
-                {item.referenceNote && <p className="text-[10px] text-muted-foreground">📎 {item.referenceNote}</p>}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* History summary */}
-          {historyCount > 0 && (
-            <Card className="bg-muted/10 border-border/20">
-              <CardContent className="pt-3 pb-3">
-                <p className="text-[10px] font-medium flex items-center gap-1.5 mb-1.5">
-                  <History className="h-3 w-3 text-primary" /> 이력 요약
-                </p>
-                <div className="space-y-0.5 text-[10px] text-muted-foreground">
-                  {(item.exportFiles?.length ?? 0) > 0 && <p>내보내기 {item.exportFiles!.length}건</p>}
-                  {(item.shareHistory?.length ?? 0) > 0 && <p>공유 {item.shareHistory!.length}건</p>}
-                  {(item.deliveryHistory?.length ?? 0) > 0 && <p>전달 {item.deliveryHistory!.length}건</p>}
-                  {(item.consultantTransferHistory?.length ?? 0) > 0 && <p>전담 컨설턴트 전환 {item.consultantTransferHistory!.length}건</p>}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Separator />
-
-          {/* Primary actions */}
-          <div className="flex flex-wrap gap-2">
-            {actions.copy.visible && (
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.copy.enabled} onClick={handleCopyAll}>
-                {actions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 전체 복사
-              </Button>
+            {/* Tags */}
+            {item.tags && item.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {item.tags.map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-[9px] bg-muted/30">{tag}</Badge>
+                ))}
+              </div>
             )}
-            {actions.regenerate.visible && (
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.regenerate.enabled} onClick={handleRegenerate}>
-                {actions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 수정 요청
-              </Button>
+
+            <Separator />
+
+            {/* Sections */}
+            {item.sections.map((section, i) => (
+              <Card key={i} className="bg-muted/20 border-border/30">
+                <CardContent className="pt-4 pb-4">
+                  <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-primary" />
+                    {section.title}
+                  </p>
+                  <div className="space-y-1">
+                    {section.content.split("\n").map((line, j) => {
+                      const trimmed = line.trim();
+                      if (!trimmed) return <div key={j} className="h-1.5" />;
+                      return <p key={j} className="text-xs text-muted-foreground leading-relaxed">{trimmed}</p>;
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Source / Reference */}
+            {(item.sourceNote || item.referenceNote) && (
+              <Card className="bg-muted/10 border-border/20">
+                <CardContent className="pt-3 pb-3 space-y-1">
+                  {item.sourceNote && <p className="text-[10px] text-muted-foreground">📋 {item.sourceNote}</p>}
+                  {item.referenceNote && <p className="text-[10px] text-muted-foreground">📎 {item.referenceNote}</p>}
+                </CardContent>
+              </Card>
             )}
-            {actions.consultantTransfer.visible && (
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.consultantTransfer.enabled} onClick={handleConsultantTransfer}>
-                {actions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 전담 컨설턴트 전환
-              </Button>
+
+            {/* History summary — collapsible */}
+            {historyCount > 0 && (
+              <Collapsible open={historyExpanded} onOpenChange={setHistoryExpanded}>
+                <Card className="bg-muted/10 border-border/20">
+                  <CardContent className="pt-3 pb-3">
+                    <CollapsibleTrigger className="w-full flex items-center justify-between">
+                      <p className="text-[10px] font-medium flex items-center gap-1.5">
+                        <History className="h-3 w-3 text-primary" /> 이력 요약 · {historyCount}건
+                      </p>
+                      {historyExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                    </CollapsibleTrigger>
+
+                    {/* Compact summary always visible */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {exportCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><Download className="h-2.5 w-2.5 mr-1" />내보내기 {exportCount}</Badge>}
+                      {shareCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><Share2 className="h-2.5 w-2.5 mr-1" />공유 {shareCount}</Badge>}
+                      {deliveryCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><Send className="h-2.5 w-2.5 mr-1" />전달 {deliveryCount}</Badge>}
+                      {consultantCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><MessageSquare className="h-2.5 w-2.5 mr-1" />컨설턴트 {consultantCount}</Badge>}
+                    </div>
+
+                    <CollapsibleContent className="mt-3 space-y-2">
+                      {/* Export history */}
+                      {item.exportFiles && item.exportFiles.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">내보내기</p>
+                          {item.exportFiles.map((e) => (
+                            <div key={e.id} className="text-[10px] text-muted-foreground flex items-center gap-2">
+                              <span className="uppercase font-mono text-primary">{e.format}</span>
+                              <span>{e.fileName}</span>
+                              <span className="ml-auto">{new Date(e.exportedAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Share history */}
+                      {item.shareHistory && item.shareHistory.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">공유</p>
+                          {item.shareHistory.map((s) => (
+                            <div key={s.id} className="text-[10px] text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">{s.method}</span>
+                              {s.note && <span>{s.note}</span>}
+                              <span className="ml-auto">{new Date(s.sharedAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Delivery history */}
+                      {item.deliveryHistory && item.deliveryHistory.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">전달</p>
+                          {item.deliveryHistory.map((d) => (
+                            <div key={d.id} className="text-[10px] text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">{d.channel}</span>
+                              {d.recipient && <span>→ {d.recipient}</span>}
+                              <Badge variant="outline" className="text-[8px] h-3.5">{d.status}</Badge>
+                              <span className="ml-auto">{new Date(d.deliveredAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Consultant transfer history */}
+                      {item.consultantTransferHistory && item.consultantTransferHistory.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">전담 컨설턴트</p>
+                          {item.consultantTransferHistory.map((ct) => (
+                            <div key={ct.id} className="text-[10px] text-muted-foreground flex items-center gap-2">
+                              <Badge variant="outline" className="text-[8px] h-3.5">{ct.status}</Badge>
+                              {ct.requestNote && <span className="truncate">{ct.requestNote}</span>}
+                              <span className="ml-auto">{new Date(ct.transferredAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </CardContent>
+                </Card>
+              </Collapsible>
             )}
+
+            <Separator />
+
+            {/* Primary actions — copy, regenerate, consultant */}
+            <div className="flex flex-wrap gap-2">
+              {actions.copy.visible && (
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.copy.enabled} onClick={handleCopyAll}>
+                  {actions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 전체 복사
+                </Button>
+              )}
+              {actions.regenerate.visible && (
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.regenerate.enabled} onClick={handleRegenerate}>
+                  {actions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 수정 요청
+                </Button>
+              )}
+              {actions.consultantTransfer.visible && (
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!actions.consultantTransfer.enabled} onClick={handleConsultantTransfer}>
+                  {actions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />} 전담 컨설턴트 전환
+                </Button>
+              )}
+            </div>
+
+            {/* Delivery actions — download, share, deliver */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
+                <Download className="h-3 w-3" /> 내보내기
+              </Button>
+              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setShareOpen(true)}>
+                <Share2 className="h-3 w-3" /> 공유
+              </Button>
+              <Button variant="secondary" size="sm" className="text-xs gap-1.5" onClick={() => setDeliverOpen(true)}>
+                <Send className="h-3 w-3" /> 전달
+              </Button>
+            </div>
           </div>
+        </SheetContent>
+      </Sheet>
 
-          {/* Phase 6 placeholder actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground" onClick={handleExport}>
-              <Download className="h-3 w-3" /> 내보내기
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground" onClick={handleShare}>
-              <Share2 className="h-3 w-3" /> 공유
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground" onClick={handleDeliver}>
-              <Send className="h-3 w-3" /> 전달
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+      {/* Dialogs */}
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={item} />
+      <ShareDialog open={shareOpen} onOpenChange={setShareOpen} result={item} />
+      <DeliverDialog open={deliverOpen} onOpenChange={setDeliverOpen} result={item} />
+    </>
   );
 }
