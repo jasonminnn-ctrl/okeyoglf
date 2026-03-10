@@ -3,19 +3,30 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Settings2, Brain, DollarSign, Clock, LayoutGrid, GraduationCap, BarChart3, Timer } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const sections = [
-  { key: "AI 진단실", icon: Brain, color: "bg-primary/10 text-primary", url: "/ai-operations/diagnosis" },
-  { key: "요금결정", icon: DollarSign, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
-  { key: "잔여타임 관리", icon: Timer, color: "bg-blue-500/10 text-blue-400", badge: "준비 중" },
-  { key: "타임관리", icon: Clock, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
-  { key: "타석관리", icon: LayoutGrid, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중" },
-  { key: "레슨관리", icon: GraduationCap, color: "bg-pink-500/10 text-pink-400", badge: "준비 중" },
-  { key: "KPI 분석", icon: BarChart3, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중" },
+  { key: "AI 진단실", icon: Brain, color: "bg-primary/10 text-primary", url: "/ai-operations/diagnosis", saveCategory: "AI 운영팀 결과" },
+  { key: "요금결정", icon: DollarSign, color: "bg-amber-500/10 text-amber-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
+  { key: "잔여타임 관리", icon: Timer, color: "bg-blue-500/10 text-blue-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
+  { key: "타임관리", icon: Clock, color: "bg-violet-500/10 text-violet-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
+  { key: "타석관리", icon: LayoutGrid, color: "bg-emerald-500/10 text-emerald-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
+  { key: "레슨관리", icon: GraduationCap, color: "bg-pink-500/10 text-pink-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
+  { key: "KPI 분석", icon: BarChart3, color: "bg-cyan-500/10 text-cyan-400", badge: "준비 중", saveCategory: "AI 운영팀 결과" },
 ];
 
+const resultTypeMap: Record<string, string> = {
+  "AI 진단실": "운영 분석",
+  "요금결정": "요금 제안",
+  "잔여타임 관리": "판매 전략",
+  "타임관리": "효율 분석",
+  "타석관리": "운영 점검표",
+  "레슨관리": "배정 요약",
+  "KPI 분석": "KPI 리포트",
+};
+
 export default function AIOperationsPage() {
-  const { config, label } = useBusinessContext();
+  const { config } = useBusinessContext();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -43,7 +54,18 @@ export default function AIOperationsPage() {
               url={s.url}
               badge={isNA ? "미해당" : s.badge}
               locked={isNA}
-            />
+            >
+              {!isNA && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                    기대 결과: {resultTypeMap[s.key] || "분석 요약"}
+                  </Badge>
+                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                    저장 → {s.saveCategory}
+                  </Badge>
+                </div>
+              )}
+            </MenuLandingCard>
           );
         })}
       </MenuLandingGrid>
