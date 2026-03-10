@@ -1,7 +1,7 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const sections = [
   { title: "오늘의 할 일", desc: "AI가 분석한 오늘의 우선 업무 목록", icon: ListChecks, color: "bg-primary/10 text-primary" },
