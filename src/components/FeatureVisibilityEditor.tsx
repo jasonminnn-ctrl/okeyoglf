@@ -130,7 +130,7 @@ interface Props {
   membershipCode: MembershipCode;
   overrides: OrganizationFeatureOverride[];
   addOverride: (o: OrganizationFeatureOverride) => void;
-  removeOverride: (key: FeatureKey) => void;
+  removeOverride: (key: FeatureKey, membershipCode?: MembershipCode) => void;
   tierBadgeColor: Record<string, string>;
 }
 
@@ -149,7 +149,7 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
     // Check if newMode matches the base policy — if so, remove override
     const base = defaultFeaturePolicies.find(p => p.featureKey === key && p.membershipCode === editingTier && p.isActive);
     if (base && base.accessMode === newMode) {
-      removeOverride(key);
+      removeOverride(key, editingTier);
     } else {
       addOverride({
         organizationId: "org-001",
@@ -231,9 +231,10 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
                   <div key={o.featureKey} className="flex items-center justify-between p-2 rounded bg-primary/5 text-[11px]">
                     <span className="font-mono text-[10px] text-muted-foreground">{o.featureKey}</span>
                     <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[9px]">{o.membershipCode}</Badge>
                       <Badge variant="outline" className={`text-[9px] ${accessModeBadge[o.accessMode]}`}>{accessModeLabel[o.accessMode]}</Badge>
                       <button
-                        onClick={() => removeOverride(o.featureKey)}
+                        onClick={() => removeOverride(o.featureKey, o.membershipCode)}
                         className="text-[9px] text-destructive hover:underline"
                       >
                         제거

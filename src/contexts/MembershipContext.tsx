@@ -40,7 +40,7 @@ interface MembershipContextValue {
   // Overrides (operator managed)
   overrides: OrganizationFeatureOverride[];
   addOverride: (override: OrganizationFeatureOverride) => void;
-  removeOverride: (featureKey: FeatureKey) => void;
+  removeOverride: (featureKey: FeatureKey, membershipCode?: MembershipCode) => void;
 }
 
 const MembershipContext = createContext<MembershipContextValue | undefined>(undefined);
@@ -126,8 +126,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  const removeOverride = useCallback((featureKey: FeatureKey) => {
-    setOverrides(prev => prev.filter(o => o.featureKey !== featureKey));
+  const removeOverride = useCallback((featureKey: FeatureKey, membershipCode?: MembershipCode) => {
+    setOverrides(prev => prev.filter(o => {
+      if (o.featureKey !== featureKey) return true;
+      if (membershipCode && o.membershipCode !== membershipCode) return true;
+      return false;
+    }));
   }, []);
 
   return (
