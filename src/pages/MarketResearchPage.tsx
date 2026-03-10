@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip, Loader2 } from "lucide-react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip, Loader2, Lock, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,20 +11,33 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
+import { useMembership } from "@/contexts/MembershipContext";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { buildContextSummary } from "@/lib/ai-generation";
 import { toast } from "@/hooks/use-toast";
 
 export default function MarketResearchPage() {
   const { config, label, businessType } = useBusinessContext();
+  const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
   const [loading, setLoading] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const contextSummary = buildContextSummary(businessType, label);
 
+  const generateAccess = checkAccess(FEATURE_KEYS.RESEARCH_BASIC);
+  const resultActions = getResultActions();
+
   const handleResearch = () => {
+    if (!generateAccess.enabled) {
+      toast({ title: "기능 제한", description: generateAccess.lockReason || "이 기능을 사용할 수 없습니다", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setHasResult(true);
+      if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
+        deductCredit(generateAccess.creditCost, "generate", "시장조사 — 기본 조사 생성", "시장조사");
+      }
     }, 2000);
   };
 
@@ -167,12 +180,20 @@ export default function MarketResearchPage() {
 
           {/* Save + handoff CTAs */}
           <div className="flex items-center gap-2 pt-1">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult} onClick={handleSave}>
-              <Bookmark className="h-3 w-3" /> 결과 저장
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult}>
-              <MessageSquare className="h-3 w-3" /> 전담 컨설턴트 전환
-            </Button>
+            {resultActions.save.visible && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.save.enabled} onClick={handleSave}>
+                <Bookmark className="h-3 w-3" /> 결과 저장
+              </Button>
+            )}
+            {resultActions.consultantTransfer.visible && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.consultantTransfer.enabled}>
+                {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                전담 컨설턴트 전환
+                {!resultActions.consultantTransfer.enabled && (
+                  <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.consultantTransfer.lockReason}</span>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

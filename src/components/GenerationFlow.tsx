@@ -92,6 +92,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
+  const [isRegenerate, setIsRegenerate] = useState(false);
 
   const config = pipelineConfigs[pipelineKey];
   const contextSummary = buildContextSummary(businessType, label);
@@ -114,9 +115,12 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
         config,
       );
       // Deduct credit on successful generation
+      const ledgerType = isRegenerate ? "regenerate" : "generate";
+      const actionLabel = isRegenerate ? "재생성" : "생성";
       if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
-        deductCredit(generateAccess.creditCost, "generate", `${config.module} — ${config.subtool} 생성`, config.module, genResult.id);
+        deductCredit(generateAccess.creditCost, ledgerType, `${config.module} — ${config.subtool} ${actionLabel}`, config.module, genResult.id);
       }
+      setIsRegenerate(false);
       setResult(genResult);
     } finally {
       setLoading(false);
@@ -128,6 +132,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
       toast({ title: "기능 제한", description: resultActions.regenerate.lockReason || "재생성이 제한됩니다", variant: "destructive" });
       return;
     }
+    setIsRegenerate(true);
     setResult(null);
   };
 
