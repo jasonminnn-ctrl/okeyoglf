@@ -1,0 +1,476 @@
+import { createContext, useContext, useState, ReactNode } from "react";
+
+export type BusinessType = "indoor" | "course" | "academy" | "shop" | "fitting" | "company";
+
+export const businessTypeLabels: Record<BusinessType, string> = {
+  indoor: "실내연습장",
+  course: "골프장",
+  academy: "골프아카데미",
+  shop: "골프샵",
+  fitting: "피팅샵",
+  company: "골프회사",
+};
+
+export interface BusinessTypeConfig {
+  kpis: { label: string; value: string; target: string; progress: number }[];
+  recommendations: { action: string; tool: string; url: string }[];
+  issues: { title: string; priority: "긴급" | "높음" | "보통" }[];
+  assistantExamples: Record<string, string>;
+  operationsExamples: Record<string, string>;
+  salesExamples: Record<string, string>;
+  marketingExamples: Record<string, string>;
+  designExamples: Record<string, string>;
+  supportExamples: Record<string, string>;
+  researchExamples: { keyword: string; region: string; focus: string };
+  consultantExamples: string[];
+}
+
+export const businessConfigs: Record<BusinessType, BusinessTypeConfig> = {
+  indoor: {
+    kpis: [
+      { label: "타석 가동률", value: "68%", target: "75%", progress: 68 },
+      { label: "회원 재등록률", value: "72%", target: "80%", progress: 72 },
+      { label: "미방문 회원", value: "34명", target: "20명 이하", progress: 58 },
+      { label: "레슨 전환율", value: "45%", target: "55%", progress: 45 },
+    ],
+    recommendations: [
+      { action: "주중 오전 할인 프로모션 문구 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+      { action: "재등록 대상 회원 접촉 지시서 작성", tool: "AI 운영팀", url: "/ai-operations" },
+      { action: "미방문 회원 복귀 캠페인 기획", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "코치별 레슨 배정 최적화 분석", tool: "AI 운영팀", url: "/ai-operations" },
+    ],
+    issues: [
+      { title: "주중 오전 타석 가동률 35% 미달", priority: "긴급" },
+      { title: "3월 재등록 대상 47명 미접촉", priority: "높음" },
+      { title: "레슨 프로 휴가 대체 인력 필요", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "미방문 회원 SMS 발송, 주중 프로모션 점검, 레슨 스케줄 확인",
+      "이번 주 추천 액션": "휴면회원 복귀 캠페인 실행, 잔여 타석 할인 운영",
+      "놓치고 있는 운영 항목": "회원권 만료 안내 미발송, 시간대별 가동률 미점검",
+      "캠페인 추천": "주중 오전 2+1 타석 이용권, 봄시즌 재등록 할인",
+      "일정/마감 리마인드": "레슨 프로 계약 갱신 D-14, 분기 정산 마감 D-7",
+      "업종별 체크리스트": "타석 점검, 프론트 응대 확인, 레슨 시간표 게시",
+    },
+    operationsExamples: {
+      "AI 진단실": "타석 가동률 하락 원인 분석 및 개선안",
+      "요금결정": "주중/주말 시간대별 최적 요금 체계 제안",
+      "잔여타임 관리": "잔여 타석 실시간 현황 및 할인 판매 전략",
+      "타임관리": "시간대별 예약 효율 분석",
+      "타석관리": "타석 배정·가동률 모니터링",
+      "레슨관리": "코치별 레슨 배정·수업 운영·전환율",
+      "KPI 분석": "타석 가동률·재등록률·레슨 전환율 추이",
+    },
+    salesExamples: {
+      "고객관리": "회원 세그먼트별 이용 패턴 분석",
+      "재등록 관리": "만료 예정 회원 47명 재등록 전략",
+      "미방문 관리": "30일 이상 미방문 회원 34명 복귀 액션",
+      "판매 제안": "시간권→회원권 전환 추천",
+      "VIP 관리": "월 20회 이상 이용 VIP 회원 특별 관리",
+      "패키지 제안": "레슨+연습 패키지 상품 기획",
+      "응대 문안": "재등록 안내 전화 스크립트",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "재등록/휴면복귀/주중 프로모션 문안",
+      "이벤트 생성기": "봄시즌 신규 회원 이벤트 기획",
+      "프로모션 기획": "주중 오전 2+1 할인 프로모션",
+      "채널 운영안": "카카오 채널 회원 대상 푸시 전략",
+      "시즌 캠페인 제안": "봄시즌 레슨 체험 캠페인",
+      "시장조사 연계": "지역 경쟁 연습장 가격·서비스 비교",
+    },
+    designExamples: {
+      "디자인 요청": "주중 할인 프로모션 배너 제작",
+      "템플릿 디자인 센터": "회원 안내문·레슨 일정표 템플릿",
+      "홍보물 문안 + 레이아웃": "시즌 프로모션 전단지 문안+레이아웃",
+      "배너/포스터 요청": "신규 오픈 안내 포스터",
+      "업로드 폼 기반 제작": "로고+사진 업로드 후 자동 배너 생성",
+      "결과물 관리": "제작된 배너·포스터 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "장비 발주서·유지보수 계약서 정리",
+      "정산/협력사 커뮤니케이션": "레슨 프로 정산 안내문 초안",
+      "내부 서식 초안": "직원 업무 지시서·공지사항 초안",
+      "반복 업무 체크리스트": "일일 타석 점검·프론트 마감 체크리스트",
+      "리스크 검토 포인트": "회원권 환불 정책·안전 점검 리스크",
+    },
+    researchExamples: { keyword: "주중 할인, 레슨 프로그램", region: "경기도 용인시", focus: "지역 경쟁 연습장 / 레슨 운영 / 가격대" },
+    consultantExamples: ["레슨 운영 구조 분석", "회원권 가격 체계 컨설팅", "운영 효율화 분석"],
+  },
+  course: {
+    kpis: [
+      { label: "일일 팀수", value: "42팀", target: "50팀", progress: 84 },
+      { label: "잔여 타임", value: "18건", target: "5건 이하", progress: 36 },
+      { label: "객단가", value: "18.5만", target: "20만", progress: 92 },
+      { label: "채널별 판매 비중", value: "자체 45%", target: "자체 60%", progress: 75 },
+    ],
+    recommendations: [
+      { action: "잔여 타임 소진을 위한 할인 문구 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+      { action: "단체팀 유치 제안서 작성", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "시즌 패키지 기획안 생성", tool: "AI 마케팅팀", url: "/ai-marketing" },
+      { action: "날씨 대응 티타임 운영 전략", tool: "AI 운영팀", url: "/ai-operations" },
+    ],
+    issues: [
+      { title: "주중 잔여 타임 18건 미소진", priority: "긴급" },
+      { title: "OTA 채널 수수료 비중 55% 초과", priority: "높음" },
+      { title: "우천 시 티타임 취소율 상승", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "잔여 타임 할인 안내, 단체 예약 확인, 캐디 배정 점검",
+      "이번 주 추천 액션": "주말 패키지 판매 강화, OTA 수수료 분석",
+      "놓치고 있는 운영 항목": "시즌 패키지 미출시, 단체팀 후속 관리 미흡",
+      "캠페인 추천": "숙박+라운드 패키지, 평일 얼리버드 할인",
+      "일정/마감 리마인드": "코스 관리 정기 점검 D-5, 시즌 요금 변경 D-10",
+      "업종별 체크리스트": "코스 컨디션 점검, 캐디 교육, 클럽하우스 준비",
+    },
+    operationsExamples: {
+      "AI 진단실": "티타임 판매율 하락 원인 분석",
+      "요금결정": "주중/주말·시즌별 그린피 최적화",
+      "잔여타임 관리": "잔여 티타임 실시간 판매 전략",
+      "타임관리": "티타임 간격·배정 효율 분석",
+      "타석관리": "연습장 타석 운영 (부대시설)",
+      "레슨관리": "프로 레슨 프로그램 운영",
+      "KPI 분석": "팀수·객단가·채널 비중 추이 분석",
+    },
+    salesExamples: {
+      "고객관리": "단체팀·법인 고객 세그먼트 관리",
+      "재등록 관리": "시즌 멤버십 재등록 대상 관리",
+      "미방문 관리": "3개월 미방문 법인고객 접촉",
+      "판매 제안": "숙박+라운드 패키지 제안",
+      "VIP 관리": "연간 30회 이상 이용 VIP 관리",
+      "패키지 제안": "시즌별 맞춤 패키지 기획",
+      "응대 문안": "티타임 예약 확인 및 안내 문안",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "시즌 패키지/단체 유치/티타임 소진 문안",
+      "이벤트 생성기": "시즌 오픈 기념 이벤트 기획",
+      "프로모션 기획": "평일 얼리버드 할인 프로모션",
+      "채널 운영안": "자체 채널 판매 비중 확대 전략",
+      "시즌 캠페인 제안": "봄시즌 얼리버드 예약 캠페인",
+      "시장조사 연계": "지역 골프장 티타임·패키지 비교",
+    },
+    designExamples: {
+      "디자인 요청": "시즌 패키지 홍보 배너 제작",
+      "템플릿 디자인 센터": "티타임 안내·코스 소개 템플릿",
+      "홍보물 문안 + 레이아웃": "패키지 상품 전단지",
+      "배너/포스터 요청": "시즌 오픈 포스터",
+      "업로드 폼 기반 제작": "코스 사진 업로드 후 홍보물 생성",
+      "결과물 관리": "제작된 홍보물 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "캐디 계약·장비 구매 정리",
+      "정산/협력사 커뮤니케이션": "OTA 채널 정산 안내문",
+      "내부 서식 초안": "코스 관리 보고서·운영 일지",
+      "반복 업무 체크리스트": "코스 관리·클럽하우스 점검 체크리스트",
+      "리스크 검토 포인트": "우천 취소 정책·안전사고 대응",
+    },
+    researchExamples: { keyword: "티타임 운영, 패키지", region: "강원도 원주시", focus: "지역 골프장 / 티타임 / 패키지 / 부대시설" },
+    consultantExamples: ["패키지 구조 분석", "티타임 판매 전략", "판매 채널 최적화"],
+  },
+  academy: {
+    kpis: [
+      { label: "수강생 유지율", value: "78%", target: "85%", progress: 78 },
+      { label: "신규 등록 수", value: "12명", target: "20명", progress: 60 },
+      { label: "코치 배정 현황", value: "92%", target: "95%", progress: 92 },
+      { label: "수업 가동률", value: "74%", target: "85%", progress: 74 },
+    ],
+    recommendations: [
+      { action: "체험레슨 전환율 개선 문구 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+      { action: "정규반 재등록 안내 지시서", tool: "AI 운영팀", url: "/ai-operations" },
+      { action: "수강생 상담 응대 스크립트 생성", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "반별 운영 체크리스트 생성", tool: "AI 비서", url: "/ai-assistant" },
+    ],
+    issues: [
+      { title: "체험레슨 후 등록 전환율 28% 미달", priority: "긴급" },
+      { title: "정규반 재등록 대상 15명 미접촉", priority: "높음" },
+      { title: "주말 고급반 수업 인원 부족", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "체험레슨 후속 상담, 반 배정 확인, 코치 일정 점검",
+      "이번 주 추천 액션": "체험레슨 전환 캠페인, 정규반 재등록 안내",
+      "놓치고 있는 운영 항목": "수강생 만족도 조사 미실시, 코치 교육 미진행",
+      "캠페인 추천": "체험레슨 무료 이벤트, 정규반 할인 등록",
+      "일정/마감 리마인드": "분기 커리큘럼 변경 D-7, 코치 평가 D-14",
+      "업종별 체크리스트": "수업 준비, 장비 점검, 상담 예약 확인",
+    },
+    operationsExamples: {
+      "AI 진단실": "수업 가동률 하락 원인 분석",
+      "요금결정": "레벨별·기간별 수강료 최적화",
+      "잔여타임 관리": "빈 수업 슬롯 추가 모집 전략",
+      "타임관리": "수업 시간대별 효율 분석",
+      "타석관리": "연습 공간 배정 최적화",
+      "레슨관리": "코치별 수업 배정·학생 피드백 관리",
+      "KPI 분석": "유지율·전환율·가동률 추이",
+    },
+    salesExamples: {
+      "고객관리": "수강생·학부모 세그먼트 관리",
+      "재등록 관리": "정규반 재등록 대상 15명 관리",
+      "미방문 관리": "2주 이상 결석 수강생 연락",
+      "판매 제안": "체험→정규반 전환 추천",
+      "VIP 관리": "장기 수강생 특별 혜택 프로그램",
+      "패키지 제안": "레슨+라운드 경험 패키지",
+      "응대 문안": "수강 상담 및 체험레슨 안내 스크립트",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "체험레슨 전환/정규반 재등록 문안",
+      "이벤트 생성기": "봄학기 신규 등록 이벤트",
+      "프로모션 기획": "체험레슨 무료 이벤트 기획",
+      "채널 운영안": "인스타그램 수강 후기 콘텐츠 전략",
+      "시즌 캠페인 제안": "방학 특강·집중반 캠페인",
+      "시장조사 연계": "지역 학원형 경쟁사 비교",
+    },
+    designExamples: {
+      "디자인 요청": "신규 등록 이벤트 포스터",
+      "템플릿 디자인 센터": "수업 일정표·수강증 템플릿",
+      "홍보물 문안 + 레이아웃": "아카데미 소개 리플렛",
+      "배너/포스터 요청": "체험레슨 안내 배너",
+      "업로드 폼 기반 제작": "코치 프로필 사진으로 소개 카드 생성",
+      "결과물 관리": "제작된 홍보물 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "코치 계약서·교구 구매 정리",
+      "정산/협력사 커뮤니케이션": "코치 급여 정산 안내문",
+      "내부 서식 초안": "수강생 상담 기록지·출석부",
+      "반복 업무 체크리스트": "수업 준비·장비 점검 체크리스트",
+      "리스크 검토 포인트": "수강료 환불 정책·안전 관리",
+    },
+    researchExamples: { keyword: "반 운영, 체험레슨", region: "서울 강남구", focus: "학원형 경쟁 / 반 운영 / 체험레슨" },
+    consultantExamples: ["커리큘럼 구조 분석", "수강 전환 전략 컨설팅", "강사 운영 최적화"],
+  },
+  shop: {
+    kpis: [
+      { label: "문의 수", value: "85건", target: "100건", progress: 85 },
+      { label: "구매 전환율", value: "12%", target: "18%", progress: 67 },
+      { label: "평균 객단가", value: "35만", target: "40만", progress: 87 },
+      { label: "인기 상품군", value: "드라이버", target: "-", progress: 100 },
+    ],
+    recommendations: [
+      { action: "시즌 상품 제안 문구 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+      { action: "재구매 고객 응대 스크립트", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "리뷰 유도 메시지 작성", tool: "AI 마케팅팀", url: "/ai-marketing" },
+      { action: "채널별 판매 포인트 분석", tool: "AI 운영팀", url: "/ai-operations" },
+    ],
+    issues: [
+      { title: "온라인 문의 대비 전환율 12% 저조", priority: "긴급" },
+      { title: "시즌 상품 재고 소진 필요", priority: "높음" },
+      { title: "리뷰 수집률 낮음", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "신규 문의 응대, 시즌 상품 진열, 재고 점검",
+      "이번 주 추천 액션": "시즌 상품 프로모션 실행, 리뷰 유도 캠페인",
+      "놓치고 있는 운영 항목": "재구매 고객 후속 관리, 상품 리뷰 수집 미흡",
+      "캠페인 추천": "봄시즌 신상품 출시 이벤트, 리뷰 작성 혜택",
+      "일정/마감 리마인드": "시즌 상품 입고 D-3, 프로모션 종료 D-5",
+      "업종별 체크리스트": "재고 점검, 진열 상태 확인, 온라인 주문 처리",
+    },
+    operationsExamples: {
+      "AI 진단실": "구매 전환율 하락 원인 분석",
+      "요금결정": "상품군별 마진율 최적화",
+      "잔여타임 관리": "-",
+      "타임관리": "매장 운영 시간대별 방문객 분석",
+      "타석관리": "-",
+      "레슨관리": "-",
+      "KPI 분석": "문의수·전환율·객단가 추이",
+    },
+    salesExamples: {
+      "고객관리": "구매 이력 기반 고객 세그먼트",
+      "재등록 관리": "재구매 유도 대상 고객 관리",
+      "미방문 관리": "3개월 미구매 고객 접촉",
+      "판매 제안": "구매 이력 기반 추천 상품",
+      "VIP 관리": "연간 구매 100만원 이상 VIP",
+      "패키지 제안": "클럽+용품 세트 패키지",
+      "응대 문안": "상품 문의 응대 스크립트",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "상품 판매/리뷰 유도/시즌 상품 전개 문안",
+      "이벤트 생성기": "시즌 세일 이벤트 기획",
+      "프로모션 기획": "신상품 출시 프로모션",
+      "채널 운영안": "인스타그램·네이버 스토어 운영 전략",
+      "시즌 캠페인 제안": "봄시즌 신상품 런칭 캠페인",
+      "시장조사 연계": "상품군·가격·리뷰·브랜드 비교",
+    },
+    designExamples: {
+      "디자인 요청": "시즌 세일 배너 제작",
+      "템플릿 디자인 센터": "상품 카드·가격표 템플릿",
+      "홍보물 문안 + 레이아웃": "상품 카탈로그 문안+레이아웃",
+      "배너/포스터 요청": "매장 내 POP 포스터",
+      "업로드 폼 기반 제작": "상품 사진으로 자동 상세페이지 생성",
+      "결과물 관리": "제작된 상세페이지·배너 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "브랜드별 발주서·거래 내역 정리",
+      "정산/협력사 커뮤니케이션": "브랜드사 정산·입고 커뮤니케이션",
+      "내부 서식 초안": "재고 관리 양식·매출 일지",
+      "반복 업무 체크리스트": "재고 점검·매장 정리 체크리스트",
+      "리스크 검토 포인트": "반품 정책·재고 리스크 점검",
+    },
+    researchExamples: { keyword: "인기 상품군, 가격대", region: "서울 종로구", focus: "상품군 / 가격 / 리뷰 / 브랜드" },
+    consultantExamples: ["상품 구성 분석", "판매 채널 전략 컨설팅", "가격 정책 최적화"],
+  },
+  fitting: {
+    kpis: [
+      { label: "예약 수", value: "28건", target: "35건", progress: 80 },
+      { label: "피팅 완료율", value: "85%", target: "92%", progress: 85 },
+      { label: "구매 전환율", value: "62%", target: "75%", progress: 62 },
+      { label: "브랜드별 판매", value: "핑 32%", target: "-", progress: 100 },
+    ],
+    recommendations: [
+      { action: "예약 리마인드 메시지 생성", tool: "마케팅 카피", url: "/ai-marketing/copy" },
+      { action: "피팅 후속 제안 스크립트 작성", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "브랜드 비교 안내 문안 생성", tool: "AI 마케팅팀", url: "/ai-marketing" },
+      { action: "고객 분석 포인트 정리", tool: "AI 운영팀", url: "/ai-operations" },
+    ],
+    issues: [
+      { title: "피팅 후 구매 전환율 62% 미달", priority: "긴급" },
+      { title: "예약 노쇼율 15% 상승", priority: "높음" },
+      { title: "특정 브랜드 재고 소진 임박", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "오늘 예약 확인, 피팅 준비, 후속 상담 전화",
+      "이번 주 추천 액션": "노쇼 방지 리마인드 강화, 후속 제안 캠페인",
+      "놓치고 있는 운영 항목": "피팅 만족도 조사 미실시, 후기 수집 미흡",
+      "캠페인 추천": "피팅 체험 이벤트, 브랜드 비교 상담",
+      "일정/마감 리마인드": "브랜드 신모델 입고 D-5, 시즌 할인 마감 D-3",
+      "업종별 체크리스트": "피팅 장비 점검, 예약 확인, 재고 현황 파악",
+    },
+    operationsExamples: {
+      "AI 진단실": "구매 전환율 개선 방안 분석",
+      "요금결정": "피팅비·구매 연계 할인 정책",
+      "잔여타임 관리": "빈 피팅 슬롯 활용 전략",
+      "타임관리": "피팅 슬롯 시간 배정 최적화",
+      "타석관리": "-",
+      "레슨관리": "-",
+      "KPI 분석": "예약수·완료율·전환율 추이",
+    },
+    salesExamples: {
+      "고객관리": "피팅 이력 기반 고객 프로필",
+      "재등록 관리": "재피팅 대상 고객 관리",
+      "미방문 관리": "피팅 후 미구매 고객 후속 관리",
+      "판매 제안": "피팅 결과 기반 맞춤 클럽 추천",
+      "VIP 관리": "다회 피팅·고액 구매 고객 관리",
+      "패키지 제안": "피팅+구매+AS 패키지",
+      "응대 문안": "피팅 예약 안내·후속 제안 스크립트",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "예약 리마인드/피팅 후속 제안/브랜드 비교 문안",
+      "이벤트 생성기": "피팅 체험 이벤트 기획",
+      "프로모션 기획": "피팅비 무료 + 구매 연계 프로모션",
+      "채널 운영안": "블로그·유튜브 피팅 후기 콘텐츠",
+      "시즌 캠페인 제안": "신모델 출시 피팅 캠페인",
+      "시장조사 연계": "예약·브랜드·후기·전환 비교",
+    },
+    designExamples: {
+      "디자인 요청": "피팅 체험 이벤트 배너",
+      "템플릿 디자인 센터": "피팅 결과 보고서 템플릿",
+      "홍보물 문안 + 레이아웃": "브랜드 비교 안내 리플렛",
+      "배너/포스터 요청": "매장 내 피팅 안내 포스터",
+      "업로드 폼 기반 제작": "피팅 데이터로 결과 카드 자동 생성",
+      "결과물 관리": "제작된 결과물 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "브랜드별 발주·주문 정리",
+      "정산/협력사 커뮤니케이션": "브랜드사 입고·정산 커뮤니케이션",
+      "내부 서식 초안": "피팅 보고서·상담 기록지",
+      "반복 업무 체크리스트": "장비 점검·예약 확인 체크리스트",
+      "리스크 검토 포인트": "A/S 정책·재고 관리 리스크",
+    },
+    researchExamples: { keyword: "예약 시스템, 브랜드 취급", region: "서울 강남구", focus: "예약 / 브랜드 / 후기 / 전환" },
+    consultantExamples: ["피팅 프로세스 최적화", "브랜드 전략 분석", "전환율 개선 컨설팅"],
+  },
+  company: {
+    kpis: [
+      { label: "리드 수", value: "156건", target: "200건", progress: 78 },
+      { label: "제안 전환율", value: "18%", target: "25%", progress: 72 },
+      { label: "거래처 현황", value: "42개", target: "50개", progress: 84 },
+      { label: "브랜드별 성과", value: "A사 35%", target: "-", progress: 100 },
+    ],
+    recommendations: [
+      { action: "B2B 리드 관리 체계 수립", tool: "AI 영업팀", url: "/ai-sales" },
+      { action: "영업 제안서 초안 생성", tool: "AI 경영지원", url: "/ai-business-support" },
+      { action: "채널 전략 요약 리포트", tool: "AI 운영팀", url: "/ai-operations" },
+      { action: "파트너 대상 프로모션 기획", tool: "AI 마케팅팀", url: "/ai-marketing" },
+    ],
+    issues: [
+      { title: "제안 전환율 18% 목표 미달", priority: "긴급" },
+      { title: "신규 거래처 확보 속도 둔화", priority: "높음" },
+      { title: "파트너사 계약 갱신 3건 미처리", priority: "보통" },
+    ],
+    assistantExamples: {
+      "오늘의 할 일": "제안서 발송 확인, 거래처 미팅 준비, 리드 후속 연락",
+      "이번 주 추천 액션": "신규 거래처 발굴 캠페인, 제안서 후속 관리",
+      "놓치고 있는 운영 항목": "파트너 계약 갱신, 분기 실적 리포트 미작성",
+      "캠페인 추천": "거래처 대상 시즌 프로모션, 파트너 세미나 초청",
+      "일정/마감 리마인드": "분기 실적 보고 D-5, 파트너 계약 갱신 D-10",
+      "업종별 체크리스트": "리드 현황 점검, 제안 진행 현황, 거래처 관리",
+    },
+    operationsExamples: {
+      "AI 진단실": "제안 전환율 저하 원인 분석",
+      "요금결정": "상품·서비스별 가격 정책 최적화",
+      "잔여타임 관리": "-",
+      "타임관리": "영업 미팅 일정 효율 분석",
+      "타석관리": "-",
+      "레슨관리": "-",
+      "KPI 분석": "리드수·전환율·거래처 추이 분석",
+    },
+    salesExamples: {
+      "고객관리": "거래처·파트너 세그먼트 관리",
+      "재등록 관리": "계약 갱신 대상 거래처 관리",
+      "미방문 관리": "3개월 미접촉 거래처 관리",
+      "판매 제안": "거래처 맞춤 상품·서비스 제안",
+      "VIP 관리": "핵심 거래처 특별 관리 프로그램",
+      "패키지 제안": "B2B 번들 상품 패키지",
+      "응대 문안": "거래처 미팅·제안 응대 스크립트",
+    },
+    marketingExamples: {
+      "마케팅 카피 생성기": "B2B 제안/채널 전략/브랜드 프로모션 문안",
+      "이벤트 생성기": "파트너 세미나·전시회 기획",
+      "프로모션 기획": "거래처 대상 시즌 프로모션",
+      "채널 운영안": "B2B 뉴스레터·영업 채널 전략",
+      "시즌 캠페인 제안": "신상품 런칭 파트너 캠페인",
+      "시장조사 연계": "경쟁사·유통채널·파트너·B2B 비교",
+    },
+    designExamples: {
+      "디자인 요청": "제안서 표지·회사 소개서 디자인",
+      "템플릿 디자인 센터": "제안서·견적서·뉴스레터 템플릿",
+      "홍보물 문안 + 레이아웃": "회사 소개서 레이아웃",
+      "배너/포스터 요청": "전시회·세미나 포스터",
+      "업로드 폼 기반 제작": "로고+상품 사진으로 제안서 자동 생성",
+      "결과물 관리": "제작된 제안서·홍보물 보관",
+    },
+    supportExamples: {
+      "계약/발주/구매 정리": "거래처 계약서·발주서 정리",
+      "정산/협력사 커뮤니케이션": "파트너사 정산·거래 커뮤니케이션",
+      "내부 서식 초안": "제안서·실적 보고서·품의서",
+      "반복 업무 체크리스트": "영업 파이프라인·리드 관리 체크리스트",
+      "리스크 검토 포인트": "계약 조건·거래처 리스크 점검",
+    },
+    researchExamples: { keyword: "유통 채널, 파트너", region: "전국", focus: "경쟁사 / 유통 채널 / 파트너 / B2B 제안 포인트" },
+    consultantExamples: ["제안서 구조 분석", "유통 전략 컨설팅", "영업 분석 리포트"],
+  },
+};
+
+interface BusinessContextValue {
+  businessType: BusinessType;
+  setBusinessType: (type: BusinessType) => void;
+  config: BusinessTypeConfig;
+  label: string;
+}
+
+const BusinessContext = createContext<BusinessContextValue | null>(null);
+
+export function BusinessProvider({ children }: { children: ReactNode }) {
+  const [businessType, setBusinessType] = useState<BusinessType>("indoor");
+  const config = businessConfigs[businessType];
+  const label = businessTypeLabels[businessType];
+
+  return (
+    <BusinessContext.Provider value={{ businessType, setBusinessType, config, label }}>
+      {children}
+    </BusinessContext.Provider>
+  );
+}
+
+export function useBusinessContext() {
+  const ctx = useContext(BusinessContext);
+  if (!ctx) throw new Error("useBusinessContext must be used within BusinessProvider");
+  return ctx;
+}
