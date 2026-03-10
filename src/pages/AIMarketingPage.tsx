@@ -23,6 +23,8 @@ export default function AIMarketingPage() {
         <p className="text-muted-foreground text-sm mt-1">마케팅 기획부터 실행까지 AI가 전담합니다</p>
       </div>
 
+      <BusinessContextBanner module="AI 마케팅팀" />
+
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
           <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} url={s.url} badge={s.badge} />

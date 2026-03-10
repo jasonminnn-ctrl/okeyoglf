@@ -23,6 +23,8 @@ export default function AIDesignPage() {
         <p className="text-muted-foreground text-sm mt-1">디자인 제작과 홍보물 관리를 AI가 지원합니다</p>
       </div>
 
+      <BusinessContextBanner module="AI 디자인팀" />
+
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
           <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge={s.badge} />

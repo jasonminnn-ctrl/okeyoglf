@@ -24,6 +24,8 @@ export default function AISalesPage() {
         <p className="text-muted-foreground text-sm mt-1">고객 관리와 매출 확대를 AI가 체계적으로 지원합니다</p>
       </div>
 
+      <BusinessContextBanner module="AI 영업팀" />
+
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
           <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge={s.badge} />

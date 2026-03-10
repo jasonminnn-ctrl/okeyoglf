@@ -23,6 +23,8 @@ export default function AIBusinessSupportPage() {
         <p className="text-muted-foreground text-sm mt-1">경영 관리와 내부 업무를 AI가 효율화합니다</p>
       </div>
 
+      <BusinessContextBanner module="AI 경영지원" />
+
       <MenuLandingGrid columns={3}>
         {sections.map((s) => (
           <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge={s.badge} />
