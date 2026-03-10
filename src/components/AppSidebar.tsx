@@ -103,7 +103,13 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        <SidebarMenuButton className="text-sidebar-foreground hover:text-destructive" onClick={logout}>
+        <SidebarMenuButton
+          className="text-sidebar-foreground hover:text-destructive"
+          onClick={() => {
+            logout();
+            navigate("/login", { replace: true });
+          }}
+        >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>로그아웃</span>}
         </SidebarMenuButton>
