@@ -4,24 +4,14 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
 
-
 const sectionKeys = [
-  { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", saveCategory: "AI 비서 결과" },
-  { key: "이번 주 추천 액션", icon: Zap, color: "bg-amber-500/10 text-amber-400", saveCategory: "AI 비서 결과" },
-  { key: "놓치고 있는 운영 항목", icon: AlertCircle, color: "bg-red-500/10 text-red-400", saveCategory: "AI 비서 결과" },
-  { key: "캠페인 추천", icon: Megaphone, color: "bg-blue-500/10 text-blue-400", saveCategory: "AI 마케팅팀 결과" },
-  { key: "일정/마감 리마인드", icon: CalendarClock, color: "bg-violet-500/10 text-violet-400", saveCategory: "AI 비서 결과" },
-  { key: "업종별 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400", saveCategory: "AI 비서 결과" },
+  { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", url: "/ai-assistant/daily-tasks" },
+  { key: "이번 주 추천 액션", icon: Zap, color: "bg-amber-500/10 text-amber-400", url: "/ai-assistant/weekly-actions" },
+  { key: "놓치고 있는 운영 항목", icon: AlertCircle, color: "bg-red-500/10 text-red-400" },
+  { key: "캠페인 추천", icon: Megaphone, color: "bg-blue-500/10 text-blue-400" },
+  { key: "일정/마감 리마인드", icon: CalendarClock, color: "bg-violet-500/10 text-violet-400" },
+  { key: "업종별 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400", url: "/ai-assistant/checklist" },
 ];
-
-const resultTypeMap: Record<string, string> = {
-  "오늘의 할 일": "추천 문안",
-  "이번 주 추천 액션": "액션 요약",
-  "놓치고 있는 운영 항목": "체크리스트",
-  "캠페인 추천": "캠페인 초안",
-  "일정/마감 리마인드": "리마인드 요약",
-  "업종별 체크리스트": "운영 체크리스트",
-};
 
 export default function AIAssistantPage() {
   const { config } = useBusinessContext();
@@ -46,7 +36,8 @@ export default function AIAssistantPage() {
             description={config.assistantExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
-            badge="준비중"
+            url={s.url}
+            badge={s.url ? undefined : "준비중"}
           />
         ))}
       </MenuLandingGrid>
