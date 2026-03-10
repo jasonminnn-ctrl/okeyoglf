@@ -40,7 +40,7 @@ interface MembershipContextValue {
   // Overrides (operator managed)
   overrides: OrganizationFeatureOverride[];
   addOverride: (override: OrganizationFeatureOverride) => void;
-  removeOverride: (featureKey: FeatureKey) => void;
+  removeOverride: (featureKey: FeatureKey, membershipCode?: MembershipCode) => void;
 }
 
 const MembershipContext = createContext<MembershipContextValue | undefined>(undefined);
