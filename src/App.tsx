@@ -55,36 +55,38 @@ const App = () => (
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route element={<AppLayout />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/ai-assistant" element={<AIAssistantPage />} />
-                    <Route path="/ai-assistant/daily-tasks" element={<DailyTasksPage />} />
-                    <Route path="/ai-assistant/weekly-actions" element={<WeeklyActionsPage />} />
-                    <Route path="/ai-assistant/checklist" element={<ChecklistPage />} />
-                    <Route path="/ai-operations" element={<AIOperationsPage />} />
-                    <Route path="/ai-operations/diagnosis" element={<DiagnosisPage />} />
-                    <Route path="/ai-sales" element={<AISalesPage />} />
-                    <Route path="/ai-sales/response-script" element={<ResponseScriptPage />} />
-                    <Route path="/ai-sales/re-registration" element={<ReRegistrationPage />} />
-                    <Route path="/ai-marketing" element={<AIMarketingPage />} />
-                    <Route path="/ai-marketing/copy" element={<MarketingPage />} />
-                    <Route path="/ai-marketing/promotion" element={<PromotionPlanPage />} />
-                    <Route path="/ai-design" element={<AIDesignPage />} />
-                    <Route path="/ai-design/request" element={<DesignRequestPage />} />
-                    <Route path="/ai-design/copy-layout" element={<CopyLayoutPage />} />
-                    <Route path="/ai-business-support" element={<AIBusinessSupportPage />} />
-                    <Route path="/ai-business-support/document-draft" element={<DocumentDraftPage />} />
-                    <Route path="/ai-business-support/contract-order" element={<ContractOrderPage />} />
-                    <Route path="/market-research" element={<MarketResearchPage />} />
-                    <Route path="/consultant" element={<ConsultantPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/instructions" element={<InstructionsPage />} />
-                    <Route path="/saved" element={<SavedPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    {/* Operator-only routes — guarded */}
-                    <Route element={<RouteGuard requiredRole="operator" />}>
-                      <Route path="/operator" element={<OperatorPage />} />
-                      <Route path="/enterprise" element={<EnterprisePage />} />
+                  <Route element={<RouteGuard />}>
+                    <Route element={<AppLayout />}>
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route path="/ai-assistant" element={<AIAssistantPage />} />
+                      <Route path="/ai-assistant/daily-tasks" element={<DailyTasksPage />} />
+                      <Route path="/ai-assistant/weekly-actions" element={<WeeklyActionsPage />} />
+                      <Route path="/ai-assistant/checklist" element={<ChecklistPage />} />
+                      <Route path="/ai-operations" element={<AIOperationsPage />} />
+                      <Route path="/ai-operations/diagnosis" element={<DiagnosisPage />} />
+                      <Route path="/ai-sales" element={<AISalesPage />} />
+                      <Route path="/ai-sales/response-script" element={<ResponseScriptPage />} />
+                      <Route path="/ai-sales/re-registration" element={<ReRegistrationPage />} />
+                      <Route path="/ai-marketing" element={<AIMarketingPage />} />
+                      <Route path="/ai-marketing/copy" element={<MarketingPage />} />
+                      <Route path="/ai-marketing/promotion" element={<PromotionPlanPage />} />
+                      <Route path="/ai-design" element={<AIDesignPage />} />
+                      <Route path="/ai-design/request" element={<DesignRequestPage />} />
+                      <Route path="/ai-design/copy-layout" element={<CopyLayoutPage />} />
+                      <Route path="/ai-business-support" element={<AIBusinessSupportPage />} />
+                      <Route path="/ai-business-support/document-draft" element={<DocumentDraftPage />} />
+                      <Route path="/ai-business-support/contract-order" element={<ContractOrderPage />} />
+                      <Route path="/market-research" element={<MarketResearchPage />} />
+                      <Route path="/consultant" element={<ConsultantPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/instructions" element={<InstructionsPage />} />
+                      <Route path="/saved" element={<SavedPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      {/* Operator-only routes — guarded */}
+                      <Route element={<RouteGuard requiredRole="operator" />}>
+                        <Route path="/operator" element={<OperatorPage />} />
+                        <Route path="/enterprise" element={<EnterprisePage />} />
+                      </Route>
                     </Route>
                   </Route>
                   <Route path="*" element={<NotFound />} />

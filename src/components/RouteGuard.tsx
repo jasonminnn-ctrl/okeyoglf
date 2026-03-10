@@ -1,12 +1,12 @@
 /**
- * RouteGuard — Protects operator-only routes from customer access.
+ * RouteGuard — Protects authenticated routes and operator-only routes.
  */
 
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface RouteGuardProps {
-  requiredRole: "operator";
+  requiredRole?: "operator";
 }
 
 export function RouteGuard({ requiredRole }: RouteGuardProps) {

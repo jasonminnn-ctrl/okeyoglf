@@ -4,7 +4,7 @@ import {
   Shield, Building
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -38,6 +38,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const { isOperator, logout } = useAuth();
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -102,7 +103,13 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        <SidebarMenuButton className="text-sidebar-foreground hover:text-destructive" onClick={logout}>
+        <SidebarMenuButton
+          className="text-sidebar-foreground hover:text-destructive"
+          onClick={() => {
+            logout();
+            navigate("/login", { replace: true });
+          }}
+        >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>로그아웃</span>}
         </SidebarMenuButton>
