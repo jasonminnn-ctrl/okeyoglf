@@ -1,18 +1,22 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
+import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
-const sections = [
-  { title: "오늘의 할 일", desc: "AI가 분석한 오늘의 우선 업무 목록", icon: ListChecks, color: "bg-primary/10 text-primary" },
-  { title: "이번 주 추천 액션", desc: "이번 주 매출·운영 개선을 위한 핵심 액션", icon: Zap, color: "bg-amber-500/10 text-amber-400" },
-  { title: "놓치고 있는 운영 항목", desc: "현재 운영에서 누락 중인 중요 사항 점검", icon: AlertCircle, color: "bg-red-500/10 text-red-400" },
-  { title: "캠페인 추천", desc: "업종·시즌에 맞는 마케팅 캠페인 제안", icon: Megaphone, color: "bg-blue-500/10 text-blue-400" },
-  { title: "일정/마감 리마인드", desc: "이번 주 마감·예정 일정 알림", icon: CalendarClock, color: "bg-violet-500/10 text-violet-400" },
-  { title: "업종별 체크리스트", desc: "선택한 업종에 맞는 일일/주간 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400" },
+const sectionKeys = [
+  { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", resultCategory: "AI 비서 결과" },
+  { key: "이번 주 추천 액션", icon: Zap, color: "bg-amber-500/10 text-amber-400", resultCategory: "AI 비서 결과" },
+  { key: "놓치고 있는 운영 항목", icon: AlertCircle, color: "bg-red-500/10 text-red-400", resultCategory: "AI 비서 결과" },
+  { key: "캠페인 추천", icon: Megaphone, color: "bg-blue-500/10 text-blue-400", resultCategory: "AI 마케팅팀 결과" },
+  { key: "일정/마감 리마인드", icon: CalendarClock, color: "bg-violet-500/10 text-violet-400", resultCategory: "AI 비서 결과" },
+  { key: "업종별 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400", resultCategory: "AI 비서 결과" },
 ];
 
 export default function AIAssistantPage() {
+  const { config, label } = useBusinessContext();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -26,8 +30,15 @@ export default function AIAssistantPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <MenuLandingGrid columns={3}>
-        {sections.map((s) => (
-          <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} badge="준비 중" />
+        {sectionKeys.map((s) => (
+          <MenuLandingCard
+            key={s.key}
+            title={s.key}
+            description={config.assistantExamples[s.key] || "준비 중"}
+            icon={s.icon}
+            color={s.color}
+            badge={`저장 → ${s.resultCategory}`}
+          />
         ))}
       </MenuLandingGrid>
 

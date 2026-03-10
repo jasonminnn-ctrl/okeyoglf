@@ -1,17 +1,22 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
-import { MessageSquare, FileText, Presentation, BarChart3, Megaphone, Palette } from "lucide-react";
+import { useBusinessContext } from "@/contexts/BusinessContext";
+import { MessageSquare, FileText, Presentation, BarChart3, Megaphone, Palette, Lock, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 
 const requestTypes = [
-  { title: "전담 컨설턴트 요청", desc: "전문 컨설턴트에게 맞춤 상담 및 지원 요청", icon: MessageSquare, color: "bg-primary/10 text-primary" },
-  { title: "문서 제작 요청", desc: "사업계획서·제안서·보고서 등 전문 문서 제작", icon: FileText, color: "bg-amber-500/10 text-amber-400" },
-  { title: "PPT 제작 요청", desc: "프레젠테이션 자료 전문 제작 의뢰", icon: Presentation, color: "bg-blue-500/10 text-blue-400" },
-  { title: "운영 분석 요청", desc: "심층 운영 데이터 분석 및 컨설팅 리포트", icon: BarChart3, color: "bg-violet-500/10 text-violet-400" },
-  { title: "마케팅 검토 요청", desc: "마케팅 전략·실행안에 대한 전문가 검토", icon: Megaphone, color: "bg-emerald-500/10 text-emerald-400" },
-  { title: "디자인 요청", desc: "전문 디자이너를 통한 고품질 디자인 제작", icon: Palette, color: "bg-pink-500/10 text-pink-400" },
+  { key: "전담 컨설턴트 요청", desc: "전문 컨설턴트에게 맞춤 상담 및 지원 요청", icon: MessageSquare, color: "bg-primary/10 text-primary", status: "locked" as const },
+  { key: "문서 제작 요청", desc: "사업계획서·제안서·보고서 등 전문 문서 제작", icon: FileText, color: "bg-amber-500/10 text-amber-400", status: "locked" as const },
+  { key: "PPT 제작 요청", desc: "프레젠테이션 자료 전문 제작 의뢰", icon: Presentation, color: "bg-blue-500/10 text-blue-400", status: "locked" as const },
+  { key: "운영 분석 요청", desc: "심층 운영 데이터 분석 및 컨설팅 리포트", icon: BarChart3, color: "bg-violet-500/10 text-violet-400", status: "locked" as const },
+  { key: "마케팅 검토 요청", desc: "마케팅 전략·실행안에 대한 전문가 검토", icon: Megaphone, color: "bg-emerald-500/10 text-emerald-400", status: "locked" as const },
+  { key: "디자인 요청", desc: "전문 디자이너를 통한 고품질 디자인 제작", icon: Palette, color: "bg-pink-500/10 text-pink-400", status: "locked" as const },
 ];
 
 export default function ConsultantPage() {
+  const { config, label } = useBusinessContext();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -22,11 +27,12 @@ export default function ConsultantPage() {
         <p className="text-muted-foreground text-sm mt-1">전문 컨설턴트에게 직접 요청하고 결과를 받아보세요</p>
       </div>
 
+      {/* Membership gate */}
       <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-        <CardContent className="pt-5">
+        <CardContent className="pt-5 pb-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-primary" />
+              <Crown className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm font-medium">프로 멤버십 전용 서비스</p>
@@ -36,11 +42,43 @@ export default function ConsultantPage() {
         </CardContent>
       </Card>
 
+      <BusinessContextBanner module="전담 컨설턴트" />
+
+      {/* Business-type aware examples */}
+      <Card className="bg-muted/20 border-border/30">
+        <CardContent className="pt-4 pb-4">
+          <p className="text-xs text-muted-foreground mb-2">
+            <span className="text-primary font-medium">{label}</span> 업종 추천 요청 예시:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {config.consultantExamples.map((ex, i) => (
+              <Badge key={i} variant="outline" className="text-[11px]">{ex}</Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <MenuLandingGrid columns={3}>
         {requestTypes.map((r) => (
-          <MenuLandingCard key={r.title} title={r.title} description={r.desc} icon={r.icon} color={r.color} locked />
+          <MenuLandingCard key={r.key} title={r.key} description={r.desc} icon={r.icon} color={r.color} locked />
         ))}
       </MenuLandingGrid>
+
+      {/* Locked state messages */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="bg-muted/20 border-border/30">
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">프로 멤버십 이상에서 이용 가능한 기능입니다</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-muted/20 border-border/30">
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">업그레이드 후 전담 컨설턴트 요청이 가능합니다</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
