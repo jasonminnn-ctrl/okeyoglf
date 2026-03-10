@@ -50,10 +50,7 @@ export default function AIAssistantPage() {
           >
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                기대 결과: {resultTypeMap[s.key] || "요약 결과"}
-              </Badge>
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                저장 → {s.saveCategory}
+                결과 유형: {resultTypeMap[s.key] || "요약 결과"}
               </Badge>
             </div>
           </MenuLandingCard>

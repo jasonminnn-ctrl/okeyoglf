@@ -58,10 +58,7 @@ export default function AIOperationsPage() {
               {!isNA && (
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                    기대 결과: {resultTypeMap[s.key] || "분석 요약"}
-                  </Badge>
-                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                    저장 → {s.saveCategory}
+                    결과 유형: {resultTypeMap[s.key] || "분석 요약"}
                   </Badge>
                 </div>
               )}
