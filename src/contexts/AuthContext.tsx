@@ -1,7 +1,7 @@
 /**
  * AuthContext — Mock role-based auth for customer/operator separation.
  * Provides user role to control sidebar visibility and route access.
- * Designed for future Supabase Auth migration.
+ * Designed for future backend Auth migration.
  */
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
@@ -25,23 +25,41 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AUTH_STORAGE_KEY = "okeygolf-auth-user";
 
 const MOCK_USERS: Record<string, AuthUser> = {
   customer: { id: "user-001", email: "admin@okeygolf.com", name: "관리자", role: "customer" },
   operator: { id: "op-001", email: "operator@okeygolf.com", name: "운영자", role: "operator" },
 };
 
+const readStoredUser = (): AuthUser | null => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as AuthUser;
+    if (parsed?.role !== "customer" && parsed?.role !== "operator") return null;
+
+    return MOCK_USERS[parsed.role];
+  } catch {
+    return null;
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(MOCK_USERS.customer);
+  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
 
   const login = useCallback((email: string, _password: string, role?: UserRole) => {
-    // Mock: operator@okeygolf.com → operator, else customer
     const resolvedRole = role || (email.includes("operator") ? "operator" : "customer");
-    setUser(MOCK_USERS[resolvedRole] || MOCK_USERS.customer);
+    const nextUser = MOCK_USERS[resolvedRole] || MOCK_USERS.customer;
+
+    setUser(nextUser);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   }, []);
 
   return (
