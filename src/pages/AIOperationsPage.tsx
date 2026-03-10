@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Settings2, Brain, DollarSign, Clock, LayoutGrid, GraduationCap, BarChart3, Timer } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "AI 진단실", icon: Brain, color: "bg-primary/10 text-primary", url: "/ai-operations/diagnosis", saveCategory: "AI 운영팀 결과" },

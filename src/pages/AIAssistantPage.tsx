@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sectionKeys = [
   { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", saveCategory: "AI 비서 결과" },

@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 경영지원 결과" },

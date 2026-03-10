@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { TrendingUp, Users, RefreshCcw, UserX, ShoppingBag, Crown, Package, MessageCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "고객관리", icon: Users, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 영업팀 결과" },

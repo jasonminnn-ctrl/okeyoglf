@@ -3,7 +3,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { Palette, PenTool, LayoutTemplate, Image, FileImage, Upload, FolderOpen } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 
 const sections = [
   { key: "디자인 요청", icon: PenTool, color: "bg-primary/10 text-primary", badge: "준비 중", saveCategory: "AI 디자인팀 결과" },
