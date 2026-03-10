@@ -89,14 +89,15 @@ function ResultSectionCard({ section }: { section: GenerationResultSection }) {
 
 export function GenerationFlow({ pipelineKey, featureKey, title, description, icon, backUrl, children }: GenerationFlowProps) {
   const navigate = useNavigate();
-  const { businessType, label } = useBusinessContext();
+  const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
+  const { saveResult } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [isRegenerate, setIsRegenerate] = useState(false);
 
   const config = pipelineConfigs[pipelineKey];
-  const contextSummary = buildContextSummary(businessType, label);
+  const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
   // Check feature access
   const generateAccess = checkAccess(featureKey);
