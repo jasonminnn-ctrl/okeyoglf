@@ -1,5 +1,6 @@
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { Settings2, Brain, DollarSign, Clock, LayoutGrid, GraduationCap, BarChart3, Timer } from "lucide-react";
 
 const sections = [
