@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Megaphone, TrendingUp, TrendingDown, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare } from "lucide-react";
+import { Brain, FileText, Megaphone, TrendingUp, TrendingDown, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 
 const kpiData = [
   { label: "이번 주 AI 분석", value: "12", change: "+3", trend: "up", icon: Brain },
