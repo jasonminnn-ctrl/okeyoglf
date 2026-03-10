@@ -46,14 +46,7 @@ export default function AIAssistantPage() {
             description={config.assistantExamples[s.key] || "준비 중"}
             icon={s.icon}
             color={s.color}
-            badge={`저장 → ${s.saveCategory}`}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {resultTypeMap[s.key] || "요약 결과"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 
