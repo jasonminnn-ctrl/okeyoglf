@@ -2,18 +2,21 @@ import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
+import { useMembership } from "@/contexts/MembershipContext";
+import { FEATURE_KEYS } from "@/lib/membership";
 import { Briefcase, FileSignature, Calculator, FileSpreadsheet, ListChecks, ShieldAlert } from "lucide-react";
 
 const sections = [
-  { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", url: "/ai-business-support/contract-order" },
-  { key: "정산/협력사 커뮤니케이션", icon: Calculator, color: "bg-amber-500/10 text-amber-400", badge: "준비 중" },
-  { key: "내부 서식 초안", icon: FileSpreadsheet, color: "bg-blue-500/10 text-blue-400", url: "/ai-business-support/document-draft" },
-  { key: "반복 업무 체크리스트", icon: ListChecks, color: "bg-violet-500/10 text-violet-400", badge: "준비 중" },
-  { key: "리스크 검토 포인트", icon: ShieldAlert, color: "bg-red-500/10 text-red-400", badge: "준비 중" },
+  { key: "계약/발주/구매 정리", icon: FileSignature, color: "bg-primary/10 text-primary", url: "/ai-business-support/contract-order", featureKey: FEATURE_KEYS.SUPPORT_CONTRACT },
+  { key: "정산/협력사 커뮤니케이션", icon: Calculator, color: "bg-amber-500/10 text-amber-400", featureKey: FEATURE_KEYS.SUPPORT_SETTLEMENT },
+  { key: "내부 서식 초안", icon: FileSpreadsheet, color: "bg-blue-500/10 text-blue-400", url: "/ai-business-support/document-draft", featureKey: FEATURE_KEYS.SUPPORT_DOCUMENT },
+  { key: "반복 업무 체크리스트", icon: ListChecks, color: "bg-violet-500/10 text-violet-400", featureKey: FEATURE_KEYS.SUPPORT_CHECKLIST },
+  { key: "리스크 검토 포인트", icon: ShieldAlert, color: "bg-red-500/10 text-red-400", featureKey: FEATURE_KEYS.SUPPORT_RISK },
 ];
 
 export default function AIBusinessSupportPage() {
   const { config } = useBusinessContext();
+  const { checkAccess } = useMembership();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -28,17 +31,22 @@ export default function AIBusinessSupportPage() {
       <BusinessContextBanner module="AI 경영지원" />
 
       <MenuLandingGrid columns={3}>
-        {sections.map((s) => (
-          <MenuLandingCard
-            key={s.key}
-            title={s.key}
-            description={config.supportExamples[s.key] || "준비 중"}
-            icon={s.icon}
-            color={s.color}
-            url={s.url}
-            badge={s.url ? undefined : s.badge}
-          />
-        ))}
+        {sections.map((s) => {
+          const access = checkAccess(s.featureKey);
+          if (!access.visible) return null;
+          return (
+            <MenuLandingCard
+              key={s.key}
+              title={s.key}
+              description={config.supportExamples[s.key] || "준비 중"}
+              icon={s.icon}
+              color={s.color}
+              url={s.url}
+              access={access}
+              badge={!s.url && access.enabled ? "준비중" : undefined}
+            />
+          );
+        })}
       </MenuLandingGrid>
 
       <ConsultantCTA category="문서/기획 지원" />
