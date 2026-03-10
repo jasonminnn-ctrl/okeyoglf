@@ -38,9 +38,9 @@ export function checkFeatureAccess(
   creditBalance: number,
   overrides?: OrganizationFeatureOverride[],
 ): FeatureAccessResult {
-  // 1. Check for org-level override first
+  // 1. Check for org-level override scoped to this membership tier
   const override = overrides?.find(
-    o => o.featureKey === featureKey && o.isActive
+    o => o.featureKey === featureKey && o.membershipCode === membershipCode && o.isActive
   );
 
   // 2. Find base policy

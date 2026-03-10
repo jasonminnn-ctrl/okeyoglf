@@ -5,12 +5,12 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
   { title: "대시보드", url: "/dashboard", icon: LayoutDashboard },
@@ -38,6 +38,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { isOperator, logout } = useAuth();
   const isActive = (path: string) => location.pathname.startsWith(path);
 
   const renderMenuItems = (items: typeof mainItems) =>
@@ -89,16 +90,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider opacity-50">내부 관리</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderMenuItems(internalItems)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Operator-only: hidden from customer sidebar */}
+        {isOperator && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider opacity-50">내부 관리</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderMenuItems(internalItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        <SidebarMenuButton className="text-sidebar-foreground hover:text-destructive">
+        <SidebarMenuButton className="text-sidebar-foreground hover:text-destructive" onClick={logout}>
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>로그아웃</span>}
         </SidebarMenuButton>
