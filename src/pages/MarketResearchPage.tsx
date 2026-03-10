@@ -1,16 +1,36 @@
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip } from "lucide-react";
+import { useState } from "react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Paperclip, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
+import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext, businessTypeLabels, BusinessType } from "@/contexts/BusinessContext";
+import { buildContextSummary } from "@/lib/ai-generation";
+import { toast } from "@/hooks/use-toast";
 
 export default function MarketResearchPage() {
   const { config, label, businessType } = useBusinessContext();
+  const [loading, setLoading] = useState(false);
+  const [hasResult, setHasResult] = useState(false);
+  const contextSummary = buildContextSummary(businessType, label);
+
+  const handleResearch = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setHasResult(true);
+    }, 2000);
+  };
+
+  const handleSave = () => {
+    toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다 (데모)" });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
@@ -23,10 +43,12 @@ export default function MarketResearchPage() {
       </div>
 
       <BusinessContextBanner module="시장조사" />
+      <ContextSummary context={contextSummary} />
 
+      {/* Research Input */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">조사 설정</CardTitle>
+          <CardTitle className="text-base">조사 조건 입력</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -72,28 +94,20 @@ export default function MarketResearchPage() {
             </CardContent>
           </Card>
 
-          <Button className="w-full md:w-auto">
-            <Play className="h-4 w-4 mr-1.5" />
-            조사 시작
+          <Button className="w-full md:w-auto" onClick={handleResearch} disabled={loading}>
+            {loading ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />조사 진행 중...</> : <><Play className="h-4 w-4 mr-1.5" />조사 시작</>}
           </Button>
         </CardContent>
       </Card>
 
-      <Card className="bg-card/50 border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">최근 조사 작업</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">아직 진행된 조사가 없습니다. 위에서 조건을 설정하고 조사를 시작해주세요.</p>
-        </CardContent>
-      </Card>
-
-      {/* Result structure - storage-ready */}
+      {/* Result structure */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">조사 결과</CardTitle>
-            <Badge variant="outline" className="text-[10px]">저장 → 시장조사 결과</Badge>
+            {hasResult && (
+              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">생성 완료</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -111,10 +125,10 @@ export default function MarketResearchPage() {
           </Card>
 
           {[
-            { icon: FileText, label: "조사 요약", desc: "수집된 데이터 요약 리포트", resultType: "조사 결과" },
-            { icon: Target, label: "경쟁사 리스트", desc: "주요 경쟁사 현황 정리", resultType: "분석 요약" },
-            { icon: Lightbulb, label: "인사이트", desc: "데이터 기반 핵심 인사이트", resultType: "분석 요약" },
-            { icon: MessageSquare, label: "추천 액션", desc: "조사 결과 기반 실행 제안", resultType: "제안 요약" },
+            { icon: FileText, label: "조사 요약", desc: hasResult ? `${label} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` : "수집된 데이터 요약 리포트" },
+            { icon: Target, label: "경쟁사 리스트", desc: hasResult ? `반경 5km 내 ${label} 3곳 확인. 가격대/서비스 비교 완료.` : "주요 경쟁사 현황 정리" },
+            { icon: Lightbulb, label: "인사이트", desc: hasResult ? "비수요 시간대 활용, 차별화 포인트 2건, 가격 경쟁력 우위 확인." : "데이터 기반 핵심 인사이트" },
+            { icon: MessageSquare, label: "추천 액션", desc: hasResult ? "프로모션 기획 연계, 채널 전략 수립, 가격 조정 검토 권장." : "조사 결과 기반 실행 제안" },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20">
               <item.icon className="h-4 w-4 text-muted-foreground" />
@@ -122,8 +136,11 @@ export default function MarketResearchPage() {
                 <p className="text-sm font-medium">{item.label}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">{item.resultType}</Badge>
-              <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/30">준비 중</span>
+              {hasResult ? (
+                <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">완료</Badge>
+              ) : (
+                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/30">대기 중</span>
+              )}
             </div>
           ))}
 
@@ -137,12 +154,23 @@ export default function MarketResearchPage() {
             </div>
           </div>
 
+          {/* Source/Reference Note */}
+          {hasResult && (
+            <Card className="bg-muted/20 border-border/30">
+              <CardContent className="pt-3 pb-3">
+                <p className="text-[10px] text-muted-foreground">📋 OkeyGolf AI 리서치 엔진 기반 생성 · 고객 운영 프로필 + 업종별 시장조사 레퍼런스 참조</p>
+              </CardContent>
+            </Card>
+          )}
+
+          <Separator />
+
           {/* Save + handoff CTAs */}
-          <div className="flex items-center gap-2 pt-2">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
+          <div className="flex items-center gap-2 pt-1">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult} onClick={handleSave}>
               <Bookmark className="h-3 w-3" /> 결과 저장
             </Button>
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled>
+            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult}>
               <MessageSquare className="h-3 w-3" /> 전담 컨설턴트 전환
             </Button>
           </div>
