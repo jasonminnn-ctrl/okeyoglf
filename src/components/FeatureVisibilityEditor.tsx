@@ -154,9 +154,10 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
       addOverride({
         organizationId: "org-001",
         featureKey: key,
+        membershipCode: editingTier,
         accessMode: newMode,
         isActive: true,
-        note: `운영자 수동 변경: ${accessModeLabel[newMode]}`,
+        note: `운영자 수동 변경: ${accessModeLabel[newMode]} (${editingTier})`,
       });
     }
   };
