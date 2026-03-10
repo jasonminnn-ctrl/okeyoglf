@@ -18,15 +18,26 @@ import { toast } from "@/hooks/use-toast";
 
 export default function MarketResearchPage() {
   const { config, label, businessType } = useBusinessContext();
+  const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
   const [loading, setLoading] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const contextSummary = buildContextSummary(businessType, label);
 
+  const generateAccess = checkAccess(FEATURE_KEYS.RESEARCH_BASIC);
+  const resultActions = getResultActions();
+
   const handleResearch = () => {
+    if (!generateAccess.enabled) {
+      toast({ title: "기능 제한", description: generateAccess.lockReason || "이 기능을 사용할 수 없습니다", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setHasResult(true);
+      if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
+        deductCredit(generateAccess.creditCost, "generate", "시장조사 — 기본 조사 생성", "시장조사");
+      }
     }, 2000);
   };
 
