@@ -149,7 +149,7 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
     // Check if newMode matches the base policy — if so, remove override
     const base = defaultFeaturePolicies.find(p => p.featureKey === key && p.membershipCode === editingTier && p.isActive);
     if (base && base.accessMode === newMode) {
-      removeOverride(key);
+      removeOverride(key, editingTier);
     } else {
       addOverride({
         organizationId: "org-001",
