@@ -3,7 +3,7 @@ import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertT
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
-import { BusinessContextBanner } from "@/components/BusinessContextBanner";
+
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
