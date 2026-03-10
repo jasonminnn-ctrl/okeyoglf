@@ -31,7 +31,7 @@ export interface ExportFileRecord {
 
 export interface ShareRecord {
   id: string;
-  method: "link" | "email" | "kakao" | "internal";
+  method: "link" | "email" | "kakao" | "internal" | "copy_text" | "link_placeholder" | "internal_placeholder";
   sharedAt: string;
   sharedTo?: string;
   note?: string;
