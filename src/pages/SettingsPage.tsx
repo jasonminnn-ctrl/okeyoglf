@@ -25,7 +25,7 @@ export default function SettingsPage() {
       </Card>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="bg-muted/30 p-1 flex-wrap h-auto gap-1">
+        <TabsList className="w-full justify-start bg-muted/30 p-1 h-auto gap-1">
           <TabsTrigger value="company" className="text-xs px-3 py-1.5 gap-1.5">
             <Building2 className="h-3 w-3" />회사/업종
           </TabsTrigger>
