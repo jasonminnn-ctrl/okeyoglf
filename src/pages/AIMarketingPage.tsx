@@ -48,13 +48,7 @@ export default function AIMarketingPage() {
             color={s.color}
             url={s.url}
             badge={s.badge}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {resultTypeMap[s.key] || "마케팅 초안"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 

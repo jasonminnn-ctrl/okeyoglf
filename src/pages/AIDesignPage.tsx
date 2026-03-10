@@ -38,13 +38,7 @@ export default function AIDesignPage() {
             icon={s.icon}
             color={s.color}
             badge={s.badge}
-          >
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                결과 유형: {config.resultTypeHints[s.key] || "홍보물 초안"}
-              </Badge>
-            </div>
-          </MenuLandingCard>
+          />
         ))}
       </MenuLandingGrid>
 

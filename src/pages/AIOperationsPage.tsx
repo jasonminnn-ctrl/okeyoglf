@@ -55,13 +55,6 @@ export default function AIOperationsPage() {
               badge={isNA ? "미해당" : s.badge}
               locked={isNA}
             >
-              {!isNA && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                    결과 유형: {resultTypeMap[s.key] || "분석 요약"}
-                  </Badge>
-                </div>
-              )}
             </MenuLandingCard>
           );
         })}
