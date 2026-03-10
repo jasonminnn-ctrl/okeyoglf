@@ -115,9 +115,12 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
         config,
       );
       // Deduct credit on successful generation
+      const ledgerType = isRegenerate ? "regenerate" : "generate";
+      const actionLabel = isRegenerate ? "재생성" : "생성";
       if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
-        deductCredit(generateAccess.creditCost, "generate", `${config.module} — ${config.subtool} 생성`, config.module, genResult.id);
+        deductCredit(generateAccess.creditCost, ledgerType, `${config.module} — ${config.subtool} ${actionLabel}`, config.module, genResult.id);
       }
+      setIsRegenerate(false);
       setResult(genResult);
     } finally {
       setLoading(false);
