@@ -14,7 +14,7 @@ const presets = [
   { label: "소모품 구매 정리", value: "supplies" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { category: string; vendor: string; details: string }> = {
   equipment: { category: "장비 발주", vendor: "장비 업체 A", details: "시뮬레이터 교체 3대, 매트 교체 10장, 타격판 5개" },
   partner: { category: "협력사 계약", vendor: "레슨 프로 / 유지보수 업체", details: "프로 계약 갱신 2건, 유지보수 계약 1건" },
   supplies: { category: "소모품 구매", vendor: "사무용품 / 비품 업체", details: "골프공 500개, 티 1000개, 청소용품 세트" },

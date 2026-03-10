@@ -16,7 +16,7 @@ const presets = [
   { label: "회의록 양식", value: "minutes" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { docType: string; purpose: string; contents: string }> = {
   instruction: { docType: "instruction", purpose: "직원 업무 지시", contents: "프로모션 운영 지침, 고객 응대 변경사항, 시설 관리 항목" },
   notice: { docType: "notice", purpose: "전체 공지", contents: "운영시간 변경, 시설 보수, 이벤트 안내" },
   report: { docType: "report", purpose: "주간/월간 보고", contents: "매출 현황, KPI 달성률, 주요 이슈, 다음 주 계획" },

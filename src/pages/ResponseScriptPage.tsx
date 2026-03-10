@@ -16,7 +16,7 @@ const presets = [
   { label: "VIP 고객 감사 메시지", value: "vip-thanks" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { scenario: string; channel: string; target: string; tone: string }> = {
   "renewal-call": { scenario: "재등록", channel: "phone", target: "만료 2주 전 회원", tone: "formal" },
   "reactivation": { scenario: "미방문 복귀", channel: "kakao", target: "30일 이상 미방문 고객", tone: "friendly" },
   "inquiry": { scenario: "가격/서비스 문의", channel: "phone", target: "신규 문의 고객", tone: "friendly" },

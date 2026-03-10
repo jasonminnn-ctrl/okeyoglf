@@ -13,7 +13,7 @@ const presets = [
   { label: "이벤트 마감 관리 + 직원 교육", value: "event-training" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { context: string; priority: string }> = {
   "contact-promo": { context: "미방문 30일 이상 고객 34명, 진행 중 프로모션 2건, 주중 오전 가동률 30%", priority: "미방문 고객 복귀 및 가동률 개선" },
   "renewal-facility": { context: "이번 달 재등록 대상 47명, 시설 정기점검 예정, 장비 교체 필요", priority: "재등록률 확보 및 시설 관리" },
   "event-training": { context: "봄시즌 이벤트 마감 D-5, 신규 직원 2명 교육 필요, 프론트 응대 품질 개선", priority: "이벤트 실행 및 서비스 품질" },

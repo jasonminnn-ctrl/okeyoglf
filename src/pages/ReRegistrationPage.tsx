@@ -14,7 +14,7 @@ const presets = [
   { label: "장기 미접촉 회원 복귀", value: "long-inactive" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { targetGroup: string; currentRate: string; incentive: string }> = {
   "expiring": { targetGroup: "만기 2주 이내 회원 47명", currentRate: "재등록률 65%, 전월 대비 7% 하락", incentive: "조기 재등록 시 1개월 무료 연장" },
   "at-risk": { targetGroup: "방문 빈도 50% 이상 감소 회원 16명", currentRate: "이탈 예상률 35%", incentive: "1:1 상담 + 맞춤 혜택 제공" },
   "long-inactive": { targetGroup: "60일 이상 미방문 회원 22명", currentRate: "자연 이탈률 80%", incentive: "컴백 특별 이용권 + 무료 체험" },

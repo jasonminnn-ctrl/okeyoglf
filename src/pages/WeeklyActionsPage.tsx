@@ -13,7 +13,7 @@ const presets = [
   { label: "운영 효율화 + 비용 절감", value: "efficiency" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { weekGoal: string; currentStatus: string }> = {
   "revenue-focus": { weekGoal: "주간 매출 10% 증가, 미방문 고객 20명 접촉", currentStatus: "이번 주 매출 전주 대비 5% 하락, 미방문 고객 34명" },
   "promo-channel": { weekGoal: "봄시즌 프로모션 실행, SNS 콘텐츠 3건 게시", currentStatus: "프로모션 기획 완료, 콘텐츠 소재 준비 중" },
   "efficiency": { weekGoal: "인력 배치 최적화, 불필요 비용 항목 검토", currentStatus: "주중 오전 인력 과잉, 주말 인력 부족" },

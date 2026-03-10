@@ -16,7 +16,7 @@ const presets = [
   { label: "제휴/협업 이벤트", value: "partnership" },
 ];
 
-const presetInputs: Record<string, Record<string, string>> = {
+const presetInputs: Record<string, { goal: string; budget: string; duration: string; target: string }> = {
   "off-peak": { goal: "비수요 시간대 가동률 60% 달성", budget: "50만원 이내", duration: "2weeks", target: "주변 자영업자, 시니어, 주부" },
   "season-new": { goal: "신규 고객 월 30명 유치", budget: "100만원 이내", duration: "1month", target: "골프 입문자, 20-30대" },
   "retention": { goal: "미방문 고객 30% 복귀", budget: "30만원 이내", duration: "2weeks", target: "30일 이상 미방문 기존 고객" },
