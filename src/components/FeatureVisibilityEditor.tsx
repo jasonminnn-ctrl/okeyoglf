@@ -130,7 +130,7 @@ interface Props {
   membershipCode: MembershipCode;
   overrides: OrganizationFeatureOverride[];
   addOverride: (o: OrganizationFeatureOverride) => void;
-  removeOverride: (key: FeatureKey) => void;
+  removeOverride: (key: FeatureKey, membershipCode?: MembershipCode) => void;
   tierBadgeColor: Record<string, string>;
 }
 
