@@ -6,6 +6,7 @@ import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { Badge } from "@/components/ui/badge";
 import { getMembershipTier, ledgerTypeLabels } from "@/lib/membership";
 
@@ -13,13 +14,19 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { config, label } = useBusinessContext();
   const { membershipCode, membershipName, creditBalance, ledger } = useMembership();
+  const { recentResults, recentByType, totalCount } = useResultStore();
   const tier = getMembershipTier(membershipCode);
 
+  const recentGenerated = recentResults(3);
+  const recentResearch = recentByType("research", 3);
+  const recentConsultant = recentByType("consultant", 3);
+
+  // Derive usage KPIs from real data when available, fall back to placeholders
   const usageKpis = [
-    { label: "이번 주 AI 분석", value: "12", change: "+3", icon: Brain },
-    { label: "생성된 보고서", value: "8", change: "+2", icon: FileText },
-    { label: "마케팅 카피", value: "24", change: "+7", icon: Megaphone },
-    { label: "전담 요청", value: "2", change: "+1", icon: MessageSquare },
+    { label: "이번 주 AI 분석", value: totalCount > 0 ? String(totalCount) : "—", change: totalCount > 0 ? `${totalCount}건` : "—", icon: Brain },
+    { label: "생성된 보고서", value: recentGenerated.length > 0 ? String(recentGenerated.length) : "—", change: "", icon: FileText },
+    { label: "시장조사", value: recentResearch.length > 0 ? String(recentResearch.length) : "—", change: "", icon: Search },
+    { label: "전담 요청", value: recentConsultant.length > 0 ? String(recentConsultant.length) : "—", change: "", icon: MessageSquare },
   ];
 
   const tierBadgeColor: Record<string, string> = {
@@ -30,6 +37,15 @@ export default function DashboardPage() {
   };
 
   const recentLedger = ledger.slice(0, 5);
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}분 전`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}시간 전`;
+    return `${Math.floor(diff / 86400000)}일 전`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -56,7 +72,6 @@ export default function DashboardPage() {
 
       {/* Membership + Credit Summary Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Membership Card */}
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
@@ -78,7 +93,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Credit Balance Card */}
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
@@ -95,7 +109,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Credit Usage */}
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5">
             <p className="text-xs text-muted-foreground mb-3">최근 크레딧 사용</p>
@@ -127,17 +140,19 @@ export default function DashboardPage() {
                   <kpi.icon className="h-5 w-5 text-primary" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="h-3 w-3 text-emerald-400" />
-                <span className="text-xs text-emerald-400">{kpi.change} 이번 주</span>
-              </div>
+              {kpi.change && (
+                <div className="flex items-center gap-1 mt-2">
+                  <TrendingUp className="h-3 w-3 text-emerald-400" />
+                  <span className="text-xs text-emerald-400">{kpi.change}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Business KPIs - dynamic */}
+        {/* Business KPIs */}
         <Card className="lg:col-span-2 bg-card/50 border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -167,7 +182,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Urgent Issues - dynamic */}
+        {/* Urgent Issues */}
         <Card className="bg-card/50 border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -202,19 +217,19 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {[
-                { text: "AI 진단 완료 - 매출 하락 원인 분석", time: "2시간 전", type: "진단" },
-                { text: "마케팅 카피 생성 - 시즌 프로모션", time: "4시간 전", type: "마케팅" },
-                { text: "직원 지시서 작성 - 업무 가이드", time: "어제", type: "지시서" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-3.5 w-3.5 text-primary/50" />
-                    <span className="text-sm">{item.text}</span>
+              {recentGenerated.length > 0 ? (
+                recentGenerated.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-3.5 w-3.5 text-primary/50" />
+                      <span className="text-sm truncate">{r.title}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.updatedAt)}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{item.time}</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-3">아직 생성된 결과가 없습니다</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -240,7 +255,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Bottom row */}
+      {/* Bottom row — data-driven */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="bg-card/50 border-border/50">
           <CardHeader className="pb-3">
@@ -250,7 +265,18 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">아직 진행된 시장조사가 없습니다</p>
+            {recentResearch.length > 0 ? (
+              <div className="space-y-1.5">
+                {recentResearch.map(r => (
+                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground truncate mr-2">{r.title}</span>
+                    <Badge className={`${r.status === "전달 완료" ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"} text-[9px]`} variant="outline">{r.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">아직 진행된 시장조사가 없습니다</p>
+            )}
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-border/50">
@@ -261,7 +287,18 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">아직 요청 이력이 없습니다</p>
+            {recentConsultant.length > 0 ? (
+              <div className="space-y-1.5">
+                {recentConsultant.map(r => (
+                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground truncate mr-2">{r.title}</span>
+                    <Badge className="bg-muted text-muted-foreground text-[9px]" variant="outline">{r.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">아직 요청 이력이 없습니다</p>
+            )}
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-border/50">

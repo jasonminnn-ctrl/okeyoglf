@@ -21,8 +21,6 @@ import AIDesignPage from "@/pages/AIDesignPage";
 import AIBusinessSupportPage from "@/pages/AIBusinessSupportPage";
 import MarketResearchPage from "@/pages/MarketResearchPage";
 import ConsultantPage from "@/pages/ConsultantPage";
-import ReportsPage from "@/pages/ReportsPage";
-import InstructionsPage from "@/pages/InstructionsPage";
 import SavedPage from "@/pages/SavedPage";
 import SettingsPage from "@/pages/SettingsPage";
 import OperatorPage from "@/pages/OperatorPage";
@@ -55,6 +53,7 @@ const App = () => (
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  {/* All customer routes — auth required */}
                   <Route element={<RouteGuard />}>
                     <Route element={<AppLayout />}>
                       <Route path="/dashboard" element={<DashboardPage />} />
@@ -78,8 +77,6 @@ const App = () => (
                       <Route path="/ai-business-support/contract-order" element={<ContractOrderPage />} />
                       <Route path="/market-research" element={<MarketResearchPage />} />
                       <Route path="/consultant" element={<ConsultantPage />} />
-                      <Route path="/reports" element={<ReportsPage />} />
-                      <Route path="/instructions" element={<InstructionsPage />} />
                       <Route path="/saved" element={<SavedPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       {/* Operator-only routes — guarded */}
