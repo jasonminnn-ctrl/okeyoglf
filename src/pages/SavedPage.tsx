@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bookmark, Bot, Settings2, TrendingUp, Megaphone, Palette, Briefcase, Search, MessageSquare, Filter, Eye, Clock, FileText } from "lucide-react";
+import { Bookmark, Bot, Settings2, TrendingUp, Megaphone, Palette, Briefcase, Search, MessageSquare, Filter, Eye, Clock, FileText, Download, Share2, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useBusinessContext } from "@/contexts/BusinessContext";
@@ -48,6 +48,33 @@ const typeLabels: Record<string, string> = {
 function formatDate(iso: string) {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+function DeliveryBadges({ result }: { result: SavedResult }) {
+  const exportCount = result.exportFiles?.length ?? 0;
+  const shareCount = result.shareHistory?.length ?? 0;
+  const deliveryCount = result.deliveryHistory?.length ?? 0;
+  if (exportCount + shareCount + deliveryCount === 0) return null;
+
+  return (
+    <>
+      {exportCount > 0 && (
+        <Badge variant="outline" className="text-[8px] h-3.5 px-1 gap-0.5">
+          <Download className="h-2 w-2" />{exportCount}
+        </Badge>
+      )}
+      {shareCount > 0 && (
+        <Badge variant="outline" className="text-[8px] h-3.5 px-1 gap-0.5">
+          <Share2 className="h-2 w-2" />{shareCount}
+        </Badge>
+      )}
+      {deliveryCount > 0 && (
+        <Badge variant="outline" className="text-[8px] h-3.5 px-1 gap-0.5">
+          <Send className="h-2 w-2" />{deliveryCount}
+        </Badge>
+      )}
+    </>
+  );
 }
 
 export default function SavedPage() {
@@ -131,6 +158,7 @@ export default function SavedPage() {
                               <Badge className={`${statusColors[r.status] || ""} text-[9px] h-4`} variant="outline">{r.status}</Badge>
                               {r.type && <Badge variant="outline" className="text-[9px] h-4">{typeLabels[r.type] || r.type}</Badge>}
                               {r.version && r.version > 1 && <Badge variant="outline" className="text-[9px] h-4">v{r.version}</Badge>}
+                              <DeliveryBadges result={r} />
                             </div>
                           </div>
                         </div>
