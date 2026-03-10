@@ -21,7 +21,6 @@ export default function DashboardPage() {
   const recentResearch = recentByType("research", 3);
   const recentConsultant = recentByType("consultant", 3);
 
-  // Derive usage KPIs from real data when available, fall back to placeholders
   const usageKpis = [
     { label: "이번 주 AI 분석", value: totalCount > 0 ? String(totalCount) : "—", change: totalCount > 0 ? `${totalCount}건` : "—", icon: Brain },
     { label: "생성된 보고서", value: recentGenerated.length > 0 ? String(recentGenerated.length) : "—", change: "", icon: FileText },
@@ -47,6 +46,9 @@ export default function DashboardPage() {
     return `${Math.floor(diff / 86400000)}일 전`;
   };
 
+  // Dynamic date
+  const todayStr = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -56,7 +58,7 @@ export default function DashboardPage() {
           <p className="text-muted-foreground text-sm mt-1">AI 운영 매니저가 비즈니스 현황을 분석하고 있습니다</p>
         </div>
         <div className="text-right space-y-1">
-          <p className="text-sm font-medium">2026년 3월 10일</p>
+          <p className="text-sm font-medium">{todayStr}</p>
           <div className="flex items-center gap-2 justify-end">
             <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary flex items-center gap-1">
               <Building2 className="h-3 w-3" /> {label}
@@ -70,8 +72,25 @@ export default function DashboardPage() {
 
       <BusinessContextBanner />
 
-      {/* Membership + Credit Summary Row */}
+      {/* Top 3 summary cards: Industry / Membership / Credit */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Card 1: Current Industry */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">현재 업종</p>
+                <p className="text-xl font-bold mt-1">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">운영 프로필 기반 AI 컨텍스트 적용 중</p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Current Membership */}
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
@@ -93,6 +112,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Card 3: Credit Balance */}
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
@@ -106,22 +126,6 @@ export default function DashboardPage() {
               </div>
             </div>
             <Progress value={(creditBalance / tier.defaultCredits) * 100} className="h-1.5 mt-3" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground mb-3">최근 크레딧 사용</p>
-            <div className="space-y-1.5">
-              {recentLedger.slice(0, 3).map(entry => (
-                <div key={entry.id} className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground truncate mr-2">{entry.reason}</span>
-                  <span className={entry.amountDelta < 0 ? "text-destructive flex-shrink-0" : "text-emerald-400 flex-shrink-0"}>
-                    {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
-                  </span>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
       </div>

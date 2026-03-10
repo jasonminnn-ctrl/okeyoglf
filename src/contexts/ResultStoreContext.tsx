@@ -1,10 +1,9 @@
 /**
  * ResultStoreContext — Central store for saved AI generation results.
- * Expanded for Phase 6 (download / share / deliver) readiness.
- * Mock/local state now; designed for future Supabase migration.
+ * Phase 6-0.5: localStorage persistence added.
  */
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { BusinessContextSummary, GenerationResultSection } from "@/lib/ai-generation";
 
 // ──────────────────────────────────
@@ -68,7 +67,6 @@ export interface SavedResult {
   plainText?: string;
   sourceTool?: string;
   sourceMenu?: string;
-  /** Legacy compat */
   module?: string;
   subtool?: string;
   referenceId?: string;
@@ -85,6 +83,32 @@ export interface SavedResult {
   deliveryHistory?: DeliveryRecord[];
   consultantTransferHistory?: ConsultantTransferRecord[];
   metadata?: Record<string, unknown>;
+}
+
+// ──────────────────────────────────
+// Persistence helpers
+// ──────────────────────────────────
+
+const STORAGE_KEY = "okeygolf_result_store";
+
+function loadFromStorage(): SavedResult[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as SavedResult[];
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(results: SavedResult[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+  } catch {
+    // storage full or unavailable — silently fail
+  }
 }
 
 // ──────────────────────────────────
@@ -130,7 +154,12 @@ function buildPlainText(sections: GenerationResultSection[]): string {
 // ──────────────────────────────────
 
 export function ResultStoreProvider({ children }: { children: ReactNode }) {
-  const [results, setResults] = useState<SavedResult[]>([]);
+  const [results, setResults] = useState<SavedResult[]>(loadFromStorage);
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    saveToStorage(results);
+  }, [results]);
 
   const saveResult = useCallback((result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }) => {
     const timestamp = now();
@@ -151,17 +180,9 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
     setResults(prev => prev.map(r => r.id === id ? { ...r, ...patch, updatedAt: now() } : r));
   }, []);
 
-  const getResultsByCategory = useCallback((category: string) => {
-    return results.filter(r => r.category === category);
-  }, [results]);
-
-  const getResultsByType = useCallback((type: ResultType) => {
-    return results.filter(r => r.type === type);
-  }, [results]);
-
-  const getResultById = useCallback((id: string) => {
-    return results.find(r => r.id === id);
-  }, [results]);
+  const getResultsByCategory = useCallback((category: string) => results.filter(r => r.category === category), [results]);
+  const getResultsByType = useCallback((type: ResultType) => results.filter(r => r.type === type), [results]);
+  const getResultById = useCallback((id: string) => results.find(r => r.id === id), [results]);
 
   const updateStatus = useCallback((id: string, status: ResultStatus) => {
     setResults(prev => prev.map(r => r.id === id ? { ...r, status, updatedAt: now() } : r));
@@ -193,77 +214,40 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
   }, [results]);
 
   const markResultExported = useCallback((id: string, record: ExportFileRecord) => {
-    setResults(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      return { ...r, exportFiles: [...(r.exportFiles ?? []), record], updatedAt: now() };
-    }));
+    setResults(prev => prev.map(r => r.id !== id ? r : { ...r, exportFiles: [...(r.exportFiles ?? []), record], updatedAt: now() }));
   }, []);
 
   const markResultShared = useCallback((id: string, record: ShareRecord) => {
-    setResults(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      return { ...r, shareHistory: [...(r.shareHistory ?? []), record], updatedAt: now() };
-    }));
+    setResults(prev => prev.map(r => r.id !== id ? r : { ...r, shareHistory: [...(r.shareHistory ?? []), record], updatedAt: now() }));
   }, []);
 
   const markResultDelivered = useCallback((id: string, record: DeliveryRecord) => {
-    setResults(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      return { ...r, deliveryHistory: [...(r.deliveryHistory ?? []), record], updatedAt: now() };
-    }));
+    setResults(prev => prev.map(r => r.id !== id ? r : { ...r, deliveryHistory: [...(r.deliveryHistory ?? []), record], updatedAt: now() }));
   }, []);
 
   const markConsultantTransferred = useCallback((id: string, record: ConsultantTransferRecord) => {
-    setResults(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      return {
-        ...r,
-        consultantTransferHistory: [...(r.consultantTransferHistory ?? []), record],
-        status: "전달 완료" as ResultStatus,
-        updatedAt: now(),
-      };
+    setResults(prev => prev.map(r => r.id !== id ? r : {
+      ...r,
+      consultantTransferHistory: [...(r.consultantTransferHistory ?? []), record],
+      status: "전달 완료" as ResultStatus,
+      updatedAt: now(),
     }));
   }, []);
 
   const markResultRegenerated = useCallback((id: string, newResultId: string) => {
-    setResults(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      return { ...r, metadata: { ...r.metadata, lastRegeneratedTo: newResultId }, updatedAt: now() };
-    }));
+    setResults(prev => prev.map(r => r.id !== id ? r : { ...r, metadata: { ...r.metadata, lastRegeneratedTo: newResultId }, updatedAt: now() }));
   }, []);
 
-  const recentResults = useCallback((limit = 5) => {
-    return [...results].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit);
-  }, [results]);
-
-  const recentByType = useCallback((type: ResultType, limit = 5) => {
-    return results.filter(r => r.type === type).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit);
-  }, [results]);
-
-  const countByCategory = useCallback((category: string) => {
-    return results.filter(r => r.category === category).length;
-  }, [results]);
+  const recentResults = useCallback((limit = 5) => [...results].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit), [results]);
+  const recentByType = useCallback((type: ResultType, limit = 5) => results.filter(r => r.type === type).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit), [results]);
+  const countByCategory = useCallback((category: string) => results.filter(r => r.category === category).length, [results]);
 
   return (
     <ResultStoreContext.Provider value={{
-      results,
-      saveResult,
-      updateResult,
-      getResultsByCategory,
-      getResultsByType,
-      getResultById,
-      updateStatus,
-      deleteResult,
-      duplicateResult,
-      markResultExported,
-      markResultShared,
-      markResultDelivered,
-      markConsultantTransferred,
-      markResultRegenerated,
-      totalCount: results.length,
-      countByCategory,
-      recentResults,
-      recentByType,
+      results, saveResult, updateResult, getResultsByCategory, getResultsByType, getResultById,
+      updateStatus, deleteResult, duplicateResult, markResultExported, markResultShared,
+      markResultDelivered, markConsultantTransferred, markResultRegenerated,
+      totalCount: results.length, countByCategory, recentResults, recentByType,
     }}>
       {children}
     </ResultStoreContext.Provider>

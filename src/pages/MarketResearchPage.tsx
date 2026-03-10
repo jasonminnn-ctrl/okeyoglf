@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Loader2, Lock } from "lucide-react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Loader2, Lock, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +26,12 @@ interface ResearchInputs {
 }
 
 export default function MarketResearchPage() {
-  const { config, label, businessType, orgProfile } = useBusinessContext();
+  const { config, label, businessType: globalBusinessType, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit } = useMembership();
   const { saveResult, markConsultantTransferred } = useResultStore();
 
   const [inputs, setInputs] = useState<ResearchInputs>({
-    businessType,
+    businessType: globalBusinessType,
     region: "",
     keyword: "",
     purpose: "",
@@ -41,8 +41,10 @@ export default function MarketResearchPage() {
   const [hasResult, setHasResult] = useState(false);
   const [resultId] = useState(`research-${Date.now()}`);
 
-  const effectiveLabel = businessTypeLabels[inputs.businessType] || label;
-  const contextSummary = buildContextSummary(inputs.businessType, effectiveLabel, orgProfile);
+  // Research industry is LOCAL — does not change global BusinessContext
+  const researchLabel = businessTypeLabels[inputs.businessType] || inputs.businessType;
+  const isResearchDifferentFromGlobal = inputs.businessType !== globalBusinessType;
+  const contextSummary = buildContextSummary(inputs.businessType, researchLabel, orgProfile);
 
   const generateAccess = checkAccess(FEATURE_KEYS.RESEARCH_BASIC);
   const resultActions = getResultActions();
@@ -73,18 +75,18 @@ export default function MarketResearchPage() {
     saveResult({
       id: resultId,
       type: "research",
-      title: `시장조사 — ${effectiveLabel}`,
+      title: `시장조사 — ${researchLabel}`,
       module: "시장조사",
       subtool: "기본 조사",
       sourceTool: "market-research/summary",
       sourceMenu: "시장조사",
       category: "시장조사 결과",
-      businessType: effectiveLabel,
-      tags: ["시장조사", effectiveLabel, keywordValue].filter(Boolean),
+      businessType: researchLabel,
+      tags: ["시장조사", researchLabel, keywordValue].filter(Boolean),
       outputFormat: "structured",
       sections: [
-        { title: "조사 요약", type: "summary", content: `${effectiveLabel} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` },
-        { title: "경쟁사 리스트", type: "detail", content: `반경 5km 내 ${effectiveLabel} 3곳 확인. 가격대/서비스 비교 완료.` },
+        { title: "조사 요약", type: "summary", content: `${researchLabel} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` },
+        { title: "경쟁사 리스트", type: "detail", content: `반경 5km 내 ${researchLabel} 3곳 확인. 가격대/서비스 비교 완료.` },
         { title: "인사이트", type: "recommendation", content: "비수요 시간대 활용, 차별화 포인트 2건, 가격 경쟁력 우위 확인." },
         { title: "추천 액션", type: "action", content: "프로모션 기획 연계, 채널 전략 수립, 가격 조정 검토 권장." },
       ],
@@ -96,11 +98,14 @@ export default function MarketResearchPage() {
       metadata: {
         researchInputs: {
           businessType: inputs.businessType,
+          businessTypeLabel: researchLabel,
           region: regionValue,
           keyword: keywordValue,
           purpose: inputs.purpose,
           count: inputs.count,
         },
+        globalBusinessType: globalBusinessType,
+        isResearchDifferentFromGlobal,
       },
       attachments: [],
       exportFiles: [],
@@ -116,14 +121,11 @@ export default function MarketResearchPage() {
       toast({ title: "기능 제한", description: resultActions.consultantTransfer.lockReason || "현재 플랜에서 이용할 수 없습니다", variant: "destructive" });
       return;
     }
-    // Save first if not saved
-    if (hasResult) {
-      handleSave();
-    }
+    if (hasResult) handleSave();
     markConsultantTransferred(resultId, {
       id: `ct-${Date.now()}`,
       transferredAt: new Date().toISOString(),
-      requestNote: `시장조사 전담 컨설턴트 전환 요청 — ${effectiveLabel}, ${regionValue}, ${keywordValue}`,
+      requestNote: `시장조사 전담 컨설턴트 전환 요청 — ${researchLabel}, ${regionValue}, ${keywordValue}`,
       status: "requested",
     });
     toast({ title: "전담 컨설턴트 전환 완료", description: "요청이 접수되었습니다. 전담 컨설턴트가 확인 후 연락드립니다." });
@@ -150,7 +152,7 @@ export default function MarketResearchPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> 업종</Label>
+              <Label className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> 조사 업종</Label>
               <Select value={inputs.businessType} onValueChange={(v) => setField("businessType", v as BusinessType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -159,6 +161,14 @@ export default function MarketResearchPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {isResearchDifferentFromGlobal && (
+                <div className="flex items-start gap-1.5 p-2 rounded bg-amber-500/10 border border-amber-500/20">
+                  <Info className="h-3 w-3 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-[10px] text-amber-400 leading-relaxed">
+                    현재 시장조사는 회사 기본 업종({businessTypeLabels[globalBusinessType]})과 별도로 선택한 조사 업종({researchLabel}) 기준으로 생성됩니다.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> 지역</Label>
@@ -191,7 +201,6 @@ export default function MarketResearchPage() {
             </div>
           </div>
 
-          {/* Purpose (optional) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5" /> 조사 목적 (선택)</Label>
             <Input
@@ -201,11 +210,15 @@ export default function MarketResearchPage() {
             />
           </div>
 
+          {/* Current research industry badge */}
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="pt-3 pb-3">
-              <p className="text-[11px] text-muted-foreground">
-                💡 추천 조사 포인트: <span className="text-primary">{config.researchExamples.focus}</span>
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] text-muted-foreground">현재 조사 업종:</span>
+                <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">{researchLabel}</Badge>
+                <span className="text-[11px] text-muted-foreground">·</span>
+                <span className="text-[11px] text-muted-foreground">💡 추천 조사 포인트: <span className="text-primary">{config.researchExamples.focus}</span></span>
+              </div>
             </CardContent>
           </Card>
 
@@ -218,7 +231,7 @@ export default function MarketResearchPage() {
       {/* Result */}
       <ResearchResultCard
         hasResult={hasResult}
-        effectiveLabel={effectiveLabel}
+        researchLabel={researchLabel}
         regionValue={regionValue}
         keywordValue={keywordValue}
         count={inputs.count}
@@ -233,12 +246,12 @@ export default function MarketResearchPage() {
 }
 
 // ──────────────────────────────────
-// Result Card (extracted component)
+// Result Card
 // ──────────────────────────────────
 
 interface ResearchResultCardProps {
   hasResult: boolean;
-  effectiveLabel: string;
+  researchLabel: string;
   regionValue: string;
   keywordValue: string;
   count: string;
@@ -248,12 +261,12 @@ interface ResearchResultCardProps {
 }
 
 function ResearchResultCard({
-  hasResult, effectiveLabel, regionValue, keywordValue, count,
+  hasResult, researchLabel, regionValue, keywordValue, count,
   resultActions, onSave, onConsultantTransfer,
 }: ResearchResultCardProps) {
   const items = [
-    { icon: FileText, label: "조사 요약", desc: hasResult ? `${effectiveLabel} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` : "수집된 데이터 요약 리포트" },
-    { icon: Target, label: "경쟁사 리스트", desc: hasResult ? `반경 5km 내 ${effectiveLabel} 3곳 확인. 가격대/서비스 비교 완료.` : "주요 경쟁사 현황 정리" },
+    { icon: FileText, label: "조사 요약", desc: hasResult ? `${researchLabel} 업종 기준 시장 데이터 수집 완료. 주요 경쟁 포인트 3건 도출.` : "수집된 데이터 요약 리포트" },
+    { icon: Target, label: "경쟁사 리스트", desc: hasResult ? `반경 5km 내 ${researchLabel} 3곳 확인. 가격대/서비스 비교 완료.` : "주요 경쟁사 현황 정리" },
     { icon: Lightbulb, label: "인사이트", desc: hasResult ? "비수요 시간대 활용, 차별화 포인트 2건, 가격 경쟁력 우위 확인." : "데이터 기반 핵심 인사이트" },
     { icon: MessageSquare, label: "추천 액션", desc: hasResult ? "프로모션 기획 연계, 채널 전략 수립, 가격 조정 검토 권장." : "조사 결과 기반 실행 제안" },
   ];
@@ -273,7 +286,7 @@ function ResearchResultCard({
           <CardContent className="pt-3 pb-3">
             <p className="text-[11px] font-medium mb-1">조사 조건 요약</p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="text-[10px]">업종: {effectiveLabel}</Badge>
+              <Badge variant="outline" className="text-[10px]">조사 업종: {researchLabel}</Badge>
               <Badge variant="outline" className="text-[10px]">지역: {regionValue}</Badge>
               <Badge variant="outline" className="text-[10px]">키워드: {keywordValue}</Badge>
               <Badge variant="outline" className="text-[10px]">수집: {count}건</Badge>
