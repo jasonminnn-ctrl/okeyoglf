@@ -1,5 +1,5 @@
 /**
- * MembershipContext (Phase 5)
+ * MembershipContext (Phase 5 + 6-1)
  * 
  * Provides membership tier, credit wallet, ledger,
  * feature access checks, and credit operations to the entire app.
