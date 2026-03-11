@@ -91,9 +91,9 @@ export default function AIMarketingPage() {
               description={description}
               icon={section.icon}
               color={section.color}
-              url={section.url}
+              url={"url" in section ? section.url : undefined}
               access={access}
-              badge={!section.url && access.enabled ? "준비중" : undefined}
+              badge={!("url" in section) && access.enabled ? "준비중" : undefined}
             />
           );
         })}
