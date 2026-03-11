@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
-import { Shield, Inbox, FileText, StickyNote, Upload, Users, Clock, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, CreditCard, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Settings2 } from "lucide-react";
+import { Shield, Inbox, FileText, StickyNote, Upload, Users, Clock, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, CreditCard, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Settings2, Link2 } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
+import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,6 +103,7 @@ export default function OperatorPage() {
           <TabsTrigger value="ai-policy" className="text-xs px-3 py-1.5 gap-1.5"><ShieldCheck className="h-3 w-3" />AI 정책</TabsTrigger>
           <TabsTrigger value="system" className="text-xs px-3 py-1.5 gap-1.5"><Cpu className="h-3 w-3" />시스템 운영</TabsTrigger>
           <TabsTrigger value="consultant" className="text-xs px-3 py-1.5 gap-1.5"><MessageSquare className="h-3 w-3" />컨설턴트</TabsTrigger>
+          <TabsTrigger value="integration" className="text-xs px-3 py-1.5 gap-1.5"><Link2 className="h-3 w-3" />외부 연동</TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
@@ -362,6 +364,11 @@ export default function OperatorPage() {
               <MenuLandingCard key={s.title} title={s.title} description={s.desc} icon={s.icon} color={s.color} />
             ))}
           </MenuLandingGrid>
+        </TabsContent>
+
+        {/* Integration Tab */}
+        <TabsContent value="integration" className="space-y-6">
+          <OperatorIntegrationTab />
         </TabsContent>
       </Tabs>
     </div>
