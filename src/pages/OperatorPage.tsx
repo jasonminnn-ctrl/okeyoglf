@@ -365,6 +365,11 @@ export default function OperatorPage() {
             ))}
           </MenuLandingGrid>
         </TabsContent>
+
+        {/* Integration Tab */}
+        <TabsContent value="integration" className="space-y-6">
+          <OperatorIntegrationTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
