@@ -49,14 +49,14 @@ import {
 } from "lucide-react";
 
 import type { BusinessType } from "@/contexts/BusinessContext";
-import { INDUSTRY_FEATURE_KEYS } from "@/lib/industry-feature-keys";
+import { INDUSTRY_FEATURE_KEYS, type IndustryFeatureKey } from "@/lib/industry-feature-keys";
 
 export type IndustryCard = {
   key: string;
   icon: LucideIcon;
   color: string;
   url?: string;
-  featureKey: string;
+  featureKey: IndustryFeatureKey;
 };
 
 export const operationsCards: Record<BusinessType, IndustryCard[]> = {
