@@ -103,6 +103,7 @@ export default function OperatorPage() {
           <TabsTrigger value="ai-policy" className="text-xs px-3 py-1.5 gap-1.5"><ShieldCheck className="h-3 w-3" />AI 정책</TabsTrigger>
           <TabsTrigger value="system" className="text-xs px-3 py-1.5 gap-1.5"><Cpu className="h-3 w-3" />시스템 운영</TabsTrigger>
           <TabsTrigger value="consultant" className="text-xs px-3 py-1.5 gap-1.5"><MessageSquare className="h-3 w-3" />컨설턴트</TabsTrigger>
+          <TabsTrigger value="integration" className="text-xs px-3 py-1.5 gap-1.5"><Link2 className="h-3 w-3" />외부 연동</TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
