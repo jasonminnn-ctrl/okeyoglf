@@ -1,13 +1,17 @@
+import { Settings2 } from "lucide-react";
+
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
+import { useMembership } from "@/contexts/MembershipContext";
 import { operationsCards } from "@/lib/industry-cards";
-import { Settings2 } from "lucide-react";
 
 export default function AIOperationsPage() {
   const { businessType, config } = useBusinessContext();
-  const cards = operationsCards[businessType];
+  const { checkAccess } = useMembership();
+
+  const cards = operationsCards[businessType] ?? operationsCards.indoor;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -16,23 +20,31 @@ export default function AIOperationsPage() {
           <Settings2 className="h-6 w-6 text-primary" />
           AI 운영팀
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">운영 전반을 AI가 분석·관리하고 실행 방안을 제시합니다</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          운영 전반을 AI가 분석·관리하고 실행 방안을 제시합니다
+        </p>
       </div>
 
       <BusinessContextBanner module="AI 운영팀" />
 
       <MenuLandingGrid columns={3}>
         {cards.map((card) => {
-          const example = config.operationsExamples[card.key];
+          const access = checkAccess(card.featureKey);
+          if (!access.visible) return null;
+
+          const description =
+            config.operationsExamples[card.key] || "준비 중";
+
           return (
             <MenuLandingCard
               key={card.key}
               title={card.key}
-              description={example || "준비 중"}
+              description={description}
               icon={card.icon}
               color={card.color}
               url={card.url}
-              badge={!card.url ? "준비중" : undefined}
+              access={access}
+              badge={!card.url && access.enabled ? "준비중" : undefined}
             />
           );
         })}
