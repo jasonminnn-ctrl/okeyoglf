@@ -1,9 +1,14 @@
 /**
  * OkeyGolf Membership & Credit Policy System (Phase 5)
- * 
+ *
  * Central policy layer for membership tiers, credit wallet,
  * feature access control, and operator visibility management.
  */
+
+import {
+  industryFeatureKeyList,
+  type IndustryFeatureKey,
+} from "@/lib/industry-feature-keys";
 
 // ──────────────────────────────────
 // Membership Tiers
@@ -20,14 +25,38 @@ export interface MembershipTier {
 }
 
 export const membershipTiers: MembershipTier[] = [
-  { code: "trial", name: "체험판", description: "기본 기능 체험 — 제한된 생성 및 저장", defaultCredits: 30, isActive: true },
-  { code: "standard", name: "스탠다드", description: "일반 생성 기능 및 저장/복사 허용", defaultCredits: 200, isActive: true },
-  { code: "pro", name: "프로", description: "전체 기능 + 전담 컨설턴트 전환 허용", defaultCredits: 1000, isActive: true },
-  { code: "enterprise", name: "엔터프라이즈", description: "전체 기능 + 멀티브랜치 + 고급 권한", defaultCredits: 5000, isActive: true },
+  {
+    code: "trial",
+    name: "체험판",
+    description: "기본 기능 체험 — 제한된 생성 및 저장",
+    defaultCredits: 30,
+    isActive: true,
+  },
+  {
+    code: "standard",
+    name: "스탠다드",
+    description: "일반 생성 기능 및 저장/복사 허용",
+    defaultCredits: 200,
+    isActive: true,
+  },
+  {
+    code: "pro",
+    name: "프로",
+    description: "전체 기능 + 전담 컨설턴트 전환 허용",
+    defaultCredits: 1000,
+    isActive: true,
+  },
+  {
+    code: "enterprise",
+    name: "엔터프라이즈",
+    description: "전체 기능 + 멀티브랜치 + 고급 권한",
+    defaultCredits: 5000,
+    isActive: true,
+  },
 ];
 
 export function getMembershipTier(code: MembershipCode): MembershipTier {
-  return membershipTiers.find(t => t.code === code) || membershipTiers[0];
+  return membershipTiers.find((t) => t.code === code) || membershipTiers[0];
 }
 
 // ──────────────────────────────────
@@ -52,7 +81,13 @@ export interface CreditWallet {
   updatedAt: string;
 }
 
-export type LedgerType = "generate" | "regenerate" | "manual_grant" | "manual_deduct" | "refund" | "bonus";
+export type LedgerType =
+  | "generate"
+  | "regenerate"
+  | "manual_grant"
+  | "manual_deduct"
+  | "refund"
+  | "bonus";
 
 export const ledgerTypeLabels: Record<LedgerType, string> = {
   generate: "생성",
@@ -77,7 +112,7 @@ export interface CreditLedgerEntry {
 }
 
 // ──────────────────────────────────
-// Feature Keys (central constants)
+// Feature Keys (legacy + central constants)
 // ──────────────────────────────────
 
 export const FEATURE_KEYS = {
@@ -93,7 +128,7 @@ export const FEATURE_KEYS = {
   ASSISTANT_REMINDER: "assistant.reminder.generate",
   ASSISTANT_CHECKLIST: "assistant.checklist.generate",
 
-  // AI 운영팀
+  // AI 운영팀 (legacy)
   OPERATIONS_DIAGNOSIS: "operations.diagnosis.generate",
   OPERATIONS_PRICING: "operations.pricing.generate",
   OPERATIONS_REMAINING: "operations.remaining_time.generate",
@@ -102,7 +137,7 @@ export const FEATURE_KEYS = {
   OPERATIONS_LESSON: "operations.lesson_mgmt.generate",
   OPERATIONS_KPI: "operations.kpi.generate",
 
-  // AI 영업팀
+  // AI 영업팀 (legacy)
   SALES_CUSTOMER: "sales.customer_mgmt.generate",
   SALES_REREGISTRATION: "sales.re_registration.generate",
   SALES_NOVISIT: "sales.no_visit.generate",
@@ -111,7 +146,7 @@ export const FEATURE_KEYS = {
   SALES_PACKAGE: "sales.package.generate",
   SALES_RESPONSE: "sales.response_script.generate",
 
-  // AI 마케팅팀
+  // AI 마케팅팀 (legacy)
   MARKETING_COPY: "marketing.copy.generate",
   MARKETING_EVENT: "marketing.event.generate",
   MARKETING_PROMOTION: "marketing.promotion.generate",
@@ -156,7 +191,8 @@ export const FEATURE_KEYS = {
   RESULT_DELIVER: "result.deliver",
 } as const;
 
-export type FeatureKey = typeof FEATURE_KEYS[keyof typeof FEATURE_KEYS];
+type LegacyFeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS];
+export type FeatureKey = LegacyFeatureKey | IndustryFeatureKey;
 
 // ──────────────────────────────────
 // Feature Access Modes
@@ -179,36 +215,79 @@ export interface FeaturePolicy {
 // Default Feature Policies
 // ──────────────────────────────────
 
+function buildIndustryCardPolicies(
+  tier: MembershipCode,
+  featureKeys: FeatureKey[],
+): FeaturePolicy[] {
+  return featureKeys.map((key) => ({
+    featureKey: key,
+    membershipCode: tier,
+    accessMode: tier === "trial" ? "locked" : "enabled",
+    requiresCredit: false,
+    creditCost: 0,
+    upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+    isActive: true,
+  }));
+}
+
 function buildDefaultPolicies(): FeaturePolicy[] {
   const policies: FeaturePolicy[] = [];
 
   const allGenerateKeys: FeatureKey[] = [
-    FEATURE_KEYS.ASSISTANT_DAILY, FEATURE_KEYS.ASSISTANT_WEEKLY, FEATURE_KEYS.ASSISTANT_CHECKLIST,
+    FEATURE_KEYS.ASSISTANT_DAILY,
+    FEATURE_KEYS.ASSISTANT_WEEKLY,
+    FEATURE_KEYS.ASSISTANT_CHECKLIST,
     FEATURE_KEYS.OPERATIONS_DIAGNOSIS,
-    FEATURE_KEYS.SALES_RESPONSE, FEATURE_KEYS.SALES_REREGISTRATION,
-    FEATURE_KEYS.MARKETING_COPY, FEATURE_KEYS.MARKETING_PROMOTION,
-    FEATURE_KEYS.DESIGN_REQUEST, FEATURE_KEYS.DESIGN_COPY_LAYOUT,
-    FEATURE_KEYS.SUPPORT_DOCUMENT, FEATURE_KEYS.SUPPORT_CONTRACT,
+    FEATURE_KEYS.SALES_RESPONSE,
+    FEATURE_KEYS.SALES_REREGISTRATION,
+    FEATURE_KEYS.MARKETING_COPY,
+    FEATURE_KEYS.MARKETING_PROMOTION,
+    FEATURE_KEYS.DESIGN_REQUEST,
+    FEATURE_KEYS.DESIGN_COPY_LAYOUT,
+    FEATURE_KEYS.SUPPORT_DOCUMENT,
+    FEATURE_KEYS.SUPPORT_CONTRACT,
     FEATURE_KEYS.RESEARCH_BASIC,
   ];
 
   const advancedKeys: FeatureKey[] = [
-    FEATURE_KEYS.ASSISTANT_MISSING, FEATURE_KEYS.ASSISTANT_CAMPAIGN, FEATURE_KEYS.ASSISTANT_REMINDER,
-    FEATURE_KEYS.OPERATIONS_PRICING, FEATURE_KEYS.OPERATIONS_REMAINING, FEATURE_KEYS.OPERATIONS_TIME,
-    FEATURE_KEYS.OPERATIONS_BAY, FEATURE_KEYS.OPERATIONS_LESSON, FEATURE_KEYS.OPERATIONS_KPI,
-    FEATURE_KEYS.SALES_CUSTOMER, FEATURE_KEYS.SALES_NOVISIT, FEATURE_KEYS.SALES_PROPOSAL,
-    FEATURE_KEYS.SALES_VIP, FEATURE_KEYS.SALES_PACKAGE,
-    FEATURE_KEYS.MARKETING_EVENT, FEATURE_KEYS.MARKETING_CHANNEL, FEATURE_KEYS.MARKETING_SEASON,
+    FEATURE_KEYS.ASSISTANT_MISSING,
+    FEATURE_KEYS.ASSISTANT_CAMPAIGN,
+    FEATURE_KEYS.ASSISTANT_REMINDER,
+    FEATURE_KEYS.OPERATIONS_PRICING,
+    FEATURE_KEYS.OPERATIONS_REMAINING,
+    FEATURE_KEYS.OPERATIONS_TIME,
+    FEATURE_KEYS.OPERATIONS_BAY,
+    FEATURE_KEYS.OPERATIONS_LESSON,
+    FEATURE_KEYS.OPERATIONS_KPI,
+    FEATURE_KEYS.SALES_CUSTOMER,
+    FEATURE_KEYS.SALES_NOVISIT,
+    FEATURE_KEYS.SALES_PROPOSAL,
+    FEATURE_KEYS.SALES_VIP,
+    FEATURE_KEYS.SALES_PACKAGE,
+    FEATURE_KEYS.MARKETING_EVENT,
+    FEATURE_KEYS.MARKETING_CHANNEL,
+    FEATURE_KEYS.MARKETING_SEASON,
     FEATURE_KEYS.MARKETING_RESEARCH,
-    FEATURE_KEYS.DESIGN_TEMPLATE, FEATURE_KEYS.DESIGN_BANNER, FEATURE_KEYS.DESIGN_UPLOAD, FEATURE_KEYS.DESIGN_RESULTS,
-    FEATURE_KEYS.SUPPORT_SETTLEMENT, FEATURE_KEYS.SUPPORT_CHECKLIST, FEATURE_KEYS.SUPPORT_RISK,
+    FEATURE_KEYS.DESIGN_TEMPLATE,
+    FEATURE_KEYS.DESIGN_BANNER,
+    FEATURE_KEYS.DESIGN_UPLOAD,
+    FEATURE_KEYS.DESIGN_RESULTS,
+    FEATURE_KEYS.SUPPORT_SETTLEMENT,
+    FEATURE_KEYS.SUPPORT_CHECKLIST,
+    FEATURE_KEYS.SUPPORT_RISK,
     FEATURE_KEYS.RESEARCH_ADVANCED,
   ];
 
   const consultantKeys: FeatureKey[] = [
-    FEATURE_KEYS.CONSULTANT_REQUEST, FEATURE_KEYS.CONSULTANT_DOCUMENT, FEATURE_KEYS.CONSULTANT_PPT,
-    FEATURE_KEYS.CONSULTANT_ANALYSIS, FEATURE_KEYS.CONSULTANT_MARKETING, FEATURE_KEYS.CONSULTANT_DESIGN,
+    FEATURE_KEYS.CONSULTANT_REQUEST,
+    FEATURE_KEYS.CONSULTANT_DOCUMENT,
+    FEATURE_KEYS.CONSULTANT_PPT,
+    FEATURE_KEYS.CONSULTANT_ANALYSIS,
+    FEATURE_KEYS.CONSULTANT_MARKETING,
+    FEATURE_KEYS.CONSULTANT_DESIGN,
   ];
+
+  const industryCardKeys: FeatureKey[] = industryFeatureKeyList as FeatureKey[];
 
   const tiers: MembershipCode[] = ["trial", "standard", "pro", "enterprise"];
 
@@ -221,15 +300,23 @@ function buildDefaultPolicies(): FeaturePolicy[] {
         accessMode: tier === "trial" ? "locked" : "enabled",
         requiresCredit: true,
         creditCost: tier === "trial" ? 5 : 3,
-        upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+        upsellLabel:
+          tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
         isActive: true,
       });
     }
+
     // Trial gets a few unlocked
     if (tier === "trial") {
-      const trialAllowed: FeatureKey[] = [FEATURE_KEYS.ASSISTANT_DAILY, FEATURE_KEYS.ASSISTANT_CHECKLIST];
+      const trialAllowed: FeatureKey[] = [
+        FEATURE_KEYS.ASSISTANT_DAILY,
+        FEATURE_KEYS.ASSISTANT_CHECKLIST,
+      ];
+
       for (const key of trialAllowed) {
-        const idx = policies.findIndex(p => p.featureKey === key && p.membershipCode === "trial");
+        const idx = policies.findIndex(
+          (p) => p.featureKey === key && p.membershipCode === "trial",
+        );
         if (idx !== -1) {
           policies[idx].accessMode = "enabled";
           policies[idx].upsellLabel = undefined;
@@ -242,10 +329,20 @@ function buildDefaultPolicies(): FeaturePolicy[] {
       policies.push({
         featureKey: key,
         membershipCode: tier,
-        accessMode: tier === "trial" ? "hidden" : tier === "standard" ? "locked" : "enabled",
+        accessMode:
+          tier === "trial"
+            ? "hidden"
+            : tier === "standard"
+              ? "locked"
+              : "enabled",
         requiresCredit: true,
         creditCost: 5,
-        upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : tier === "standard" ? "Pro 플랜에서 사용 가능" : undefined,
+        upsellLabel:
+          tier === "trial"
+            ? "스탠다드 플랜에서 사용 가능"
+            : tier === "standard"
+              ? "Pro 플랜에서 사용 가능"
+              : undefined,
         isActive: true,
       });
     }
@@ -255,29 +352,117 @@ function buildDefaultPolicies(): FeaturePolicy[] {
       policies.push({
         featureKey: key,
         membershipCode: tier,
-        accessMode: tier === "pro" || tier === "enterprise" ? "enabled" : "locked",
+        accessMode:
+          tier === "pro" || tier === "enterprise" ? "enabled" : "locked",
         requiresCredit: false,
         creditCost: 0,
-        upsellLabel: tier !== "pro" && tier !== "enterprise" ? "Pro 플랜에서 사용 가능" : undefined,
+        upsellLabel:
+          tier !== "pro" && tier !== "enterprise"
+            ? "Pro 플랜에서 사용 가능"
+            : undefined,
         isActive: true,
       });
     }
 
+    // New industry card policies
+    policies.push(...buildIndustryCardPolicies(tier, industryCardKeys));
+
     // Result actions
     policies.push(
-      { featureKey: FEATURE_KEYS.RESULT_SAVE, membershipCode: tier, accessMode: "enabled", requiresCredit: false, creditCost: 0, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_COPY, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_REGENERATE, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: true, creditCost: 3, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_CONSULTANT_TRANSFER, membershipCode: tier, accessMode: tier === "pro" || tier === "enterprise" ? "enabled" : "locked", requiresCredit: false, creditCost: 0, upsellLabel: tier !== "pro" && tier !== "enterprise" ? "Pro 플랜에서 사용 가능" : undefined, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_EXPORT, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_SHARE, membershipCode: tier, accessMode: tier === "trial" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined, isActive: true },
-      { featureKey: FEATURE_KEYS.RESULT_DELIVER, membershipCode: tier, accessMode: tier === "trial" || tier === "standard" ? "locked" : "enabled", requiresCredit: false, creditCost: 0, upsellLabel: tier === "trial" || tier === "standard" ? "Pro 플랜에서 사용 가능" : undefined, isActive: true },
+      {
+        featureKey: FEATURE_KEYS.RESULT_SAVE,
+        membershipCode: tier,
+        accessMode: "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_COPY,
+        membershipCode: tier,
+        accessMode: tier === "trial" ? "locked" : "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        upsellLabel:
+          tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_REGENERATE,
+        membershipCode: tier,
+        accessMode: tier === "trial" ? "locked" : "enabled",
+        requiresCredit: true,
+        creditCost: 3,
+        upsellLabel:
+          tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_CONSULTANT_TRANSFER,
+        membershipCode: tier,
+        accessMode:
+          tier === "pro" || tier === "enterprise" ? "enabled" : "locked",
+        requiresCredit: false,
+        creditCost: 0,
+        upsellLabel:
+          tier !== "pro" && tier !== "enterprise"
+            ? "Pro 플랜에서 사용 가능"
+            : undefined,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_EXPORT,
+        membershipCode: tier,
+        accessMode: tier === "trial" ? "locked" : "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        upsellLabel:
+          tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_SHARE,
+        membershipCode: tier,
+        accessMode: tier === "trial" ? "locked" : "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        upsellLabel:
+          tier === "trial" ? "스탠다드 플랜에서 사용 가능" : undefined,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.RESULT_DELIVER,
+        membershipCode: tier,
+        accessMode:
+          tier === "trial" || tier === "standard" ? "locked" : "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        upsellLabel:
+          tier === "trial" || tier === "standard"
+            ? "Pro 플랜에서 사용 가능"
+            : undefined,
+        isActive: true,
+      },
     );
 
     // Dashboard views
     policies.push(
-      { featureKey: FEATURE_KEYS.DASHBOARD_MEMBERSHIP_VIEW, membershipCode: tier, accessMode: "enabled", requiresCredit: false, creditCost: 0, isActive: true },
-      { featureKey: FEATURE_KEYS.DASHBOARD_CREDIT_VIEW, membershipCode: tier, accessMode: "enabled", requiresCredit: false, creditCost: 0, isActive: true },
+      {
+        featureKey: FEATURE_KEYS.DASHBOARD_MEMBERSHIP_VIEW,
+        membershipCode: tier,
+        accessMode: "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        isActive: true,
+      },
+      {
+        featureKey: FEATURE_KEYS.DASHBOARD_CREDIT_VIEW,
+        membershipCode: tier,
+        accessMode: "enabled",
+        requiresCredit: false,
+        creditCost: 0,
+        isActive: true,
+      },
     );
   }
 
@@ -310,7 +495,12 @@ export interface UsageEvent {
   organizationId: string;
   userId?: string;
   featureKey: FeatureKey;
-  actionType: "generate" | "regenerate" | "save" | "copy" | "consultant_transfer";
+  actionType:
+    | "generate"
+    | "regenerate"
+    | "save"
+    | "copy"
+    | "consultant_transfer";
   success: boolean;
   creditDelta: number;
   createdAt: string;
