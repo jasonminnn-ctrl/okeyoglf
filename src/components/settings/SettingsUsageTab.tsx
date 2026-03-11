@@ -1,10 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, CreditCard, BarChart3, Lock, CheckCircle2, Eye } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Crown, CreditCard, BarChart3, Lock, CheckCircle2, Eye, HardDrive } from "lucide-react";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { ledgerTypeLabels } from "@/lib/membership";
+import { calculateStorageMetrics, getStorageQuota } from "@/lib/market-research";
 
 /** Feature key groups for summary display */
 const featureGroups = [
