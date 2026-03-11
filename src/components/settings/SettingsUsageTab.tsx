@@ -1,10 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, CreditCard, BarChart3, Lock, CheckCircle2, Eye } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Crown, CreditCard, BarChart3, Lock, CheckCircle2, Eye, HardDrive } from "lucide-react";
 import { useMembership } from "@/contexts/MembershipContext";
+import { useResultStore } from "@/contexts/ResultStoreContext";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { ledgerTypeLabels } from "@/lib/membership";
+import { calculateStorageMetrics, getStorageQuota } from "@/lib/market-research";
 
 /** Feature key groups for summary display */
 const featureGroups = [
@@ -51,8 +54,12 @@ const featureGroups = [
 
 export default function SettingsUsageTab() {
   const { membershipCode, membershipName, membershipDescription, creditBalance, ledger, checkAccess } = useMembership();
+  const { results } = useResultStore();
 
   const recentLedger = ledger.slice(0, 8);
+  const storageMetrics = calculateStorageMetrics(results);
+  const storageQuota = getStorageQuota(membershipCode);
+  const usagePercent = Math.min(100, Math.round((storageMetrics.totalSavedCount / storageQuota.maxResults) * 100));
 
   return (
     <div className="space-y-6">
@@ -176,6 +183,52 @@ export default function SettingsUsageTab() {
               <p className="text-[11px] text-muted-foreground">ℹ️ 기능 활성/제한 정책은 OkeyGolf 운영팀에서 관리합니다. 변경이 필요하시면 담당자에게 문의하세요.</p>
             </CardContent>
           </Card>
+        </CardContent>
+      </Card>
+
+      {/* 저장공간 사용량 */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <HardDrive className="h-4 w-4 text-primary" />
+            저장공간 사용량
+            <Badge className="ml-2 bg-primary/10 text-primary text-[10px]">조회 전용</Badge>
+          </CardTitle>
+          <CardDescription>저장된 결과 수와 추정 사용량을 확인하세요 (localStorage 기준 추정치)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium">{storageMetrics.totalSavedCount}건 저장됨</p>
+              <span className="text-xs text-muted-foreground">{storageQuota.label}</span>
+            </div>
+            <Progress value={usagePercent} className="h-1.5 mb-2" />
+            <p className="text-[10px] text-muted-foreground">약 {storageMetrics.estimatedStorageLabel} 사용 중 (추정치)</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg border border-border/30 p-3 text-center">
+              <p className="text-lg font-bold text-primary">{storageMetrics.totalGenerationCount}</p>
+              <p className="text-[10px] text-muted-foreground">생성 결과</p>
+            </div>
+            <div className="rounded-lg border border-border/30 p-3 text-center">
+              <p className="text-lg font-bold text-primary">{storageMetrics.totalResearchCount}</p>
+              <p className="text-[10px] text-muted-foreground">시장조사</p>
+            </div>
+            <div className="rounded-lg border border-border/30 p-3 text-center">
+              <p className="text-lg font-bold text-primary">{storageMetrics.totalConsultantCount}</p>
+              <p className="text-[10px] text-muted-foreground">컨설턴트</p>
+            </div>
+          </div>
+          {usagePercent >= 80 && (
+            <Card className="bg-amber-500/10 border-amber-500/20">
+              <CardContent className="pt-3 pb-3 flex items-center justify-between">
+                <p className="text-xs text-amber-400">⚠️ 저장공간이 {usagePercent}% 사용 중입니다</p>
+                <Button size="sm" variant="outline" className="text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10">
+                  <Crown className="h-3 w-3" /> 업그레이드 안내
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>

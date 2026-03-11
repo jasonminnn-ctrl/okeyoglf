@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { Bookmark, Bot, Settings2, TrendingUp, Megaphone, Palette, Briefcase, Search, MessageSquare, Filter, Eye, Clock, FileText, Download, Share2, Send } from "lucide-react";
+import { Bookmark, Bot, Settings2, TrendingUp, Megaphone, Palette, Briefcase, Search, MessageSquare, Filter, Eye, Clock, FileText, Download, Share2, Send, HardDrive, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useResultStore, type SavedResult } from "@/contexts/ResultStoreContext";
+import { useMembership } from "@/contexts/MembershipContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import { calculateStorageMetrics, getStorageQuota } from "@/lib/market-research";
+import { toast } from "@/hooks/use-toast";
 
 const categories = [
   { key: "AI 비서 결과", icon: Bot, module: "AI 비서" },
@@ -79,13 +84,38 @@ function DeliveryBadges({ result }: { result: SavedResult }) {
 
 export default function SavedPage() {
   const { label } = useBusinessContext();
-  const { getResultsByCategory, countByCategory } = useResultStore();
+  const { getResultsByCategory, countByCategory, results, deleteResult } = useResultStore();
+  const { membershipCode } = useMembership();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetTitle, setDeleteTargetTitle] = useState<string>("");
+
+  // Storage usage metrics
+  const storageMetrics = calculateStorageMetrics(results);
+  const storageQuota = getStorageQuota(membershipCode);
+  const usagePercent = Math.min(100, Math.round((storageMetrics.totalSavedCount / storageQuota.maxResults) * 100));
 
   const handleOpenDetail = (id: string) => {
     setSelectedResultId(id);
     setDrawerOpen(true);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string, title: string) => {
+    e.stopPropagation();
+    setDeleteTargetId(id);
+    setDeleteTargetTitle(title);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTargetId) {
+      deleteResult(deleteTargetId);
+      setDeleteOpen(false);
+      setDeleteTargetId(null);
+      toast({ title: "삭제 완료", description: "결과가 삭제되었습니다" });
+    }
   };
 
   return (
@@ -97,6 +127,31 @@ export default function SavedPage() {
         </h1>
         <p className="text-muted-foreground text-sm mt-1">저장한 AI 생성 결과를 카테고리별로 관리하고 재열람·재활용하세요</p>
       </div>
+
+      {/* Storage usage summary */}
+      <Card className="bg-card/50 border-border/50">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">저장공간 사용량</span>
+            </div>
+            <span className="text-xs text-muted-foreground">{storageQuota.label}</span>
+          </div>
+          <Progress value={usagePercent} className="h-1.5 mb-2" />
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>{storageMetrics.totalSavedCount}건 / {storageQuota.maxResults === 9999 ? "무제한" : `${storageQuota.maxResults}건`} · 약 {storageMetrics.estimatedStorageLabel}</span>
+            <div className="flex items-center gap-3">
+              <span>생성 {storageMetrics.totalGenerationCount}</span>
+              <span>조사 {storageMetrics.totalResearchCount}</span>
+              <span>컨설턴트 {storageMetrics.totalConsultantCount}</span>
+            </div>
+          </div>
+          {usagePercent >= 80 && usagePercent < 100 && (
+            <p className="text-[10px] text-amber-400 mt-1.5">⚠️ 저장공간이 {usagePercent}% 사용 중입니다. 불필요한 결과를 정리하거나 업그레이드를 고려하세요.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="bg-muted/20 border-border/30">
         <CardContent className="pt-3 pb-3 flex items-center justify-between gap-3">
@@ -124,7 +179,7 @@ export default function SavedPage() {
         </TabsList>
 
         {categories.map((cat) => {
-          const results = getResultsByCategory(cat.key);
+          const catResults = getResultsByCategory(cat.key);
 
           return (
             <TabsContent key={cat.key} value={cat.key}>
@@ -135,13 +190,13 @@ export default function SavedPage() {
                       <cat.icon className="h-4 w-4 text-primary" />
                       {cat.key}
                     </CardTitle>
-                    <Badge variant="outline" className="text-[10px]">{results.length}건</Badge>
+                    <Badge variant="outline" className="text-[10px]">{catResults.length}건</Badge>
                   </div>
                   <CardDescription>{categoryDescriptions[cat.key]}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {results.length > 0 ? (
-                    results.map((r) => (
+                  {catResults.length > 0 ? (
+                    catResults.map((r) => (
                       <div
                         key={r.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors cursor-pointer border border-border/20"
@@ -162,9 +217,19 @@ export default function SavedPage() {
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                          <Eye className="h-3 w-3 mr-1" /> 보기
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                            <Eye className="h-3 w-3 mr-1" /> 보기
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => handleDeleteClick(e, r.id, r.title)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -181,6 +246,7 @@ export default function SavedPage() {
       </Tabs>
 
       <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={selectedResultId} />
+      <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDeleteConfirm} title={deleteTargetTitle} />
     </div>
   );
 }
