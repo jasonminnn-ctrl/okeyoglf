@@ -54,8 +54,12 @@ const featureGroups = [
 
 export default function SettingsUsageTab() {
   const { membershipCode, membershipName, membershipDescription, creditBalance, ledger, checkAccess } = useMembership();
+  const { results } = useResultStore();
 
   const recentLedger = ledger.slice(0, 8);
+  const storageMetrics = calculateStorageMetrics(results);
+  const storageQuota = getStorageQuota(membershipCode);
+  const usagePercent = Math.min(100, Math.round((storageMetrics.totalSavedCount / storageQuota.maxResults) * 100));
 
   return (
     <div className="space-y-6">
