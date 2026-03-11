@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Copy, RefreshCw, MessageSquare, Calendar, Clock, Tag, FolderOpen, Lock, FileText, Download, Share2, Send, History, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, RefreshCw, MessageSquare, Calendar, Clock, Tag, FolderOpen, Lock, FileText, Download, Share2, Send, History, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { toast } from "@/hooks/use-toast";
 import { ExportDialog } from "@/components/ExportDialog";
 import { ShareDialog } from "@/components/ShareDialog";
 import { DeliverDialog } from "@/components/DeliverDialog";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 interface ResultDetailDrawerProps {
   open: boolean;
@@ -29,12 +30,13 @@ const statusColors: Record<string, string> = {
 
 export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetailDrawerProps) {
   const { getResultActions } = useMembership();
-  const { getResultById, markResultRegenerated, markConsultantTransferred } = useResultStore();
+  const { getResultById, markResultRegenerated, markConsultantTransferred, deleteResult } = useResultStore();
 
   const [exportOpen, setExportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const item = resultId ? getResultById(resultId) : undefined;
   if (!item) return null;
@@ -75,6 +77,13 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
     toast({ title: "전담 컨설턴트 전환 완료", description: "요청이 접수되었습니다" });
   };
 
+  const handleDelete = () => {
+    deleteResult(item.id);
+    setDeleteOpen(false);
+    onOpenChange(false);
+    toast({ title: "삭제 완료", description: "결과가 삭제되었습니다" });
+  };
+
   const formatDate = (iso: string) => new Date(iso).toLocaleString("ko-KR");
 
   const exportCount = item.exportFiles?.length ?? 0;
@@ -82,6 +91,9 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
   const deliveryCount = item.deliveryHistory?.length ?? 0;
   const consultantCount = item.consultantTransferHistory?.length ?? 0;
   const historyCount = exportCount + shareCount + deliveryCount + consultantCount;
+
+  // Research metadata display
+  const researchInputs = item.metadata?.researchInputs as Record<string, string> | undefined;
 
   return (
     <>
@@ -106,6 +118,26 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><Tag className="h-3 w-3" /> <span>업종: {item.businessType}</span></div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><FolderOpen className="h-3 w-3" /> <span>{item.category}</span></div>
             </div>
+
+            {/* Research-specific metadata */}
+            {item.type === "research" && researchInputs && (
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="pt-3 pb-3 space-y-1">
+                  <p className="text-[10px] font-medium text-primary mb-1.5">📊 조사 조건</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {researchInputs.businessTypeLabel && <Badge variant="outline" className="text-[9px]">업종: {researchInputs.businessTypeLabel}</Badge>}
+                    {researchInputs.region && <Badge variant="outline" className="text-[9px]">지역: {researchInputs.region}</Badge>}
+                    {researchInputs.keyword && <Badge variant="outline" className="text-[9px]">키워드: {researchInputs.keyword}</Badge>}
+                    {researchInputs.templateTitle && <Badge variant="outline" className="text-[9px]">범위: {researchInputs.templateTitle}</Badge>}
+                    {researchInputs.count && <Badge variant="outline" className="text-[9px]">수집: {researchInputs.count}건</Badge>}
+                  </div>
+                  {researchInputs.purpose && <p className="text-[10px] text-muted-foreground mt-1">목적: {researchInputs.purpose}</p>}
+                  {(item.metadata as Record<string, unknown>)?.externalCollectionPlanned === false && (
+                    <p className="text-[10px] text-amber-400 mt-1">⚠️ 외부 데이터 수집 미연동 — AI 내부 분석 기반 결과</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Tags */}
             {item.tags && item.tags.length > 0 && (
@@ -159,7 +191,6 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                       {historyExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
                     </CollapsibleTrigger>
 
-                    {/* Compact summary always visible */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {exportCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><Download className="h-2.5 w-2.5 mr-1" />내보내기 {exportCount}</Badge>}
                       {shareCount > 0 && <Badge variant="outline" className="text-[9px] h-4"><Share2 className="h-2.5 w-2.5 mr-1" />공유 {shareCount}</Badge>}
@@ -168,7 +199,6 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                     </div>
 
                     <CollapsibleContent className="mt-3 space-y-2">
-                      {/* Export history */}
                       {item.exportFiles && item.exportFiles.length > 0 && (
                         <div className="space-y-1">
                           <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">내보내기</p>
@@ -181,7 +211,6 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                           ))}
                         </div>
                       )}
-                      {/* Share history */}
                       {item.shareHistory && item.shareHistory.length > 0 && (
                         <div className="space-y-1">
                           <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">공유</p>
@@ -194,7 +223,6 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                           ))}
                         </div>
                       )}
-                      {/* Delivery history */}
                       {item.deliveryHistory && item.deliveryHistory.length > 0 && (
                         <div className="space-y-1">
                           <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">전달</p>
@@ -208,7 +236,6 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                           ))}
                         </div>
                       )}
-                      {/* Consultant transfer history */}
                       {item.consultantTransferHistory && item.consultantTransferHistory.length > 0 && (
                         <div className="space-y-1">
                           <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">전담 컨설턴트</p>
@@ -269,6 +296,14 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
                 </Button>
               )}
             </div>
+
+            {/* Delete action */}
+            <Separator />
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground hover:text-destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-3 w-3" /> 삭제
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -277,6 +312,7 @@ export function ResultDetailDrawer({ open, onOpenChange, resultId }: ResultDetai
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={item} />
       <ShareDialog open={shareOpen} onOpenChange={setShareOpen} result={item} />
       <DeliverDialog open={deliverOpen} onOpenChange={setDeliverOpen} result={item} />
+      <DeleteConfirmDialog open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDelete} title={item.title} />
     </>
   );
 }
