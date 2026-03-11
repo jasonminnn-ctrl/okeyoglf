@@ -2,63 +2,13 @@ import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
-import { useMembership } from "@/contexts/MembershipContext";
-import { FEATURE_KEYS } from "@/lib/membership";
-import {
-  Megaphone,
-  PenTool,
-  Calendar,
-  PartyPopper,
-  Share2,
-  BarChart2,
-  Search,
-} from "lucide-react";
-
-const sections = [
-  {
-    key: "마케팅 카피 생성기",
-    icon: PenTool,
-    color: "bg-primary/10 text-primary",
-    url: "/ai-marketing/copy",
-    featureKey: FEATURE_KEYS.MARKETING_COPY,
-  },
-  {
-    key: "이벤트 생성기",
-    icon: PartyPopper,
-    color: "bg-amber-500/10 text-amber-400",
-    featureKey: FEATURE_KEYS.MARKETING_EVENT,
-  },
-  {
-    key: "프로모션 기획",
-    icon: Calendar,
-    color: "bg-blue-500/10 text-blue-400",
-    url: "/ai-marketing/promotion",
-    featureKey: FEATURE_KEYS.MARKETING_PROMOTION,
-  },
-  {
-    key: "채널 운영안",
-    icon: Share2,
-    color: "bg-violet-500/10 text-violet-400",
-    featureKey: FEATURE_KEYS.MARKETING_CHANNEL,
-  },
-  {
-    key: "시즌 캠페인 제안",
-    icon: BarChart2,
-    color: "bg-emerald-500/10 text-emerald-400",
-    featureKey: FEATURE_KEYS.MARKETING_SEASON,
-  },
-  {
-    key: "시장조사 연계",
-    icon: Search,
-    color: "bg-cyan-500/10 text-cyan-400",
-    url: "/market-research",
-    featureKey: FEATURE_KEYS.MARKETING_RESEARCH,
-  },
-] as const;
+import { marketingCards } from "@/lib/industry-cards";
+import { Megaphone, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function AIMarketingPage() {
   const { config } = useBusinessContext();
-  const { checkAccess } = useMembership();
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -75,29 +25,30 @@ export default function AIMarketingPage() {
       <BusinessContextBanner module="AI 마케팅팀" />
 
       <MenuLandingGrid columns={3}>
-        {sections.map((section) => {
-          const access = checkAccess(section.featureKey);
-          if (!access.visible) return null;
-
-          const description =
-            section.key === "시장조사 연계"
-              ? "시장조사 메뉴로 이동해 업종·지역·주제별 조사 결과를 저장하고 비교합니다"
-              : config.marketingExamples[section.key] || "준비 중";
-
+        {marketingCards.map((card) => {
+          const description = config.marketingExamples[card.key] || "준비 중";
           return (
             <MenuLandingCard
-              key={section.key}
-              title={section.key}
+              key={card.key}
+              title={card.key}
               description={description}
-              icon={section.icon}
-              color={section.color}
-              url={"url" in section ? section.url : undefined}
-              access={access}
-              badge={!("url" in section) && access.enabled ? "준비중" : undefined}
+              icon={card.icon}
+              color={card.color}
+              url={card.url}
+              badge={!card.url ? "준비중" : undefined}
             />
           );
         })}
       </MenuLandingGrid>
+
+      {/* 시장조사 약한 연결 — 하단 CTA 수준 */}
+      <div
+        className="flex items-center gap-2 px-4 py-3 rounded-lg bg-muted/20 border border-border/30 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => navigate("/market-research")}
+      >
+        <Search className="h-4 w-4 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">시장조사 결과를 참고하여 마케팅 전략을 세워보세요 →</span>
+      </div>
 
       <ConsultantCTA category="마케팅 지원" />
     </div>
