@@ -426,7 +426,7 @@ const ResultStoreContext = createContext<ResultStoreContextValue | undefined>(un
 // ──────────────────────────────────
 
 const now = () => new Date().toISOString();
-const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const uid = () => crypto.randomUUID();
 
 function buildPlainText(sections: GenerationResultSection[]): string {
   return sections.map((s) => `${s.title}\n${s.content}`).join("\n\n");
