@@ -278,8 +278,11 @@ export default function OperatorCreditTab() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2"><History className="h-4 w-4 text-primary" />크레딧 거래 내역</CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={handleExportLedger}>
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportLedger("csv")}>
                 <Download className="h-3 w-3" />CSV
+              </Button>
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportLedger("xlsx")}>
+                <Download className="h-3 w-3" />XLSX
               </Button>
               <Badge variant="outline" className="text-[10px]">{selectedOrg.ledger.length}건</Badge>
             </div>
