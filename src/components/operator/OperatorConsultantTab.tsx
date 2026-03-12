@@ -207,11 +207,17 @@ export default function OperatorConsultantTab() {
 
       {/* CSV Export buttons */}
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportRequests}>
-          <Download className="h-3 w-3" />요청 목록 CSV
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportRequests("csv")}>
+          <Download className="h-3 w-3" />요청 CSV
         </Button>
-        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportDeliveries}>
-          <Download className="h-3 w-3" />전달 이력 CSV
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportRequests("xlsx")}>
+          <Download className="h-3 w-3" />요청 XLSX
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportDeliveries("csv")}>
+          <Download className="h-3 w-3" />전달 CSV
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportDeliveries("xlsx")}>
+          <Download className="h-3 w-3" />전달 XLSX
         </Button>
       </div>
 
