@@ -1,10 +1,11 @@
 /**
  * 운영자 전용 — 전담 컨설턴트 요청 처리 워크플로우
  * 요청 접수함, 상태관리, 우선순위, 내부 메모, 결과 업로드, 전달 이력
+ * 9단계 잔수정: state 반영 실동작 + CSV export
  */
 
-import { useState } from "react";
-import { Inbox, FileText, StickyNote, Upload, Clock, ChevronRight, AlertCircle, CheckCircle, CircleDot, PauseCircle, Send } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Inbox, FileText, StickyNote, Upload, Clock, ChevronRight, AlertCircle, CheckCircle, CircleDot, PauseCircle, Send, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,11 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
 
 type RequestStatus = "pending" | "in_progress" | "review" | "completed" | "on_hold";
 type Priority = "urgent" | "high" | "normal" | "low";
+
+interface Memo { text: string; author: string; createdAt: string }
+interface Delivery { fileName: string; version: number; deliveredAt: string; method: string }
 
 interface ConsultantRequest {
   id: string;
@@ -30,8 +34,8 @@ interface ConsultantRequest {
   priority: Priority;
   createdAt: string;
   assignee: string | null;
-  memos: { text: string; author: string; createdAt: string }[];
-  deliveries: { fileName: string; version: number; deliveredAt: string; method: string }[];
+  memos: Memo[];
+  deliveries: Delivery[];
 }
 
 const statusConfig: Record<RequestStatus, { label: string; color: string; icon: typeof CircleDot }> = {
@@ -49,66 +53,34 @@ const priorityConfig: Record<Priority, { label: string; color: string }> = {
   low: { label: "낮음", color: "bg-muted text-muted-foreground border-border" },
 };
 
-const mockRequests: ConsultantRequest[] = [
+const initialRequests: ConsultantRequest[] = [
   {
-    id: "req-001",
-    orgName: "그린골프연습장",
-    orgId: "org-001",
-    requestType: "운영 분석 요청",
-    title: "3월 운영 현황 분석 및 개선안 요청",
-    status: "in_progress",
-    priority: "high",
-    createdAt: "2026-03-10T09:00:00Z",
-    assignee: "김컨설턴트",
-    memos: [
-      { text: "기존 3개월 데이터 확인 완료, 분석 보고서 초안 작성 중", author: "김컨설턴트", createdAt: "2026-03-11T14:00:00Z" },
-    ],
+    id: "req-001", orgName: "그린골프연습장", orgId: "org-001", requestType: "운영 분석 요청",
+    title: "3월 운영 현황 분석 및 개선안 요청", status: "in_progress", priority: "high",
+    createdAt: "2026-03-10T09:00:00Z", assignee: "김컨설턴트",
+    memos: [{ text: "기존 3개월 데이터 확인 완료, 분석 보고서 초안 작성 중", author: "김컨설턴트", createdAt: "2026-03-11T14:00:00Z" }],
     deliveries: [],
   },
   {
-    id: "req-002",
-    orgName: "이글아카데미",
-    orgId: "org-003",
-    requestType: "문서 제작 요청",
-    title: "수강생 모집용 제안서 제작",
-    status: "review",
-    priority: "normal",
-    createdAt: "2026-03-08T11:30:00Z",
-    assignee: "박컨설턴트",
+    id: "req-002", orgName: "이글아카데미", orgId: "org-003", requestType: "문서 제작 요청",
+    title: "수강생 모집용 제안서 제작", status: "review", priority: "normal",
+    createdAt: "2026-03-08T11:30:00Z", assignee: "박컨설턴트",
     memos: [
       { text: "초안 완성, 내부 검토 중", author: "박컨설턴트", createdAt: "2026-03-10T16:00:00Z" },
       { text: "디자인 보완 필요 — 디자인팀 협조 요청", author: "김매니저", createdAt: "2026-03-11T09:00:00Z" },
     ],
-    deliveries: [
-      { fileName: "이글아카데미_제안서_v1.pdf", version: 1, deliveredAt: "2026-03-10T17:00:00Z", method: "이메일" },
-    ],
+    deliveries: [{ fileName: "이글아카데미_제안서_v1.pdf", version: 1, deliveredAt: "2026-03-10T17:00:00Z", method: "이메일" }],
   },
   {
-    id: "req-003",
-    orgName: "레이크사이드CC",
-    orgId: "org-002",
-    requestType: "마케팅 검토 요청",
-    title: "봄 시즌 마케팅 전략 검토",
-    status: "pending",
-    priority: "urgent",
-    createdAt: "2026-03-12T08:00:00Z",
-    assignee: null,
-    memos: [],
-    deliveries: [],
+    id: "req-003", orgName: "레이크사이드CC", orgId: "org-002", requestType: "마케팅 검토 요청",
+    title: "봄 시즌 마케팅 전략 검토", status: "pending", priority: "urgent",
+    createdAt: "2026-03-12T08:00:00Z", assignee: null, memos: [], deliveries: [],
   },
   {
-    id: "req-004",
-    orgName: "프로골프샵 강남점",
-    orgId: "org-004",
-    requestType: "PPT 제작 요청",
-    title: "분기 실적 보고 PPT 제작",
-    status: "completed",
-    priority: "normal",
-    createdAt: "2026-03-01T10:00:00Z",
-    assignee: "박컨설턴트",
-    memos: [
-      { text: "최종 전달 완료", author: "박컨설턴트", createdAt: "2026-03-05T15:00:00Z" },
-    ],
+    id: "req-004", orgName: "프로골프샵 강남점", orgId: "org-004", requestType: "PPT 제작 요청",
+    title: "분기 실적 보고 PPT 제작", status: "completed", priority: "normal",
+    createdAt: "2026-03-01T10:00:00Z", assignee: "박컨설턴트",
+    memos: [{ text: "최종 전달 완료", author: "박컨설턴트", createdAt: "2026-03-05T15:00:00Z" }],
     deliveries: [
       { fileName: "프로골프샵_분기보고_v1.pptx", version: 1, deliveredAt: "2026-03-04T14:00:00Z", method: "이메일" },
       { fileName: "프로골프샵_분기보고_v2.pptx", version: 2, deliveredAt: "2026-03-05T14:30:00Z", method: "링크 전달" },
@@ -116,22 +88,82 @@ const mockRequests: ConsultantRequest[] = [
   },
 ];
 
+// CSV columns
+const requestCsvCols: CsvColumn<ConsultantRequest>[] = [
+  { header: "요청ID", accessor: r => r.id },
+  { header: "조직명", accessor: r => r.orgName },
+  { header: "유형", accessor: r => r.requestType },
+  { header: "제목", accessor: r => r.title },
+  { header: "상태", accessor: r => statusConfig[r.status].label },
+  { header: "우선순위", accessor: r => priorityConfig[r.priority].label },
+  { header: "담당자", accessor: r => r.assignee || "미배정" },
+  { header: "메모수", accessor: r => r.memos.length },
+  { header: "전달횟수", accessor: r => r.deliveries.length },
+  { header: "접수일", accessor: r => new Date(r.createdAt).toLocaleString("ko-KR") },
+];
+
+const deliveryCsvCols: CsvColumn<Delivery & { reqTitle: string }>[] = [
+  { header: "요청 제목", accessor: r => r.reqTitle },
+  { header: "파일명", accessor: r => r.fileName },
+  { header: "버전", accessor: r => r.version },
+  { header: "전달 방법", accessor: r => r.method },
+  { header: "전달일", accessor: r => new Date(r.deliveredAt).toLocaleString("ko-KR") },
+];
+
 export default function OperatorConsultantTab() {
+  const [requests, setRequests] = useState<ConsultantRequest[]>(initialRequests);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [newMemo, setNewMemo] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | RequestStatus>("all");
 
-  const selectedRequest = mockRequests.find(r => r.id === selectedRequestId);
-  const filteredRequests = statusFilter === "all" ? mockRequests : mockRequests.filter(r => r.status === statusFilter);
+  const selectedRequest = requests.find(r => r.id === selectedRequestId);
+  const filteredRequests = statusFilter === "all" ? requests : requests.filter(r => r.status === statusFilter);
 
-  const pendingCount = mockRequests.filter(r => r.status === "pending").length;
-  const inProgressCount = mockRequests.filter(r => r.status === "in_progress" || r.status === "review").length;
-  const completedCount = mockRequests.filter(r => r.status === "completed").length;
+  const pendingCount = requests.filter(r => r.status === "pending").length;
+  const inProgressCount = requests.filter(r => r.status === "in_progress" || r.status === "review").length;
+  const completedCount = requests.filter(r => r.status === "completed").length;
+
+  const updateRequest = useCallback((id: string, patch: Partial<ConsultantRequest>) => {
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
+  }, []);
+
+  const handleStatusChange = (newStatus: RequestStatus) => {
+    if (!selectedRequestId) return;
+    updateRequest(selectedRequestId, { status: newStatus });
+    toast({ title: "상태 변경 완료", description: `→ ${statusConfig[newStatus].label}` });
+  };
+
+  const handlePriorityChange = (newPriority: Priority) => {
+    if (!selectedRequestId) return;
+    updateRequest(selectedRequestId, { priority: newPriority });
+    toast({ title: "우선순위 변경", description: `→ ${priorityConfig[newPriority].label}` });
+  };
+
+  const handleAssigneeChange = (assignee: string) => {
+    if (!selectedRequestId) return;
+    updateRequest(selectedRequestId, { assignee: assignee || null });
+  };
 
   const handleAddMemo = () => {
-    if (!newMemo.trim()) return;
-    toast({ title: "메모 추가됨", description: "내부 메모가 기록되었습니다 (데모)" });
+    if (!newMemo.trim() || !selectedRequestId || !selectedRequest) return;
+    const memo: Memo = { text: newMemo.trim(), author: "운영자", createdAt: new Date().toISOString() };
+    updateRequest(selectedRequestId, { memos: [...selectedRequest.memos, memo] });
+    toast({ title: "메모 추가됨" });
     setNewMemo("");
+  };
+
+  const handleExportRequests = () => {
+    const csv = buildCsv(filteredRequests, requestCsvCols);
+    downloadCsv(csv, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast({ title: "CSV 다운로드 완료", description: `${filteredRequests.length}건` });
+  };
+
+  const handleExportDeliveries = () => {
+    const rows = requests.flatMap(r => r.deliveries.map(d => ({ ...d, reqTitle: r.title })));
+    if (rows.length === 0) { toast({ title: "전달 이력 없음", variant: "destructive" }); return; }
+    const csv = buildCsv(rows, deliveryCsvCols);
+    downloadCsv(csv, `전달이력_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast({ title: "CSV 다운로드 완료", description: `${rows.length}건` });
   };
 
   return (
@@ -141,7 +173,7 @@ export default function OperatorConsultantTab() {
         <Card className="bg-card/50 border-border/50">
           <CardContent className="pt-5 pb-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">전체 요청</p>
-            <p className="text-2xl font-bold mt-1">{mockRequests.length}</p>
+            <p className="text-2xl font-bold mt-1">{requests.length}</p>
           </CardContent>
         </Card>
         <Card className="bg-amber-500/5 border-amber-500/20">
@@ -162,6 +194,16 @@ export default function OperatorConsultantTab() {
             <p className="text-2xl font-bold mt-1 text-emerald-400">{completedCount}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* CSV Export buttons */}
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportRequests}>
+          <Download className="h-3 w-3" />요청 목록 CSV
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportDeliveries}>
+          <Download className="h-3 w-3" />전달 이력 CSV
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
@@ -252,19 +294,39 @@ export default function OperatorConsultantTab() {
 
                   <Separator className="opacity-30" />
 
-                  {/* Status change */}
-                  <div className="flex items-center gap-3">
-                    <Label className="text-xs">상태 변경:</Label>
-                    <Select defaultValue={selectedRequest.status} onValueChange={() => toast({ title: "상태 변경됨 (데모)" })}>
-                      <SelectTrigger className="w-[120px] text-xs h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(statusConfig).map(([k, v]) => (
-                          <SelectItem key={k} value={k}>{v.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Label className="text-xs">담당자:</Label>
-                    <Input className="w-[120px] text-xs h-8" placeholder="이름" defaultValue={selectedRequest.assignee || ""} />
+                  {/* Status / Priority / Assignee change — all wired to real state */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs">상태:</Label>
+                      <Select value={selectedRequest.status} onValueChange={(v) => handleStatusChange(v as RequestStatus)}>
+                        <SelectTrigger className="w-[110px] text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusConfig).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs">우선순위:</Label>
+                      <Select value={selectedRequest.priority} onValueChange={(v) => handlePriorityChange(v as Priority)}>
+                        <SelectTrigger className="w-[90px] text-xs h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(priorityConfig).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs">담당자:</Label>
+                      <Input
+                        className="w-[120px] text-xs h-8"
+                        placeholder="이름"
+                        value={selectedRequest.assignee || ""}
+                        onChange={e => handleAssigneeChange(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
