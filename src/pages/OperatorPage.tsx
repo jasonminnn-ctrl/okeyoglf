@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users } from "lucide-react";
+import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3 } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
@@ -7,6 +7,7 @@ import OperatorMembershipTab from "@/components/operator/OperatorMembershipTab";
 import OperatorCreditTab from "@/components/operator/OperatorCreditTab";
 import OperatorOrgManageTab from "@/components/operator/OperatorOrgManageTab";
 import OperatorConsultantTab from "@/components/operator/OperatorConsultantTab";
+import OperatorKpiBoard from "@/components/operator/OperatorKpiBoard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
