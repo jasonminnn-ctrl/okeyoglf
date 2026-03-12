@@ -426,7 +426,7 @@ const ResultStoreContext = createContext<ResultStoreContextValue | undefined>(un
 // ──────────────────────────────────
 
 const now = () => new Date().toISOString();
-const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const uid = () => crypto.randomUUID();
 
 function buildPlainText(sections: GenerationResultSection[]): string {
   return sections.map((s) => `${s.title}\n${s.content}`).join("\n\n");
@@ -547,7 +547,7 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
     if (!original) return undefined;
     const dup: SavedResult = {
       ...original,
-      id: `dup-${uid()}`,
+      id: uid(),
       title: `${original.title} (복사)`,
       status: "임시 저장",
       version: 1,

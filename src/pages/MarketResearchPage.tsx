@@ -162,7 +162,7 @@ export default function MarketResearchPage() {
       return;
     }
 
-    const requestId = `research-${Date.now()}`;
+    const requestId = crypto.randomUUID();
     setCurrentRequestId(requestId);
 
     const request: ResearchRequest = {
@@ -209,7 +209,7 @@ export default function MarketResearchPage() {
   };
 
   const handleSave = () => {
-    const resultId = currentRequestId || `research-${Date.now()}`;
+    const resultId = currentRequestId || crypto.randomUUID();
     saveResult({
       id: resultId,
       type: "research",
@@ -273,7 +273,7 @@ export default function MarketResearchPage() {
       toast({ title: "기능 제한", description: resultActions.consultantTransfer.lockReason || "현재 플랜에서 이용할 수 없습니다", variant: "destructive" });
       return;
     }
-    const resultId = currentRequestId || `research-${Date.now()}`;
+    const resultId = currentRequestId || crypto.randomUUID();
     if (hasResult) handleSave();
     markConsultantTransferred(resultId, {
       id: `ct-${Date.now()}`,
