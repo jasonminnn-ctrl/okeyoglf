@@ -547,7 +547,7 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
     if (!original) return undefined;
     const dup: SavedResult = {
       ...original,
-      id: `dup-${uid()}`,
+      id: uid(),
       title: `${original.title} (복사)`,
       status: "임시 저장",
       version: 1,
