@@ -208,9 +208,9 @@ export default function MarketResearchPage() {
     }, 2000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const resultId = currentRequestId || crypto.randomUUID();
-    saveResult({
+    await saveResult({
       id: resultId,
       type: "research",
       title: `시장조사 — ${selectedTemplate.title} (${researchLabel})`,
@@ -259,12 +259,10 @@ export default function MarketResearchPage() {
       consultantTransferHistory: [],
     });
 
-    // Link request to result in DB (delay to ensure saved_results row exists for FK)
+    // Link request to result in DB — await ensures saved_results row exists before FK reference
     if (currentRequestId) {
       setRequests(prev => prev.map(r => r.id === currentRequestId ? { ...r, linkedResultId: resultId, updatedAt: new Date().toISOString() } : r));
-      setTimeout(() => {
-        updateResearchStatus(currentRequestId, "completed", { resultId });
-      }, 1500);
+      await updateResearchStatus(currentRequestId, "completed", { resultId });
     }
 
     toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다" });
