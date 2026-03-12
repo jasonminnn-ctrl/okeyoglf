@@ -208,7 +208,7 @@ export default function MarketResearchPage() {
     }, 2000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const resultId = currentRequestId || crypto.randomUUID();
     saveResult({
       id: resultId,
