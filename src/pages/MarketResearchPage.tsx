@@ -259,10 +259,12 @@ export default function MarketResearchPage() {
       consultantTransferHistory: [],
     });
 
-    // Link request to result in DB
+    // Link request to result in DB (delay to ensure saved_results row exists for FK)
     if (currentRequestId) {
       setRequests(prev => prev.map(r => r.id === currentRequestId ? { ...r, linkedResultId: resultId, updatedAt: new Date().toISOString() } : r));
-      updateResearchStatus(currentRequestId, "completed", { resultId });
+      setTimeout(() => {
+        updateResearchStatus(currentRequestId, "completed", { resultId });
+      }, 1500);
     }
 
     toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다" });
