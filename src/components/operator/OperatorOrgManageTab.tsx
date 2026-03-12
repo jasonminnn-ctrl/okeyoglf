@@ -17,6 +17,7 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { membershipTiers, type MembershipCode, type AccessMode, type FeatureKey } from "@/lib/membership";
 import { toast } from "@/hooks/use-toast";
 import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 interface OrgOverrideRecord {
   id: string;
