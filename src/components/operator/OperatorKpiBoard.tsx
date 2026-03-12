@@ -199,12 +199,19 @@ export default function OperatorKpiBoard() {
         </Card>
       </div>
 
-      {/* Add KPI button */}
+      {/* Charts toggle + Add KPI */}
       <div className="flex items-center gap-3">
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
           <Plus className="h-3 w-3" />{showForm ? "취소" : "KPI 추가"}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowCharts(!showCharts)} className="gap-1.5 text-xs">
+          {showCharts ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {showCharts ? "차트 접기" : "차트 보기"}
+        </Button>
       </div>
+
+      {/* KPI Charts */}
+      {showCharts && <KpiCharts data={filteredKpis} />}
 
       {/* Add KPI form */}
       {showForm && (
