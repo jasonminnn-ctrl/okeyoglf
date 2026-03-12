@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { Target, TrendingUp, Plus, Edit2, Trash2, BarChart3, Calendar } from "lucide-react";
+import { Target, TrendingUp, Plus, Edit2, Trash2, BarChart3, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
