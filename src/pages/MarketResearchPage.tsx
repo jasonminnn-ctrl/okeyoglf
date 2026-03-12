@@ -210,7 +210,7 @@ export default function MarketResearchPage() {
 
   const handleSave = async () => {
     const resultId = currentRequestId || crypto.randomUUID();
-    saveResult({
+    await saveResult({
       id: resultId,
       type: "research",
       title: `시장조사 — ${selectedTemplate.title} (${researchLabel})`,
