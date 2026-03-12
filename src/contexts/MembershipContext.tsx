@@ -1,43 +1,36 @@
 /**
- * MembershipContext (Phase 5 + 6-1)
+ * MembershipContext (Phase 10 — DB-backed)
  * 
- * Provides membership tier, credit wallet, ledger,
- * feature access checks, and credit operations to the entire app.
- * Currently uses mock/local state; designed for future Supabase migration.
+ * Reads membership from organizations table, credits from credit_wallets/ledger.
+ * Credit operations go through deduct_credit/grant_credit RPC.
  */
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type {
-  MembershipCode, CreditWallet, CreditLedgerEntry, LedgerType,
-  FeatureKey, OrganizationFeatureOverride, UsageEvent,
+  MembershipCode, CreditLedgerEntry, LedgerType,
+  FeatureKey, OrganizationFeatureOverride,
 } from "@/lib/membership";
-import { getMembershipTier, membershipTiers, FEATURE_KEYS } from "@/lib/membership";
+import { getMembershipTier } from "@/lib/membership";
 import { checkFeatureAccess, checkResultActions, type FeatureAccessResult, type ResultActionsAccess } from "@/lib/feature-access";
+import { fetchOrganization } from "@/lib/repositories/organization-repository";
+import { fetchWallet, fetchLedger, deductCreditRPC, grantCreditRPC, type CreditLedgerRow } from "@/lib/repositories/credit-repository";
+import { DEV_ORG_ID } from "@/lib/repositories/constants";
 
 // ──────────────────────────────────
-// Context Interface
+// Context Interface (unchanged public API)
 // ──────────────────────────────────
 
 interface MembershipContextValue {
-  // Membership
   membershipCode: MembershipCode;
   membershipName: string;
   membershipDescription: string;
   setMembershipCode: (code: MembershipCode) => void;
-
-  // Credits
   creditBalance: number;
   ledger: CreditLedgerEntry[];
-
-  // Credit operations
   deductCredit: (amount: number, type: LedgerType, reason: string, module?: string, resultId?: string) => boolean;
   grantCredit: (amount: number, type: LedgerType, reason: string) => void;
-
-  // Feature access
   checkAccess: (featureKey: FeatureKey) => FeatureAccessResult;
   getResultActions: () => ResultActionsAccess;
-
-  // Overrides (operator managed)
   overrides: OrganizationFeatureOverride[];
   addOverride: (override: OrganizationFeatureOverride) => void;
   removeOverride: (featureKey: FeatureKey, membershipCode?: MembershipCode) => void;
@@ -46,18 +39,23 @@ interface MembershipContextValue {
 const MembershipContext = createContext<MembershipContextValue | undefined>(undefined);
 
 // ──────────────────────────────────
-// Mock initial data
+// Helpers: DB row → context shape
 // ──────────────────────────────────
 
-const MOCK_ORG_ID = "org-001";
-
-const initialLedger: CreditLedgerEntry[] = [
-  { id: "led-1", organizationId: MOCK_ORG_ID, type: "manual_grant", amountDelta: 1000, balanceAfter: 1000, reason: "프로 멤버십 월간 크레딧 지급", actorType: "system", createdAt: "2026-03-01T00:00:00Z" },
-  { id: "led-2", organizationId: MOCK_ORG_ID, type: "generate", amountDelta: -3, balanceAfter: 997, reason: "AI 비서 — 오늘의 할 일 생성", relatedModule: "AI 비서", actorType: "user", createdAt: "2026-03-05T10:30:00Z" },
-  { id: "led-3", organizationId: MOCK_ORG_ID, type: "generate", amountDelta: -3, balanceAfter: 994, reason: "AI 마케팅팀 — 마케팅 카피 생성", relatedModule: "AI 마케팅팀", actorType: "user", createdAt: "2026-03-07T14:20:00Z" },
-  { id: "led-4", organizationId: MOCK_ORG_ID, type: "generate", amountDelta: -5, balanceAfter: 989, reason: "AI 운영팀 — AI 진단실 생성", relatedModule: "AI 운영팀", actorType: "user", createdAt: "2026-03-08T09:15:00Z" },
-  { id: "led-5", organizationId: MOCK_ORG_ID, type: "regenerate", amountDelta: -3, balanceAfter: 986, reason: "AI 영업팀 — 응대 문안 재생성", relatedModule: "AI 영업팀", actorType: "user", createdAt: "2026-03-09T16:45:00Z" },
-];
+function ledgerRowToEntry(row: CreditLedgerRow): CreditLedgerEntry {
+  return {
+    id: row.id,
+    organizationId: row.org_id,
+    type: row.type as LedgerType,
+    amountDelta: row.amount_delta,
+    balanceAfter: row.balance_after,
+    reason: row.reason,
+    relatedModule: row.related_module ?? undefined,
+    relatedResultId: row.related_result_id ?? undefined,
+    actorType: row.actor_type as CreditLedgerEntry["actorType"],
+    createdAt: row.created_at,
+  };
+}
 
 // ──────────────────────────────────
 // Provider
@@ -65,20 +63,50 @@ const initialLedger: CreditLedgerEntry[] = [
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
   const [membershipCode, setMembershipCode] = useState<MembershipCode>("pro");
-  const [creditBalance, setCreditBalance] = useState(986);
-  const [ledger, setLedger] = useState<CreditLedgerEntry[]>(initialLedger);
+  const [creditBalance, setCreditBalance] = useState(0);
+  const [ledger, setLedger] = useState<CreditLedgerEntry[]>([]);
   const [overrides, setOverrides] = useState<OrganizationFeatureOverride[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   const tier = getMembershipTier(membershipCode);
+
+  // Initial load from DB
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      const [org, wallet, ledgerRows] = await Promise.all([
+        fetchOrganization(DEV_ORG_ID),
+        fetchWallet(DEV_ORG_ID),
+        fetchLedger(DEV_ORG_ID),
+      ]);
+
+      if (cancelled) return;
+
+      if (org) {
+        setMembershipCode(org.membership_code);
+      }
+      if (wallet) {
+        setCreditBalance(wallet.balance);
+      }
+      setLedger(ledgerRows.map(ledgerRowToEntry));
+      setLoaded(true);
+    }
+
+    init();
+    return () => { cancelled = true; };
+  }, []);
 
   const deductCredit = useCallback((amount: number, type: LedgerType, reason: string, module?: string, resultId?: string): boolean => {
     if (creditBalance < amount) return false;
     const newBalance = creditBalance - amount;
+
+    // Optimistic update
     setCreditBalance(newBalance);
     setLedger(prev => [
       {
         id: `led-${Date.now()}`,
-        organizationId: MOCK_ORG_ID,
+        organizationId: DEV_ORG_ID,
         type,
         amountDelta: -amount,
         balanceAfter: newBalance,
@@ -90,16 +118,26 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       },
       ...prev,
     ]);
+
+    // Fire RPC (async, no await — fire-and-forget with error logging)
+    deductCreditRPC(DEV_ORG_ID, amount, type, reason, module, resultId).then(success => {
+      if (!success) {
+        console.warn("deductCreditRPC returned false — may need to refresh balance");
+      }
+    });
+
     return true;
   }, [creditBalance]);
 
   const grantCredit = useCallback((amount: number, type: LedgerType, reason: string) => {
     const newBalance = creditBalance + amount;
+
+    // Optimistic update
     setCreditBalance(newBalance);
     setLedger(prev => [
       {
         id: `led-${Date.now()}`,
-        organizationId: MOCK_ORG_ID,
+        organizationId: DEV_ORG_ID,
         type,
         amountDelta: amount,
         balanceAfter: newBalance,
@@ -109,6 +147,12 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       },
       ...prev,
     ]);
+
+    grantCreditRPC(DEV_ORG_ID, amount, type, reason).then(success => {
+      if (!success) {
+        console.warn("grantCreditRPC returned false — may need to refresh balance");
+      }
+    });
   }, [creditBalance]);
 
   const checkAccess = useCallback((featureKey: FeatureKey): FeatureAccessResult => {
