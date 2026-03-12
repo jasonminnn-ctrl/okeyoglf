@@ -112,11 +112,16 @@ export default function OperatorOrgManageTab() {
     setForceReason("");
   };
 
-  const handleExportOverrideHistory = () => {
+  const handleExportOverrideHistory = (format: "csv" | "xlsx" = "csv") => {
     if (mockOverrideHistory.length === 0) { toast({ title: "이력 없음", variant: "destructive" }); return; }
-    const csv = buildCsv(mockOverrideHistory, overrideHistoryCsvCols);
-    downloadCsv(csv, `Override이력_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${mockOverrideHistory.length}건` });
+    const baseName = `Override이력_${new Date().toISOString().slice(0, 10)}`;
+    if (format === "xlsx") {
+      downloadXlsx(mockOverrideHistory, overrideHistoryCsvCols, `${baseName}.xlsx`, "Override이력");
+    } else {
+      const csv = buildCsv(mockOverrideHistory, overrideHistoryCsvCols);
+      downloadCsv(csv, `${baseName}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${mockOverrideHistory.length}건` });
   };
 
   return (
