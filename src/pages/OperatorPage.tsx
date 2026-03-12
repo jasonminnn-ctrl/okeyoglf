@@ -245,6 +245,16 @@ export default function OperatorPage() {
           <OperatorConsultantTab />
         </TabsContent>
 
+        {/* Results Board Tab */}
+        <TabsContent value="results" className="space-y-6">
+          <OperatorResultsBoard />
+        </TabsContent>
+
+        {/* Research Board Tab */}
+        <TabsContent value="research" className="space-y-6">
+          <OperatorResearchBoard />
+        </TabsContent>
+
         {/* Integration Tab */}
         <TabsContent value="integration" className="space-y-6">
           <OperatorIntegrationTab />
