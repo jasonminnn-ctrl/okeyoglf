@@ -14,16 +14,17 @@ export async function insertDelivery(
   orgId: string = DEV_ORG_ID,
   extra?: { recipient?: string; status?: string; fileName?: string; note?: string; metadata?: Record<string, unknown> },
 ): Promise<boolean> {
-  const { error } = await supabase.from("result_deliveries").insert({
+  const row: Record<string, unknown> = {
     result_id: resultId,
     org_id: orgId,
     method: method as DbDeliveryMethod,
-    recipient: extra?.recipient,
+    recipient: extra?.recipient ?? null,
     status: extra?.status ?? "sent",
-    file_name: extra?.fileName,
-    note: extra?.note,
-    metadata: (extra?.metadata ?? {}) as Record<string, unknown>,
-  });
+    file_name: extra?.fileName ?? null,
+    note: extra?.note ?? null,
+    metadata: extra?.metadata ?? {},
+  };
+  const { error } = await supabase.from("result_deliveries").insert(row as never);
   if (error) { console.error("insertDelivery error:", error); return false; }
   return true;
 }
@@ -46,14 +47,15 @@ export async function insertAttachment(
   storagePath?: string,
   fileSizeBytes?: number,
 ): Promise<boolean> {
-  const { error } = await supabase.from("result_attachments").insert({
+  const row: Record<string, unknown> = {
     result_id: resultId,
     org_id: orgId,
     file_name: fileName,
     file_type: fileType,
-    storage_path: storagePath,
-    file_size_bytes: fileSizeBytes,
-  });
+    storage_path: storagePath ?? null,
+    file_size_bytes: fileSizeBytes ?? null,
+  };
+  const { error } = await supabase.from("result_attachments").insert(row as never);
   if (error) { console.error("insertAttachment error:", error); return false; }
   return true;
 }

@@ -9,21 +9,19 @@ import type { ResearchRequest, ResearchRequestStatus } from "@/lib/market-resear
 import type { BusinessType } from "@/contexts/BusinessContext";
 
 // ── Status mapping ──
-const STATUS_TO_DB = {
+const STATUS_TO_DB: Record<string, string> = {
   requested: "requested",
   processing_placeholder: "processing",
   completed: "completed",
   consultant_handoff: "consultant_handoff",
-} as const;
-
-type DbResearchStatus = "requested" | "processing" | "completed" | "consultant_handoff" | "failed";
+};
 
 const STATUS_FROM_DB: Record<string, ResearchRequestStatus> = {
   requested: "requested",
   processing: "processing_placeholder",
   completed: "completed",
   consultant_handoff: "consultant_handoff",
-  failed: "requested", // fallback
+  failed: "requested",
 };
 
 // ── Row → ResearchRequest ──
@@ -63,7 +61,7 @@ export async function fetchResearchRequests(orgId: string = DEV_ORG_ID): Promise
 
 // ── Insert ──
 export async function insertResearchRequest(req: ResearchRequest, orgId: string = DEV_ORG_ID): Promise<boolean> {
-  const payload: Record<string, unknown> = {
+  const payload = {
     businessType: req.businessType,
     businessTypeLabel: req.businessTypeLabel,
     region: req.region,
@@ -78,9 +76,9 @@ export async function insertResearchRequest(req: ResearchRequest, orgId: string 
     sourceSummary: req.sourceSummary,
   };
 
-  const dbStatus = (STATUS_TO_DB[req.status as keyof typeof STATUS_TO_DB] ?? "requested") as DbResearchStatus;
+  const dbStatus = STATUS_TO_DB[req.status] ?? "requested";
 
-  const { error } = await supabase.from("research_requests").insert({
+  const row: Record<string, unknown> = {
     org_id: orgId,
     query: `${req.businessTypeLabel} ${req.scope} ${req.keyword}`.trim(),
     research_type: req.scope,
@@ -88,7 +86,9 @@ export async function insertResearchRequest(req: ResearchRequest, orgId: string 
     request_payload: payload,
     result_id: req.linkedResultId ?? null,
     requested_at: req.createdAt,
-  });
+  };
+
+  const { error } = await supabase.from("research_requests").insert(row as never);
   if (error) { console.error("insertResearchRequest error:", error); return false; }
   return true;
 }
@@ -99,7 +99,7 @@ export async function updateResearchStatus(
   status: ResearchRequestStatus,
   extra?: { resultId?: string; resultPayload?: Record<string, unknown>; sourceSummary?: string },
 ): Promise<boolean> {
-  const dbStatus = (STATUS_TO_DB[status as keyof typeof STATUS_TO_DB] ?? "requested") as DbResearchStatus;
+  const dbStatus = STATUS_TO_DB[status] ?? "requested";
   const update: Record<string, unknown> = { status: dbStatus };
 
   if (status === "completed" || status === "consultant_handoff") {
@@ -117,7 +117,7 @@ export async function updateResearchStatus(
     update.request_payload = { ...prev, sourceSummary: extra.sourceSummary };
   }
 
-  const { error } = await supabase.from("research_requests").update(update).eq("id", id);
+  const { error } = await supabase.from("research_requests").update(update as never).eq("id", id);
   if (error) { console.error("updateResearchStatus error:", error); return false; }
   return true;
 }
