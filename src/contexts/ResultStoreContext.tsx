@@ -4,88 +4,13 @@
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import type { BusinessContextSummary, GenerationResultSection } from "@/lib/ai-generation";
 import { fetchResults, upsertResult, softDeleteResult, updateResultStatus as repoUpdateStatus, insertDeliveryRecord, insertConsultantRequest as repoInsertConsultant } from "@/lib/repositories/result-repository";
 import { DEV_ORG_ID } from "@/lib/repositories/constants";
 
-// ──────────────────────────────────
-// Status & Types (unchanged public API)
-// ──────────────────────────────────
-
-export type ResultStatus = "임시 저장" | "검토 필요" | "완료" | "전달 완료" | "보관됨";
-export type ResultType = "generation" | "research" | "consultant" | "manual";
-
-export interface AttachmentMeta {
-  id: string;
-  fileName: string;
-  fileType: string;
-  url?: string;
-  addedAt: string;
-}
-
-export interface ExportFileRecord {
-  id: string;
-  format: "pdf" | "doc" | "ppt" | "txt" | "csv";
-  fileName: string;
-  exportedAt: string;
-  exportedBy?: string;
-}
-
-export interface ShareRecord {
-  id: string;
-  method: "link" | "email" | "kakao" | "internal" | "copy_text" | "link_placeholder" | "internal_placeholder";
-  sharedAt: string;
-  sharedTo?: string;
-  note?: string;
-}
-
-export interface DeliveryRecord {
-  id: string;
-  channel: "email" | "kakao" | "sms" | "internal";
-  deliveredAt: string;
-  recipient?: string;
-  status: "sent" | "delivered" | "failed";
-  note?: string;
-}
-
-export interface ConsultantTransferRecord {
-  id: string;
-  transferredAt: string;
-  requestNote?: string;
-  status: "requested" | "in_progress" | "completed" | "cancelled";
-  consultantNote?: string;
-}
-
-export interface SavedResult {
-  id: string;
-  type: ResultType;
-  title: string;
-  category: string;
-  businessType: string;
-  createdAt: string;
-  updatedAt: string;
-  status: ResultStatus;
-  sections: GenerationResultSection[];
-  plainText?: string;
-  sourceTool?: string;
-  sourceMenu?: string;
-  module?: string;
-  subtool?: string;
-  referenceId?: string;
-  tags?: string[];
-  outputFormat?: string;
-  version?: number;
-  regeneratedFromId?: string;
-  contextSummary?: BusinessContextSummary;
-  sourceNote?: string;
-  referenceNote?: string;
-  attachments?: AttachmentMeta[];
-  exportFiles?: ExportFileRecord[];
-  shareHistory?: ShareRecord[];
-  deliveryHistory?: DeliveryRecord[];
-  consultantTransferHistory?: ConsultantTransferRecord[];
-  metadata?: Record<string, unknown>;
-}
+// Re-export all types from shared file for backward compatibility
+export type { ResultStatus, ResultType, AttachmentMeta, ExportFileRecord, ShareRecord, DeliveryRecord, ConsultantTransferRecord, SavedResult } from "@/lib/result-types";
+import type { SavedResult, ResultStatus, ResultType, ExportFileRecord, ShareRecord, DeliveryRecord, ConsultantTransferRecord } from "@/lib/result-types";
+import type { GenerationResultSection } from "@/lib/ai-generation";
 
 // ──────────────────────────────────
 // localStorage import helpers
