@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { Target, TrendingUp, Plus, Edit2, Trash2, BarChart3, Calendar } from "lucide-react";
+import { Target, TrendingUp, Plus, Edit2, Trash2, BarChart3, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import DataBoard, { type DataBoardColumn } from "./DataBoard";
 import OrgBranchFilter, { type OrgFilterState } from "./OrgBranchFilter";
+import KpiCharts from "./KpiCharts";
 
 type KpiStatus = "on_track" | "at_risk" | "behind" | "achieved";
 
@@ -58,6 +59,7 @@ export default function OperatorKpiBoard() {
   const [kpis, setKpis] = useState<KpiItem[]>(initialKpis);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [orgFilter, setOrgFilter] = useState<OrgFilterState>({ search: "", industry: "전체", membership: "전체" });
+  const [showCharts, setShowCharts] = useState(true);
 
   // New KPI form
   const [showForm, setShowForm] = useState(false);
@@ -197,12 +199,19 @@ export default function OperatorKpiBoard() {
         </Card>
       </div>
 
-      {/* Add KPI button */}
+      {/* Charts toggle + Add KPI */}
       <div className="flex items-center gap-3">
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
           <Plus className="h-3 w-3" />{showForm ? "취소" : "KPI 추가"}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowCharts(!showCharts)} className="gap-1.5 text-xs">
+          {showCharts ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {showCharts ? "차트 접기" : "차트 보기"}
+        </Button>
       </div>
+
+      {/* KPI Charts */}
+      {showCharts && <KpiCharts data={filteredKpis} />}
 
       {/* Add KPI form */}
       {showForm && (

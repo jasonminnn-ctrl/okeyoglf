@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3 } from "lucide-react";
+import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3, Search, FileBarChart } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
@@ -8,6 +8,8 @@ import OperatorCreditTab from "@/components/operator/OperatorCreditTab";
 import OperatorOrgManageTab from "@/components/operator/OperatorOrgManageTab";
 import OperatorConsultantTab from "@/components/operator/OperatorConsultantTab";
 import OperatorKpiBoard from "@/components/operator/OperatorKpiBoard";
+import OperatorResultsBoard from "@/components/operator/OperatorResultsBoard";
+import OperatorResearchBoard from "@/components/operator/OperatorResearchBoard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -82,6 +84,8 @@ export default function OperatorPage() {
           <TabsTrigger value="ai-policy" className="text-xs px-3 py-1.5 gap-1.5"><ShieldCheck className="h-3 w-3" />AI 정책</TabsTrigger>
           <TabsTrigger value="system" className="text-xs px-3 py-1.5 gap-1.5"><Cpu className="h-3 w-3" />시스템 운영</TabsTrigger>
           <TabsTrigger value="consultant" className="text-xs px-3 py-1.5 gap-1.5"><MessageSquare className="h-3 w-3" />컨설턴트</TabsTrigger>
+          <TabsTrigger value="results" className="text-xs px-3 py-1.5 gap-1.5"><FileBarChart className="h-3 w-3" />결과 보드</TabsTrigger>
+          <TabsTrigger value="research" className="text-xs px-3 py-1.5 gap-1.5"><Search className="h-3 w-3" />시장조사</TabsTrigger>
           <TabsTrigger value="integration" className="text-xs px-3 py-1.5 gap-1.5"><Link2 className="h-3 w-3" />외부 연동</TabsTrigger>
         </TabsList>
 
@@ -239,6 +243,16 @@ export default function OperatorPage() {
         {/* Consultant Tab */}
         <TabsContent value="consultant" className="space-y-6">
           <OperatorConsultantTab />
+        </TabsContent>
+
+        {/* Results Board Tab */}
+        <TabsContent value="results" className="space-y-6">
+          <OperatorResultsBoard />
+        </TabsContent>
+
+        {/* Research Board Tab */}
+        <TabsContent value="research" className="space-y-6">
+          <OperatorResearchBoard />
         </TabsContent>
 
         {/* Integration Tab */}
