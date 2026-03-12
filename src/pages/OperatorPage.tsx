@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3 } from "lucide-react";
+import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3, Search, FileBarChart } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
