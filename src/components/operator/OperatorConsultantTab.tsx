@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 type RequestStatus = "pending" | "in_progress" | "review" | "completed" | "on_hold";
 type Priority = "urgent" | "high" | "normal" | "low";
