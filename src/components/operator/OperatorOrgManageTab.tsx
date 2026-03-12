@@ -17,6 +17,7 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { membershipTiers, type MembershipCode, type AccessMode, type FeatureKey } from "@/lib/membership";
 import { toast } from "@/hooks/use-toast";
 import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 interface OrgOverrideRecord {
   id: string;
@@ -111,11 +112,16 @@ export default function OperatorOrgManageTab() {
     setForceReason("");
   };
 
-  const handleExportOverrideHistory = () => {
+  const handleExportOverrideHistory = (format: "csv" | "xlsx" = "csv") => {
     if (mockOverrideHistory.length === 0) { toast({ title: "이력 없음", variant: "destructive" }); return; }
-    const csv = buildCsv(mockOverrideHistory, overrideHistoryCsvCols);
-    downloadCsv(csv, `Override이력_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${mockOverrideHistory.length}건` });
+    const baseName = `Override이력_${new Date().toISOString().slice(0, 10)}`;
+    if (format === "xlsx") {
+      downloadXlsx(mockOverrideHistory, overrideHistoryCsvCols, `${baseName}.xlsx`, "Override이력");
+    } else {
+      const csv = buildCsv(mockOverrideHistory, overrideHistoryCsvCols);
+      downloadCsv(csv, `${baseName}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${mockOverrideHistory.length}건` });
   };
 
   return (
@@ -249,9 +255,14 @@ export default function OperatorOrgManageTab() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />예외 처리 이력</CardTitle>
-            <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={handleExportOverrideHistory}>
-              <Download className="h-3 w-3" />CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportOverrideHistory("csv")}>
+                <Download className="h-3 w-3" />CSV
+              </Button>
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportOverrideHistory("xlsx")}>
+                <Download className="h-3 w-3" />XLSX
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

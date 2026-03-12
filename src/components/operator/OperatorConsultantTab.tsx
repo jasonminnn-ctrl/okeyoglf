@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 type RequestStatus = "pending" | "in_progress" | "review" | "completed" | "on_hold";
 type Priority = "urgent" | "high" | "normal" | "low";
@@ -152,18 +153,26 @@ export default function OperatorConsultantTab() {
     setNewMemo("");
   };
 
-  const handleExportRequests = () => {
-    const csv = buildCsv(filteredRequests, requestCsvCols);
-    downloadCsv(csv, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${filteredRequests.length}건` });
+  const handleExportRequests = (format: "csv" | "xlsx" = "csv") => {
+    if (format === "xlsx") {
+      downloadXlsx(filteredRequests, requestCsvCols, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.xlsx`, "요청목록");
+    } else {
+      const csv = buildCsv(filteredRequests, requestCsvCols);
+      downloadCsv(csv, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${filteredRequests.length}건` });
   };
 
-  const handleExportDeliveries = () => {
+  const handleExportDeliveries = (format: "csv" | "xlsx" = "csv") => {
     const rows = requests.flatMap(r => r.deliveries.map(d => ({ ...d, reqTitle: r.title })));
     if (rows.length === 0) { toast({ title: "전달 이력 없음", variant: "destructive" }); return; }
-    const csv = buildCsv(rows, deliveryCsvCols);
-    downloadCsv(csv, `전달이력_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${rows.length}건` });
+    if (format === "xlsx") {
+      downloadXlsx(rows, deliveryCsvCols, `전달이력_${new Date().toISOString().slice(0, 10)}.xlsx`, "전달이력");
+    } else {
+      const csv = buildCsv(rows, deliveryCsvCols);
+      downloadCsv(csv, `전달이력_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${rows.length}건` });
   };
 
   return (
@@ -198,11 +207,17 @@ export default function OperatorConsultantTab() {
 
       {/* CSV Export buttons */}
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportRequests}>
-          <Download className="h-3 w-3" />요청 목록 CSV
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportRequests("csv")}>
+          <Download className="h-3 w-3" />요청 CSV
         </Button>
-        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExportDeliveries}>
-          <Download className="h-3 w-3" />전달 이력 CSV
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportRequests("xlsx")}>
+          <Download className="h-3 w-3" />요청 XLSX
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportDeliveries("csv")}>
+          <Download className="h-3 w-3" />전달 CSV
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleExportDeliveries("xlsx")}>
+          <Download className="h-3 w-3" />전달 XLSX
         </Button>
       </div>
 

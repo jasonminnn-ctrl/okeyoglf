@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users } from "lucide-react";
+import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3 } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
@@ -7,6 +7,7 @@ import OperatorMembershipTab from "@/components/operator/OperatorMembershipTab";
 import OperatorCreditTab from "@/components/operator/OperatorCreditTab";
 import OperatorOrgManageTab from "@/components/operator/OperatorOrgManageTab";
 import OperatorConsultantTab from "@/components/operator/OperatorConsultantTab";
+import OperatorKpiBoard from "@/components/operator/OperatorKpiBoard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,6 +74,7 @@ export default function OperatorPage() {
       <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/30 p-1">
           <TabsTrigger value="dashboard" className="text-xs px-3 py-1.5 gap-1.5"><Activity className="h-3 w-3" />시스템 현황</TabsTrigger>
+          <TabsTrigger value="kpi" className="text-xs px-3 py-1.5 gap-1.5"><BarChart3 className="h-3 w-3" />KPI 보드</TabsTrigger>
           <TabsTrigger value="membership" className="text-xs px-3 py-1.5 gap-1.5"><Crown className="h-3 w-3" />멤버십 정책</TabsTrigger>
           <TabsTrigger value="credit" className="text-xs px-3 py-1.5 gap-1.5"><Wallet className="h-3 w-3" />크레딧 운영</TabsTrigger>
           <TabsTrigger value="org-manage" className="text-xs px-3 py-1.5 gap-1.5"><Users className="h-3 w-3" />조직별 관리</TabsTrigger>
@@ -183,6 +185,11 @@ export default function OperatorPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* KPI Board Tab */}
+        <TabsContent value="kpi" className="space-y-6">
+          <OperatorKpiBoard />
         </TabsContent>
 
         {/* Membership Tab */}
