@@ -126,7 +126,7 @@ export default function OperatorCreditTab() {
     if (actionType === "grant") {
       success = await grantCreditRPC(selectedOrgId, amt, "manual_grant", reason.trim());
     } else {
-      success = await deductCreditRPC(selectedOrgId, amt, "manual_deduct", reason.trim());
+      success = await deductCreditRPC(selectedOrgId, amt, "manual_deduct", reason.trim(), undefined, undefined, "operator");
     }
 
     if (success) {
