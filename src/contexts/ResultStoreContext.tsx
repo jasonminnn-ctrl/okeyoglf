@@ -496,24 +496,27 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [results, loaded]);
 
-  const saveResult = useCallback((result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }) => {
+  const saveResult = useCallback(async (result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }): Promise<void> => {
     const timestamp = now();
+    const plainText = result.plainText ?? buildPlainText(result.sections);
+    let saved: SavedResult;
+
     setResults((prev) => {
       const existing = prev.findIndex((r) => r.id === result.id);
       const version = result.version ?? 1;
-      const plainText = result.plainText ?? buildPlainText(result.sections);
-      let saved: SavedResult;
       if (existing >= 0) {
         saved = { ...result, version: (prev[existing].version ?? 1) + 1, plainText, updatedAt: timestamp };
         const updated = [...prev];
         updated[existing] = saved;
-        void upsertResult(saved, DEV_ORG_ID);
         return updated;
       }
       saved = { ...result, version, plainText, updatedAt: timestamp };
-      void upsertResult(saved, DEV_ORG_ID);
       return [saved, ...prev];
     });
+
+    // Await DB persistence so callers can rely on the row existing
+    const finalSaved: SavedResult = { ...result, version: result.version ?? 1, plainText, updatedAt: timestamp } as SavedResult;
+    await upsertResult(finalSaved, DEV_ORG_ID);
   }, []);
 
   const updateResult = useCallback((id: string, patch: Partial<SavedResult>) => {
