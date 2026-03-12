@@ -400,7 +400,7 @@ async function insertDeliveryRecord(
 
 interface ResultStoreContextValue {
   results: SavedResult[];
-  saveResult: (result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }) => void;
+  saveResult: (result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }) => Promise<void>;
   updateResult: (id: string, patch: Partial<SavedResult>) => void;
   getResultsByCategory: (category: string) => SavedResult[];
   getResultsByType: (type: ResultType) => SavedResult[];
