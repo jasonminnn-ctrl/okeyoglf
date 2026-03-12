@@ -33,13 +33,13 @@ export async function insertConsultantRequest(
   orgId: string,
   resultId: string | null,
   requestNote?: string,
-  requestType: string = "request",
+  requestType: "request" | "ppt" | "analysis" | "review" | "custom" = "request",
 ): Promise<boolean> {
   const { error } = await supabase.from("consultant_requests").insert({
     org_id: orgId,
     result_id: resultId,
     request_type: requestType,
-    status: "requested",
+    status: "requested" as const,
     request_note: requestNote,
   });
   if (error) { console.error("insertConsultantRequest error:", error); return false; }
@@ -47,7 +47,10 @@ export async function insertConsultantRequest(
 }
 
 export async function updateConsultantStatus(id: string, status: string, note?: string): Promise<boolean> {
-  const update: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+  const update: Record<string, unknown> = {
+    status: status as "requested" | "in_progress" | "completed" | "cancelled",
+    updated_at: new Date().toISOString(),
+  };
   if (note !== undefined) update.consultant_note = note;
   const { error } = await supabase.from("consultant_requests").update(update).eq("id", id);
   if (error) { console.error("updateConsultantStatus error:", error); return false; }

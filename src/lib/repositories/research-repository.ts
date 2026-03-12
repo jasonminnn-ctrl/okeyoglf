@@ -6,14 +6,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DEV_ORG_ID } from "./constants";
 import type { ResearchRequest, ResearchRequestStatus } from "@/lib/market-research";
+import type { BusinessType } from "@/contexts/BusinessContext";
 
 // ── Status mapping ──
-const STATUS_TO_DB: Record<string, string> = {
+const STATUS_TO_DB = {
   requested: "requested",
   processing_placeholder: "processing",
   completed: "completed",
   consultant_handoff: "consultant_handoff",
-};
+} as const;
+
+type DbResearchStatus = "requested" | "processing" | "completed" | "consultant_handoff" | "failed";
 
 const STATUS_FROM_DB: Record<string, ResearchRequestStatus> = {
   requested: "requested",
@@ -31,7 +34,7 @@ function rowToRequest(row: Record<string, unknown>): ResearchRequest {
     createdAt: row.requested_at as string,
     updatedAt: (row.completed_at as string) ?? (row.requested_at as string),
     status: STATUS_FROM_DB[row.status as string] ?? "requested",
-    businessType: (payload.businessType as string) ?? "",
+    businessType: (payload.businessType as BusinessType) ?? "indoor",
     businessTypeLabel: (payload.businessTypeLabel as string) ?? "",
     region: (payload.region as string) ?? "",
     keyword: (payload.keyword as string) ?? "",
@@ -60,7 +63,7 @@ export async function fetchResearchRequests(orgId: string = DEV_ORG_ID): Promise
 
 // ── Insert ──
 export async function insertResearchRequest(req: ResearchRequest, orgId: string = DEV_ORG_ID): Promise<boolean> {
-  const payload = {
+  const payload: Record<string, unknown> = {
     businessType: req.businessType,
     businessTypeLabel: req.businessTypeLabel,
     region: req.region,
@@ -75,12 +78,13 @@ export async function insertResearchRequest(req: ResearchRequest, orgId: string 
     sourceSummary: req.sourceSummary,
   };
 
+  const dbStatus = (STATUS_TO_DB[req.status as keyof typeof STATUS_TO_DB] ?? "requested") as DbResearchStatus;
+
   const { error } = await supabase.from("research_requests").insert({
-    id: req.id,
     org_id: orgId,
     query: `${req.businessTypeLabel} ${req.scope} ${req.keyword}`.trim(),
     research_type: req.scope,
-    status: STATUS_TO_DB[req.status] ?? "requested",
+    status: dbStatus,
     request_payload: payload,
     result_id: req.linkedResultId ?? null,
     requested_at: req.createdAt,
@@ -95,22 +99,21 @@ export async function updateResearchStatus(
   status: ResearchRequestStatus,
   extra?: { resultId?: string; resultPayload?: Record<string, unknown>; sourceSummary?: string },
 ): Promise<boolean> {
-  const update: Record<string, unknown> = {
-    status: STATUS_TO_DB[status] ?? "requested",
-  };
+  const dbStatus = (STATUS_TO_DB[status as keyof typeof STATUS_TO_DB] ?? "requested") as DbResearchStatus;
+  const update: Record<string, unknown> = { status: dbStatus };
+
   if (status === "completed" || status === "consultant_handoff") {
     update.completed_at = new Date().toISOString();
   }
   if (extra?.resultId) update.result_id = extra.resultId;
   if (extra?.resultPayload) update.result_payload = extra.resultPayload;
   if (extra?.sourceSummary) {
-    // Merge into request_payload
     const { data: existing } = await supabase
       .from("research_requests")
       .select("request_payload")
       .eq("id", id)
       .maybeSingle();
-    const prev = (existing?.request_payload ?? {}) as Record<string, unknown>;
+    const prev = ((existing?.request_payload as Record<string, unknown>) ?? {});
     update.request_payload = { ...prev, sourceSummary: extra.sourceSummary };
   }
 

@@ -6,6 +6,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DEV_ORG_ID } from "./constants";
 
+type DbDeliveryMethod = "copy_text" | "email" | "export_csv" | "export_doc" | "export_pdf" | "export_ppt" | "export_txt" | "internal" | "kakao" | "link" | "sms";
+
 export async function insertDelivery(
   resultId: string,
   method: string,
@@ -15,12 +17,12 @@ export async function insertDelivery(
   const { error } = await supabase.from("result_deliveries").insert({
     result_id: resultId,
     org_id: orgId,
-    method,
+    method: method as DbDeliveryMethod,
     recipient: extra?.recipient,
     status: extra?.status ?? "sent",
     file_name: extra?.fileName,
     note: extra?.note,
-    metadata: extra?.metadata ?? {},
+    metadata: (extra?.metadata ?? {}) as Record<string, unknown>,
   });
   if (error) { console.error("insertDelivery error:", error); return false; }
   return true;

@@ -51,6 +51,8 @@ export async function fetchLedger(orgId: string = DEV_ORG_ID, limit = 100): Prom
   return (data ?? []) as CreditLedgerRow[];
 }
 
+type LedgerTypeEnum = "admin_adjust" | "auto_grant" | "bonus" | "consultant" | "expire" | "export" | "generate" | "manual_deduct" | "manual_grant" | "refund" | "regenerate" | "research";
+
 export async function deductCreditRPC(
   orgId: string,
   amount: number,
@@ -62,7 +64,7 @@ export async function deductCreditRPC(
   const { data, error } = await supabase.rpc("deduct_credit", {
     _org_id: orgId,
     _amount: amount,
-    _type: type,
+    _type: type as LedgerTypeEnum,
     _reason: reason,
     _module: module ?? null,
     _result_id: resultId ?? null,
@@ -80,7 +82,7 @@ export async function grantCreditRPC(
   const { data, error } = await supabase.rpc("grant_credit", {
     _org_id: orgId,
     _amount: amount,
-    _type: type,
+    _type: type as LedgerTypeEnum,
     _reason: reason,
   });
   if (error) { console.error("grantCreditRPC error:", error); return false; }
