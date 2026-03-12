@@ -187,6 +187,11 @@ export default function OperatorPage() {
           </Card>
         </TabsContent>
 
+        {/* KPI Board Tab */}
+        <TabsContent value="kpi" className="space-y-6">
+          <OperatorKpiBoard />
+        </TabsContent>
+
         {/* Membership Tab */}
         <TabsContent value="membership" className="space-y-6">
           <OperatorMembershipTab />
