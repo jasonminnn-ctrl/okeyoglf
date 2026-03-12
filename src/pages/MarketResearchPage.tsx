@@ -209,7 +209,7 @@ export default function MarketResearchPage() {
   };
 
   const handleSave = () => {
-    const resultId = currentRequestId || `research-${Date.now()}`;
+    const resultId = currentRequestId || crypto.randomUUID();
     saveResult({
       id: resultId,
       type: "research",
