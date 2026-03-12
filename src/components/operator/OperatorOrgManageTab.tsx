@@ -255,9 +255,14 @@ export default function OperatorOrgManageTab() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />예외 처리 이력</CardTitle>
-            <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={handleExportOverrideHistory}>
-              <Download className="h-3 w-3" />CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportOverrideHistory("csv")}>
+                <Download className="h-3 w-3" />CSV
+              </Button>
+              <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={() => handleExportOverrideHistory("xlsx")}>
+                <Download className="h-3 w-3" />XLSX
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
