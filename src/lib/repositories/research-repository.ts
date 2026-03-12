@@ -79,6 +79,7 @@ export async function insertResearchRequest(req: ResearchRequest, orgId: string 
   const dbStatus = STATUS_TO_DB[req.status] ?? "requested";
 
   const row: Record<string, unknown> = {
+    id: req.id,
     org_id: orgId,
     query: `${req.businessTypeLabel} ${req.scope} ${req.keyword}`.trim(),
     research_type: req.scope,
