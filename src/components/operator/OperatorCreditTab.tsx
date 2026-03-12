@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ledgerTypeLabels, type LedgerType } from "@/lib/membership";
 import { toast } from "@/hooks/use-toast";
 import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 interface OrgLedgerEntry {
   id: string;
