@@ -139,12 +139,17 @@ export default function OperatorCreditTab() {
     setReason("");
   }, [amount, reason, actionType, selectedOrgId]);
 
-  const handleExportLedger = () => {
+  const handleExportLedger = (format: "csv" | "xlsx" = "csv") => {
     const rows = selectedOrg.ledger.map(e => ({ ...e, orgName: selectedOrg.name }));
     if (rows.length === 0) { toast({ title: "이력 없음", variant: "destructive" }); return; }
-    const csv = buildCsv(rows, ledgerCsvCols);
-    downloadCsv(csv, `크레딧이력_${selectedOrg.name}_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${rows.length}건` });
+    const baseName = `크레딧이력_${selectedOrg.name}_${new Date().toISOString().slice(0, 10)}`;
+    if (format === "xlsx") {
+      downloadXlsx(rows, ledgerCsvCols, `${baseName}.xlsx`, "크레딧이력");
+    } else {
+      const csv = buildCsv(rows, ledgerCsvCols);
+      downloadCsv(csv, `${baseName}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${rows.length}건` });
   };
 
   return (
