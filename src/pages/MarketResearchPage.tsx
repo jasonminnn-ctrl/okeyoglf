@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Loader2, Lock, Info, Clock, History, ChevronRight, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
   type ResearchRequestStatus,
   type ResearchTemplate,
 } from "@/lib/market-research";
+import { fetchResearchRequests, insertResearchRequest, updateResearchStatus } from "@/lib/repositories/research-repository";
 
 // ──────────────────────────────────
 // Research Inputs
@@ -50,18 +51,16 @@ function formatDate(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
-const REQUESTS_STORAGE_KEY = "okeygolf_research_requests";
+// One-time localStorage import
+const LS_KEY = "okeygolf_research_requests";
+const LS_IMPORT_FLAG = "okeygolf_research_imported";
 
-function loadRequests(): ResearchRequest[] {
+function loadLocalRequests(): ResearchRequest[] {
   try {
-    const raw = localStorage.getItem(REQUESTS_STORAGE_KEY);
+    const raw = localStorage.getItem(LS_KEY);
     if (!raw) return [];
     return JSON.parse(raw) as ResearchRequest[];
   } catch { return []; }
-}
-
-function saveRequests(requests: ResearchRequest[]) {
-  try { localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(requests)); } catch {}
 }
 
 // ──────────────────────────────────
@@ -73,8 +72,9 @@ export default function MarketResearchPage() {
   const { checkAccess, getResultActions, deductCredit } = useMembership();
   const { saveResult, markConsultantTransferred, getResultsByCategory } = useResultStore();
 
-  const [requests, setRequests] = useState<ResearchRequest[]>(loadRequests);
+  const [requests, setRequests] = useState<ResearchRequest[]>([]);
   const [activeTab, setActiveTab] = useState("new");
+  const importAttempted = useRef(false);
 
   const [inputs, setInputs] = useState<ResearchInputs>({
     businessType: globalBusinessType,
@@ -89,7 +89,6 @@ export default function MarketResearchPage() {
   const [hasResult, setHasResult] = useState(false);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
-  // Drawer state for viewing saved results
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
 
@@ -103,8 +102,39 @@ export default function MarketResearchPage() {
   const templates = useMemo(() => getResearchTemplates(inputs.businessType), [inputs.businessType]);
   const selectedTemplate = templates.find(t => t.key === inputs.scope) || templates[0];
 
-  // Saved research results
   const savedResearchResults = getResultsByCategory("시장조사 결과");
+
+  // Load from DB + one-time localStorage import
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      const dbRequests = await fetchResearchRequests();
+      if (cancelled) return;
+
+      const alreadyImported = localStorage.getItem(LS_IMPORT_FLAG) === "true";
+      if (!alreadyImported && !importAttempted.current) {
+        importAttempted.current = true;
+        const localRequests = loadLocalRequests();
+        if (localRequests.length > 0) {
+          const existingIds = new Set(dbRequests.map(r => r.id));
+          const toImport = localRequests.filter(r => !existingIds.has(r.id) && r.status !== "draft");
+          for (const r of toImport) {
+            await insertResearchRequest(r);
+          }
+          const merged = [...dbRequests, ...toImport];
+          merged.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+          if (!cancelled) setRequests(merged);
+        } else {
+          if (!cancelled) setRequests(dbRequests);
+        }
+        localStorage.setItem(LS_IMPORT_FLAG, "true");
+      } else {
+        if (!cancelled) setRequests(dbRequests);
+      }
+    }
+    init();
+    return () => { cancelled = true; };
+  }, []);
 
   const setField = useCallback(<K extends keyof ResearchInputs>(key: K, value: ResearchInputs[K]) => {
     setInputs(prev => ({ ...prev, [key]: value }));
@@ -113,19 +143,16 @@ export default function MarketResearchPage() {
   const regionValue = inputs.region || config.researchExamples.region;
   const keywordValue = inputs.keyword || config.researchExamples.keyword;
 
-  // Save request to local storage
+  // Persist request to DB + local state
   const persistRequest = useCallback((req: ResearchRequest) => {
     setRequests(prev => {
       const idx = prev.findIndex(r => r.id === req.id);
-      let next: ResearchRequest[];
       if (idx >= 0) {
-        next = [...prev];
+        const next = [...prev];
         next[idx] = req;
-      } else {
-        next = [req, ...prev];
+        return next;
       }
-      saveRequests(next);
-      return next;
+      return [req, ...prev];
     });
   }, []);
 
@@ -138,7 +165,6 @@ export default function MarketResearchPage() {
     const requestId = `research-${Date.now()}`;
     setCurrentRequestId(requestId);
 
-    // Create request record
     const request: ResearchRequest = {
       id: requestId,
       createdAt: new Date().toISOString(),
@@ -157,13 +183,13 @@ export default function MarketResearchPage() {
       externalCollectionPlanned: false,
     };
     persistRequest(request);
+    insertResearchRequest(request); // DB insert
 
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       setHasResult(true);
 
-      // Update request status
       const completed: ResearchRequest = {
         ...request,
         updatedAt: new Date().toISOString(),
@@ -172,6 +198,9 @@ export default function MarketResearchPage() {
         sourceSummary: "AI 내부 분석 기반 결과 생성 완료 (외부 데이터 수집 미연동 — 추후 확장 예정)",
       };
       persistRequest(completed);
+      updateResearchStatus(requestId, "completed", {
+        sourceSummary: completed.sourceSummary,
+      });
 
       if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
         deductCredit(generateAccess.creditCost, "generate", `시장조사 — ${selectedTemplate.title}`, "시장조사");
@@ -230,13 +259,10 @@ export default function MarketResearchPage() {
       consultantTransferHistory: [],
     });
 
-    // Link request to result
+    // Link request to result in DB
     if (currentRequestId) {
-      setRequests(prev => {
-        const next = prev.map(r => r.id === currentRequestId ? { ...r, linkedResultId: resultId, updatedAt: new Date().toISOString() } : r);
-        saveRequests(next);
-        return next;
-      });
+      setRequests(prev => prev.map(r => r.id === currentRequestId ? { ...r, linkedResultId: resultId, updatedAt: new Date().toISOString() } : r));
+      updateResearchStatus(currentRequestId, "completed", { resultId });
     }
 
     toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다" });
@@ -256,13 +282,10 @@ export default function MarketResearchPage() {
       status: "requested",
     });
 
-    // Update request status
+    // Update request status in DB
     if (currentRequestId) {
-      setRequests(prev => {
-        const next = prev.map(r => r.id === currentRequestId ? { ...r, status: "consultant_handoff" as ResearchRequestStatus, updatedAt: new Date().toISOString() } : r);
-        saveRequests(next);
-        return next;
-      });
+      setRequests(prev => prev.map(r => r.id === currentRequestId ? { ...r, status: "consultant_handoff" as ResearchRequestStatus, updatedAt: new Date().toISOString() } : r));
+      updateResearchStatus(currentRequestId, "consultant_handoff");
     }
 
     toast({ title: "전담 컨설턴트 전환 완료", description: "요청이 접수되었습니다. 전담 컨설턴트가 확인 후 연락드립니다." });

@@ -1,13 +1,15 @@
 /**
  * ResultStoreContext — Central store for saved AI generation results.
- * Phase 6-0.5: localStorage persistence added.
+ * Phase 10: DB-backed with localStorage 1-time import + fallback.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { BusinessContextSummary, GenerationResultSection } from "@/lib/ai-generation";
+import { fetchResults, upsertResult, softDeleteResult, updateResultStatus as repoUpdateStatus, insertDeliveryRecord, insertConsultantRequest as repoInsertConsultant } from "@/lib/repositories/result-repository";
+import { DEV_ORG_ID } from "@/lib/repositories/constants";
 
 // ──────────────────────────────────
-// Status & Types
+// Status & Types (unchanged public API)
 // ──────────────────────────────────
 
 export type ResultStatus = "임시 저장" | "검토 필요" | "완료" | "전달 완료" | "보관됨";
@@ -86,10 +88,11 @@ export interface SavedResult {
 }
 
 // ──────────────────────────────────
-// Persistence helpers
+// localStorage import helpers
 // ──────────────────────────────────
 
 const STORAGE_KEY = "okeygolf_result_store";
+const IMPORT_FLAG = "okeygolf_result_store_imported";
 
 function loadFromStorage(): SavedResult[] {
   try {
@@ -98,21 +101,11 @@ function loadFromStorage(): SavedResult[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed as SavedResult[];
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(results: SavedResult[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
-  } catch {
-    // storage full or unavailable — silently fail
-  }
+  } catch { return []; }
 }
 
 // ──────────────────────────────────
-// Context Value
+// Context Value (unchanged public API)
 // ──────────────────────────────────
 
 interface ResultStoreContextValue {
@@ -154,12 +147,53 @@ function buildPlainText(sections: GenerationResultSection[]): string {
 // ──────────────────────────────────
 
 export function ResultStoreProvider({ children }: { children: ReactNode }) {
-  const [results, setResults] = useState<SavedResult[]>(loadFromStorage);
+  const [results, setResults] = useState<SavedResult[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const importAttempted = useRef(false);
 
-  // Persist to localStorage on every change
+  // Initial load from DB + one-time localStorage import
   useEffect(() => {
-    saveToStorage(results);
-  }, [results]);
+    let cancelled = false;
+
+    async function init() {
+      // 1. Load from DB
+      const dbResults = await fetchResults(DEV_ORG_ID);
+
+      if (cancelled) return;
+
+      // 2. One-time localStorage import
+      const alreadyImported = localStorage.getItem(IMPORT_FLAG) === "true";
+      if (!alreadyImported && !importAttempted.current) {
+        importAttempted.current = true;
+        const localResults = loadFromStorage();
+        if (localResults.length > 0) {
+          const existingIds = new Set(dbResults.map(r => r.id));
+          const toImport = localResults.filter(r => !existingIds.has(r.id));
+          // Import to DB in background
+          for (const r of toImport) {
+            await upsertResult(r, DEV_ORG_ID);
+          }
+          // Merge for immediate display
+          const merged = [...dbResults, ...toImport.map(r => ({ ...r, updatedAt: r.updatedAt || now() }))];
+          merged.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+          if (!cancelled) {
+            setResults(merged);
+            localStorage.setItem(IMPORT_FLAG, "true");
+          }
+        } else {
+          if (!cancelled) setResults(dbResults);
+          localStorage.setItem(IMPORT_FLAG, "true");
+        }
+      } else {
+        if (!cancelled) setResults(dbResults);
+      }
+
+      if (!cancelled) setLoaded(true);
+    }
+
+    init();
+    return () => { cancelled = true; };
+  }, []);
 
   const saveResult = useCallback((result: Omit<SavedResult, "updatedAt" | "version"> & { version?: number }) => {
     const timestamp = now();
@@ -167,17 +201,30 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
       const existing = prev.findIndex(r => r.id === result.id);
       const version = result.version ?? 1;
       const plainText = result.plainText ?? buildPlainText(result.sections);
+      let saved: SavedResult;
       if (existing >= 0) {
+        saved = { ...result, version: (prev[existing].version ?? 1) + 1, plainText, updatedAt: timestamp };
         const updated = [...prev];
-        updated[existing] = { ...result, version: (prev[existing].version ?? 1) + 1, plainText, updatedAt: timestamp };
+        updated[existing] = saved;
+        upsertResult(saved, DEV_ORG_ID);
         return updated;
       }
-      return [{ ...result, version, plainText, updatedAt: timestamp }, ...prev];
+      saved = { ...result, version, plainText, updatedAt: timestamp };
+      upsertResult(saved, DEV_ORG_ID);
+      return [saved, ...prev];
     });
   }, []);
 
   const updateResult = useCallback((id: string, patch: Partial<SavedResult>) => {
-    setResults(prev => prev.map(r => r.id === id ? { ...r, ...patch, updatedAt: now() } : r));
+    setResults(prev => {
+      const updated = prev.map(r => {
+        if (r.id !== id) return r;
+        const patched = { ...r, ...patch, updatedAt: now() };
+        upsertResult(patched, DEV_ORG_ID);
+        return patched;
+      });
+      return updated;
+    });
   }, []);
 
   const getResultsByCategory = useCallback((category: string) => results.filter(r => r.category === category), [results]);
@@ -186,10 +233,12 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
 
   const updateStatus = useCallback((id: string, status: ResultStatus) => {
     setResults(prev => prev.map(r => r.id === id ? { ...r, status, updatedAt: now() } : r));
+    repoUpdateStatus(id, status);
   }, []);
 
   const deleteResult = useCallback((id: string) => {
     setResults(prev => prev.filter(r => r.id !== id));
+    softDeleteResult(id);
   }, []);
 
   const duplicateResult = useCallback((id: string) => {
@@ -210,19 +259,38 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
       consultantTransferHistory: [],
     };
     setResults(prev => [dup, ...prev]);
+    upsertResult(dup, DEV_ORG_ID);
     return dup;
   }, [results]);
 
   const markResultExported = useCallback((id: string, record: ExportFileRecord) => {
     setResults(prev => prev.map(r => r.id !== id ? r : { ...r, exportFiles: [...(r.exportFiles ?? []), record], updatedAt: now() }));
+    const formatToMethod: Record<string, string> = { pdf: "export_pdf", doc: "export_doc", ppt: "export_ppt", csv: "export_csv", txt: "export_txt" };
+    insertDeliveryRecord(id, DEV_ORG_ID, formatToMethod[record.format] || "export_pdf", {
+      fileName: record.fileName,
+      metadata: { exported_by: record.exportedBy },
+    });
   }, []);
 
   const markResultShared = useCallback((id: string, record: ShareRecord) => {
     setResults(prev => prev.map(r => r.id !== id ? r : { ...r, shareHistory: [...(r.shareHistory ?? []), record], updatedAt: now() }));
+    const isPlaceholder = record.method.endsWith("_placeholder");
+    const dbMethod = isPlaceholder ? record.method.replace("_placeholder", "") : record.method;
+    insertDeliveryRecord(id, DEV_ORG_ID, dbMethod, {
+      recipient: record.sharedTo,
+      note: record.note,
+      metadata: isPlaceholder ? { placeholder: true } : {},
+    });
   }, []);
 
   const markResultDelivered = useCallback((id: string, record: DeliveryRecord) => {
     setResults(prev => prev.map(r => r.id !== id ? r : { ...r, deliveryHistory: [...(r.deliveryHistory ?? []), record], updatedAt: now() }));
+    insertDeliveryRecord(id, DEV_ORG_ID, record.channel, {
+      recipient: record.recipient,
+      status: record.status,
+      note: record.note,
+      metadata: { is_delivery: true },
+    });
   }, []);
 
   const markConsultantTransferred = useCallback((id: string, record: ConsultantTransferRecord) => {
@@ -232,11 +300,18 @@ export function ResultStoreProvider({ children }: { children: ReactNode }) {
       status: "전달 완료" as ResultStatus,
       updatedAt: now(),
     }));
+    repoInsertConsultant(id, DEV_ORG_ID, record.requestNote);
+    repoUpdateStatus(id, "전달 완료");
   }, []);
 
   const markResultRegenerated = useCallback((id: string, newResultId: string) => {
     setResults(prev => prev.map(r => r.id !== id ? r : { ...r, metadata: { ...r.metadata, lastRegeneratedTo: newResultId }, updatedAt: now() }));
-  }, []);
+    // Update metadata in DB
+    const result = results.find(r => r.id === id);
+    if (result) {
+      upsertResult({ ...result, metadata: { ...result.metadata, lastRegeneratedTo: newResultId }, updatedAt: now() }, DEV_ORG_ID);
+    }
+  }, [results]);
 
   const recentResults = useCallback((limit = 5) => [...results].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit), [results]);
   const recentByType = useCallback((type: ResultType, limit = 5) => results.filter(r => r.type === type).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, limit), [results]);
