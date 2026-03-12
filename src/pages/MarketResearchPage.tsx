@@ -162,7 +162,7 @@ export default function MarketResearchPage() {
       return;
     }
 
-    const requestId = `research-${Date.now()}`;
+    const requestId = crypto.randomUUID();
     setCurrentRequestId(requestId);
 
     const request: ResearchRequest = {
