@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import DataBoard, { type DataBoardColumn } from "./DataBoard";
 import OrgBranchFilter, { type OrgFilterState } from "./OrgBranchFilter";
+import KpiCharts from "./KpiCharts";
 
 type KpiStatus = "on_track" | "at_risk" | "behind" | "achieved";
 
