@@ -1,22 +1,22 @@
 /**
  * 운영자 전용 — 조직별 관리 / Override 탭
- * 특정 조직 멤버십 강제 조정, 기능 예외 허용, 예외 사유 기록
+ * 9단계 잔수정: CSV export 추가
  */
 
 import { useState } from "react";
-import { Users, Search, Crown, ShieldCheck, Plus, X, FileText } from "lucide-react";
+import { Users, Crown, ShieldCheck, Plus, X, FileText, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { useMembership } from "@/contexts/MembershipContext";
 import { membershipTiers, type MembershipCode, type AccessMode, type FeatureKey } from "@/lib/membership";
 import { toast } from "@/hooks/use-toast";
+import { buildCsv, downloadCsv, type CsvColumn } from "@/lib/csv-export";
 
 interface OrgOverrideRecord {
   id: string;
@@ -32,26 +32,14 @@ interface OrgOverrideRecord {
 
 const mockOverrideHistory: OrgOverrideRecord[] = [
   {
-    id: "ovr-001",
-    orgId: "org-003",
-    orgName: "이글아카데미",
-    featureKey: "consultant.request",
-    previousMode: "locked",
-    newMode: "enabled",
-    reason: "프로모션 기간 컨설턴트 체험 허용",
-    createdAt: "2026-03-10T10:00:00Z",
-    createdBy: "admin@okeygolf.com",
+    id: "ovr-001", orgId: "org-003", orgName: "이글아카데미",
+    featureKey: "consultant.request", previousMode: "locked", newMode: "enabled",
+    reason: "프로모션 기간 컨설턴트 체험 허용", createdAt: "2026-03-10T10:00:00Z", createdBy: "admin@okeygolf.com",
   },
   {
-    id: "ovr-002",
-    orgId: "org-005",
-    orgName: "피팅마스터",
-    featureKey: "result.export",
-    previousMode: "locked",
-    newMode: "enabled",
-    reason: "체험판 기간 내보내기 임시 허용",
-    createdAt: "2026-03-08T15:30:00Z",
-    createdBy: "admin@okeygolf.com",
+    id: "ovr-002", orgId: "org-005", orgName: "피팅마스터",
+    featureKey: "result.export", previousMode: "locked", newMode: "enabled",
+    reason: "체험판 기간 내보내기 임시 허용", createdAt: "2026-03-08T15:30:00Z", createdBy: "admin@okeygolf.com",
   },
 ];
 
@@ -69,6 +57,16 @@ const mockOrgs = [
   { id: "org-004", name: "프로골프샵 강남점", membershipCode: "standard" as const },
   { id: "org-005", name: "피팅마스터", membershipCode: "trial" as const },
   { id: "org-006", name: "(주)골프이노베이션", membershipCode: "pro" as const },
+];
+
+const overrideHistoryCsvCols: CsvColumn<OrgOverrideRecord>[] = [
+  { header: "조직", accessor: r => r.orgName },
+  { header: "featureKey", accessor: r => r.featureKey },
+  { header: "이전", accessor: r => r.previousMode },
+  { header: "변경", accessor: r => r.newMode },
+  { header: "사유", accessor: r => r.reason },
+  { header: "처리자", accessor: r => r.createdBy },
+  { header: "일시", accessor: r => new Date(r.createdAt).toLocaleString("ko-KR") },
 ];
 
 export default function OperatorOrgManageTab() {
@@ -111,6 +109,13 @@ export default function OperatorOrgManageTab() {
     toast({ title: "멤버십 강제 변경", description: `${selectedOrg.name} → ${forceMembership} (데모)` });
     setForceMembership("");
     setForceReason("");
+  };
+
+  const handleExportOverrideHistory = () => {
+    if (mockOverrideHistory.length === 0) { toast({ title: "이력 없음", variant: "destructive" }); return; }
+    const csv = buildCsv(mockOverrideHistory, overrideHistoryCsvCols);
+    downloadCsv(csv, `Override이력_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast({ title: "CSV 다운로드 완료", description: `${mockOverrideHistory.length}건` });
   };
 
   return (
@@ -242,7 +247,12 @@ export default function OperatorOrgManageTab() {
       {/* Override history */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />예외 처리 이력</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />예외 처리 이력</CardTitle>
+            <Button variant="outline" size="sm" className="text-[10px] h-7 gap-1" onClick={handleExportOverrideHistory}>
+              <Download className="h-3 w-3" />CSV
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-border/50 overflow-hidden">
