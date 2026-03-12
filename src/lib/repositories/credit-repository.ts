@@ -60,6 +60,7 @@ export async function deductCreditRPC(
   reason: string,
   module?: string,
   resultId?: string,
+  actorType: string = "user",
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc("deduct_credit", {
     _org_id: orgId,
@@ -68,6 +69,7 @@ export async function deductCreditRPC(
     _reason: reason,
     _module: module ?? null,
     _result_id: resultId ?? null,
+    _actor_type: actorType,
   });
   if (error) { console.error("deductCreditRPC error:", error); return false; }
   return data === true;
