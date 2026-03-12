@@ -153,18 +153,26 @@ export default function OperatorConsultantTab() {
     setNewMemo("");
   };
 
-  const handleExportRequests = () => {
-    const csv = buildCsv(filteredRequests, requestCsvCols);
-    downloadCsv(csv, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${filteredRequests.length}건` });
+  const handleExportRequests = (format: "csv" | "xlsx" = "csv") => {
+    if (format === "xlsx") {
+      downloadXlsx(filteredRequests, requestCsvCols, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.xlsx`, "요청목록");
+    } else {
+      const csv = buildCsv(filteredRequests, requestCsvCols);
+      downloadCsv(csv, `컨설턴트_요청목록_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${filteredRequests.length}건` });
   };
 
-  const handleExportDeliveries = () => {
+  const handleExportDeliveries = (format: "csv" | "xlsx" = "csv") => {
     const rows = requests.flatMap(r => r.deliveries.map(d => ({ ...d, reqTitle: r.title })));
     if (rows.length === 0) { toast({ title: "전달 이력 없음", variant: "destructive" }); return; }
-    const csv = buildCsv(rows, deliveryCsvCols);
-    downloadCsv(csv, `전달이력_${new Date().toISOString().slice(0, 10)}.csv`);
-    toast({ title: "CSV 다운로드 완료", description: `${rows.length}건` });
+    if (format === "xlsx") {
+      downloadXlsx(rows, deliveryCsvCols, `전달이력_${new Date().toISOString().slice(0, 10)}.xlsx`, "전달이력");
+    } else {
+      const csv = buildCsv(rows, deliveryCsvCols);
+      downloadCsv(csv, `전달이력_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+    toast({ title: `${format.toUpperCase()} 다운로드 완료`, description: `${rows.length}건` });
   };
 
   return (
