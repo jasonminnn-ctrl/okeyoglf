@@ -59,6 +59,7 @@ export default function OperatorKpiBoard() {
   const [kpis, setKpis] = useState<KpiItem[]>(initialKpis);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [orgFilter, setOrgFilter] = useState<OrgFilterState>({ search: "", industry: "전체", membership: "전체" });
+  const [showCharts, setShowCharts] = useState(true);
 
   // New KPI form
   const [showForm, setShowForm] = useState(false);
