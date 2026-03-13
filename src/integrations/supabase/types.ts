@@ -1030,6 +1030,7 @@ export type Database = {
           target_branch_code: string | null
           target_business_types: string[] | null
           target_org_id: string | null
+          target_user_ids: string[] | null
           title: string
           updated_at: string
         }
@@ -1050,6 +1051,7 @@ export type Database = {
           target_branch_code?: string | null
           target_business_types?: string[] | null
           target_org_id?: string | null
+          target_user_ids?: string[] | null
           title: string
           updated_at?: string
         }
@@ -1070,6 +1072,7 @@ export type Database = {
           target_branch_code?: string | null
           target_business_types?: string[] | null
           target_org_id?: string | null
+          target_user_ids?: string[] | null
           title?: string
           updated_at?: string
         }

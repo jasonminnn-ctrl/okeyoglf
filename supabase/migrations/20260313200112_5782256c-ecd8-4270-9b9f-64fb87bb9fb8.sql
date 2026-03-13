@@ -1,0 +1,1 @@
+ALTER TABLE public.operator_recommendations ADD COLUMN IF NOT EXISTS target_user_ids uuid[] DEFAULT '{}'::uuid[];
