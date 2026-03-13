@@ -17,7 +17,7 @@ import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
-import { ResultActionBar } from "@/components/result/ResultActionBar.tsx";
+import { ResultActionBar } from "@/components/ResultActionBar";
 import type { ExportableResult } from "@/lib/export-utils";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection } from "@/lib/ai-generation";

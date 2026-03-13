@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
-import { ResultActionBar } from "@/components/result/ResultActionBar.tsx";
+import { ResultActionBar } from "@/components/ResultActionBar";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { ContextSummary } from "@/components/ContextSummary";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
