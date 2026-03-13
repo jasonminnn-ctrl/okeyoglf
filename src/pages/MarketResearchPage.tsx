@@ -599,7 +599,7 @@ interface ResearchResultCardProps {
 
 function ResearchResultCard({
   hasResult, template, researchLabel, regionValue, keywordValue, count,
-  resultActions, onSave, onConsultantTransfer,
+  resultActions, onSave, onConsultantTransfer, isSaved, onOpenSaved,
 }: ResearchResultCardProps) {
   const items = [
     { icon: FileText, label: "조사 요약", desc: hasResult ? `${researchLabel} 업종 기준 ${template.title} 완료. 입력 기준에 따른 분석 결과입니다.` : "수집된 데이터 요약 리포트" },
