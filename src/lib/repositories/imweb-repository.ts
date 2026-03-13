@@ -583,7 +583,7 @@ export async function upsertOrderEvent(
     .single();
 
   if (error) throw error;
-  return data as ImwebOrderEventRow;
+  return data as unknown as ImwebOrderEventRow;
 }
 
 export async function getSyncHistoryItems(
