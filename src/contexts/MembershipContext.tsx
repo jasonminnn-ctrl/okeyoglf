@@ -14,6 +14,7 @@ import { getMembershipTier } from "@/lib/membership";
 import { checkFeatureAccess, checkResultActions, type FeatureAccessResult, type ResultActionsAccess } from "@/lib/feature-access";
 import { fetchOrganization } from "@/lib/repositories/organization-repository";
 import { fetchWallet, fetchLedger, deductCreditRPC, grantCreditRPC, type CreditLedgerRow } from "@/lib/repositories/credit-repository";
+import { fetchFeatureOverrides, type FeatureOverrideRow } from "@/lib/repositories/feature-override-repository";
 import { DEV_ORG_ID } from "@/lib/repositories/constants";
 
 // ──────────────────────────────────
