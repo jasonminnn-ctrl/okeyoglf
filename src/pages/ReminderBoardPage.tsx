@@ -155,6 +155,15 @@ export default function ReminderBoardPage() {
         </div>
       </div>
 
+      {tab === "ops" && (
+        <RecommendationSupplyPanel
+          category="reminder"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={reminders.filter(r => r.source_type === "ops_recommended").map(r => r.title)}
+          headerLabel="운영 권장 리마인드"
+        />
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>
       ) : filteredReminders.length === 0 ? (

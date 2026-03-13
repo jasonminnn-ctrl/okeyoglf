@@ -157,6 +157,15 @@ export default function CampaignPlannerPage() {
         </div>
       </div>
 
+      {tab === "ops" && (
+        <RecommendationSupplyPanel
+          category="campaign"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={campaigns.filter(c => c.source_type === "ops_recommended").map(c => c.title)}
+          headerLabel="운영 권장 캠페인"
+        />
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>
       ) : filteredCampaigns.length === 0 ? (
