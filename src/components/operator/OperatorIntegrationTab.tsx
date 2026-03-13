@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import {
   AlertTriangle,
   Bell,
@@ -14,7 +14,6 @@ import {
   RefreshCw,
   ShoppingCart,
   Smartphone,
-  Users,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +25,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  externalStatusMeta,
+  notificationProviders,
+  openAIIntegrationSummary,
+  productMembershipMappings as fallbackProductMembershipMappings,
+  pointCreditMappings as fallbackPointCreditMappings,
+  externalSyncHistory as fallbackExternalSyncHistory,
+  externalSyncExceptions as fallbackExternalSyncExceptions,
+  type ExternalConnectionStatus,
+  type ExternalSyncExceptionItem,
+  type ExternalSyncHistoryItem,
+  type NotificationProviderSummary,
+  type PointCreditMapping,
+  type ProductMembershipMapping,
+  type ImwebMemberSyncSummary,
+} from "@/lib/external-integrations";
+import {
+  getImwebMemberSyncSummary,
+  getPointCreditMappings,
+  getProductMembershipMappings,
+  getSyncExceptionItems,
+  getSyncHistoryItems,
+} from "@/lib/repositories/imweb-repository";
 
-type IntegrationStatus =
-  | "connected"
-  | "ready"
-  | "disconnected"
-  | "testing"
-  | "error";
+type IntegrationStatus = ExternalConnectionStatus;
+type ProviderKey = "email" | "kakao" | "sms";
 
 type IntegrationItem = {
   key: string;
@@ -44,265 +63,40 @@ type IntegrationItem = {
   note?: string;
 };
 
-type ProductMembershipMapping = {
-  externalProductName: string;
-  externalProductCode: string;
-  membershipCode: "standard" | "pro" | "enterprise";
-  status: IntegrationStatus;
-  note: string;
+const providerIconMap: Record<ProviderKey, ComponentType<{ className?: string }>> = {
+  email: Mail,
+  kakao: MessageSquare,
+  sms: Smartphone,
 };
 
-type PointCreditMapping = {
-  externalPointProductName: string;
-  externalPointProductCode: string;
-  creditAmount: number;
-  status: IntegrationStatus;
-  grantMode: "auto" | "manual_review" | "manual_only";
-  note: string;
+const statusIconMap: Record<IntegrationStatus, ComponentType<{ className?: string }>> = {
+  connected: CheckCircle2,
+  pending: CircleDashed,
+  disconnected: Link2,
+  testing: FlaskConical,
+  error: AlertTriangle,
 };
 
-type ProviderConfig = {
-  key: "email" | "kakao" | "sms";
-  name: string;
-  status: IntegrationStatus;
-  enabled: boolean;
-  configured: boolean;
-  lastTestedAt: string | null;
-  note: string;
-  icon: ComponentType<{ className?: string }>;
-};
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
 
-type SyncHistoryItem = {
-  id: string;
-  actionType:
-    | "membership_sync"
-    | "credit_grant"
-    | "refund_revert"
-    | "manual_override";
-  status: IntegrationStatus;
-  processedAt: string | null;
-  processedBy: string;
-  note: string;
-};
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
 
-type ExceptionItem = {
-  id: string;
-  issueType:
-    | "unmapped_product"
-    | "duplicate_order"
-    | "sync_failed"
-    | "refund_pending";
-  status: IntegrationStatus;
-  lastDetectedAt: string | null;
-  note: string;
-};
-
-const statusConfig: Record<
-  IntegrationStatus,
-  {
-    label: string;
-    badgeClassName: string;
-    icon: ComponentType<{ className?: string }>;
-  }
-> = {
-  connected: {
-    label: "연결됨",
-    badgeClassName: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    icon: CheckCircle2,
-  },
-  ready: {
-    label: "연결 준비",
-    badgeClassName: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-    icon: CircleDashed,
-  },
-  disconnected: {
-    label: "미연결",
-    badgeClassName: "bg-muted text-muted-foreground border-border",
-    icon: Link2,
-  },
-  testing: {
-    label: "테스트 필요",
-    badgeClassName: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-    icon: FlaskConical,
-  },
-  error: {
-    label: "오류",
-    badgeClassName: "bg-red-500/15 text-red-300 border-red-500/30",
-    icon: AlertTriangle,
-  },
-};
-
-const integrations: IntegrationItem[] = [
-  {
-    key: "openai",
-    title: "OpenAI 연동",
-    description: "서버사이드 호출 구조, 모델 설정, 최근 테스트 상태를 관리합니다",
-    status: "ready",
-    icon: Cpu,
-    accentClassName: "bg-emerald-500/10 text-emerald-400",
-    note: "프론트 직접 호출 금지. Edge/Server Function 연결 전 단계",
-  },
-  {
-    key: "imweb-member-order",
-    title: "아임웹 회원/주문 연동",
-    description: "회원 매칭, 주문 이벤트 수신, 처리 상태를 관리합니다",
-    status: "disconnected",
-    icon: ShoppingCart,
-    accentClassName: "bg-blue-500/10 text-blue-400",
-    note: "로그인보다 상품/주문 운영 매핑이 우선",
-  },
-  {
-    key: "imweb-membership-mapping",
-    title: "상품 → 멤버십 매핑",
-    description: "아임웹 상품과 membershipCode 매핑 상태를 관리합니다",
-    status: "ready",
-    icon: Crown,
-    accentClassName: "bg-amber-500/10 text-amber-400",
-  },
-  {
-    key: "imweb-credit-mapping",
-    title: "포인트상품 → 크레딧 매핑",
-    description: "아임웹 포인트상품과 creditAmount 매핑 상태를 관리합니다",
-    status: "ready",
-    icon: Coins,
-    accentClassName: "bg-violet-500/10 text-violet-400",
-  },
-  {
-    key: "notification-provider",
-    title: "알림/발송 연동",
-    description: "email, kakao, sms provider 설정 상태를 관리합니다",
-    status: "disconnected",
-    icon: Bell,
-    accentClassName: "bg-pink-500/10 text-pink-400",
-  },
-  {
-    key: "sync-history",
-    title: "동기화 이력 / 예외 처리",
-    description: "처리 이력, 실패 건, 수동 재처리 placeholder를 관리합니다",
-    status: "ready",
-    icon: RefreshCw,
-    accentClassName: "bg-slate-500/10 text-slate-300",
-  },
-];
-
-const productMembershipMappings: ProductMembershipMapping[] = [
-  {
-    externalProductName: "(상품 미연결)",
-    externalProductCode: "—",
-    membershipCode: "standard",
-    status: "ready",
-    note: "상품 연결 후 standard 부여 예정",
-  },
-  {
-    externalProductName: "(상품 미연결)",
-    externalProductCode: "—",
-    membershipCode: "pro",
-    status: "ready",
-    note: "상품 연결 후 pro 부여 예정",
-  },
-  {
-    externalProductName: "(상품 미연결)",
-    externalProductCode: "—",
-    membershipCode: "enterprise",
-    status: "ready",
-    note: "상품 연결 후 enterprise 부여 예정",
-  },
-];
-
-const pointCreditMappings: PointCreditMapping[] = [
-  {
-    externalPointProductName: "(포인트상품 미연결)",
-    externalPointProductCode: "—",
-    creditAmount: 100,
-    status: "ready",
-    grantMode: "manual_review",
-    note: "자동 지급 전 운영자 검토 필요",
-  },
-  {
-    externalPointProductName: "(포인트상품 미연결)",
-    externalPointProductCode: "—",
-    creditAmount: 500,
-    status: "ready",
-    grantMode: "manual_review",
-    note: "자동 지급 전 운영자 검토 필요",
-  },
-];
-
-const providerConfigs: ProviderConfig[] = [
-  {
-    key: "email",
-    name: "이메일",
-    status: "disconnected",
-    enabled: false,
-    configured: false,
-    lastTestedAt: null,
-    note: "SMTP/API 키 미설정",
-    icon: Mail,
-  },
-  {
-    key: "kakao",
-    name: "카카오",
-    status: "disconnected",
-    enabled: false,
-    configured: false,
-    lastTestedAt: null,
-    note: "알림톡 provider 미설정",
-    icon: MessageSquare,
-  },
-  {
-    key: "sms",
-    name: "SMS",
-    status: "disconnected",
-    enabled: false,
-    configured: false,
-    lastTestedAt: null,
-    note: "SMS provider 미설정",
-    icon: Smartphone,
-  },
-];
-
-const syncHistories: SyncHistoryItem[] = [
-  {
-    id: "history-001",
-    actionType: "membership_sync",
-    status: "ready",
-    processedAt: null,
-    processedBy: "system",
-    note: "실제 주문 연동 전. 처리 이력 placeholder",
-  },
-  {
-    id: "history-002",
-    actionType: "credit_grant",
-    status: "ready",
-    processedAt: null,
-    processedBy: "system",
-    note: "실제 포인트상품 연동 전. 수동 검토 기준만 준비",
-  },
-];
-
-const exceptionItems: ExceptionItem[] = [
-  {
-    id: "exception-001",
-    issueType: "unmapped_product",
-    status: "ready",
-    lastDetectedAt: null,
-    note: "상품 미매핑 시 이 영역에서 확인",
-  },
-  {
-    id: "exception-002",
-    issueType: "sync_failed",
-    status: "ready",
-    lastDetectedAt: null,
-    note: "실제 연동 실패 건 placeholder",
-  },
-];
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
 
 function StatusBadge({ status }: { status: IntegrationStatus }) {
-  const config = statusConfig[status];
+  const meta = externalStatusMeta[status];
+  const Icon = statusIconMap[status];
 
   return (
-    <Badge variant="outline" className={config.badgeClassName}>
-      {config.label}
+    <Badge variant="outline" className={meta.badgeClassName}>
+      <Icon className="mr-1 h-3.5 w-3.5" />
+      {meta.label}
     </Badge>
   );
 }
@@ -315,46 +109,236 @@ function KeyValueRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/40 px-3 py-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-right">{value}</span>
+    <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
 
 export default function OperatorIntegrationTab() {
+  const { orgId, isLoading: authLoading } = useAuth();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [imwebSummary, setImwebSummary] =
+    useState<ImwebMemberSyncSummary | null>(null);
+  const [membershipMappings, setMembershipMappings] = useState<
+    ProductMembershipMapping[]
+  >(fallbackProductMembershipMappings);
+  const [pointMappings, setPointMappings] = useState<PointCreditMapping[]>(
+    fallbackPointCreditMappings,
+  );
+  const [syncHistories, setSyncHistories] = useState<ExternalSyncHistoryItem[]>(
+    fallbackExternalSyncHistory,
+  );
+  const [exceptionItems, setExceptionItems] = useState<
+    ExternalSyncExceptionItem[]
+  >(fallbackExternalSyncExceptions);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!orgId) {
+      setIsLoading(false);
+      setLoadError("조직 정보가 없어 외부 연동 상태를 불러올 수 없습니다.");
+      return;
+    }
+
+    let isMounted = true;
+
+    async function load() {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+
+        const [
+          summary,
+          productRows,
+          pointRows,
+          historyRows,
+          exceptionRows,
+        ] = await Promise.all([
+          getImwebMemberSyncSummary(orgId),
+          getProductMembershipMappings({ orgId }),
+          getPointCreditMappings({ orgId }),
+          getSyncHistoryItems({ orgId, limit: 10 }),
+          getSyncExceptionItems({ orgId, limit: 10 }),
+        ]);
+
+        if (!isMounted) return;
+
+        setImwebSummary(summary);
+
+        setMembershipMappings(
+          productRows.length > 0
+            ? productRows
+            : fallbackProductMembershipMappings,
+        );
+
+        setPointMappings(
+          pointRows.length > 0 ? pointRows : fallbackPointCreditMappings,
+        );
+
+        setSyncHistories(
+          historyRows.length > 0 ? historyRows : fallbackExternalSyncHistory,
+        );
+
+        setExceptionItems(
+          exceptionRows.length > 0
+            ? exceptionRows
+            : fallbackExternalSyncExceptions,
+        );
+      } catch (error) {
+        console.error("OperatorIntegrationTab load failed", error);
+
+        if (!isMounted) return;
+
+        setLoadError("외부 연동 상태를 불러오지 못했습니다.");
+        setImwebSummary(null);
+        setMembershipMappings(fallbackProductMembershipMappings);
+        setPointMappings(fallbackPointCreditMappings);
+        setSyncHistories(fallbackExternalSyncHistory);
+        setExceptionItems(fallbackExternalSyncExceptions);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authLoading, orgId]);
+
+  const imwebStatus = imwebSummary?.syncStatus ?? "disconnected";
+  const membershipStatus = membershipMappings.some((item) => item.isActive)
+    ? "connected"
+    : "pending";
+  const pointStatus = pointMappings.some((item) => item.isActive)
+    ? "connected"
+    : "pending";
+  const syncStatus = exceptionItems.some((item) => item.status === "error")
+    ? "error"
+    : syncHistories.some((item) => item.status === "connected")
+      ? "connected"
+      : "pending";
+
+  const integrations: IntegrationItem[] = useMemo(
+    () => [
+      {
+        key: "openai",
+        title: "OpenAI 연동",
+        description:
+          "서버사이드 호출 구조, 모델 설정, 최근 테스트 상태를 관리합니다",
+        status: openAIIntegrationSummary.status,
+        icon: Cpu,
+        accentClassName: "bg-emerald-500/10 text-emerald-400",
+        note: openAIIntegrationSummary.note,
+      },
+      {
+        key: "imweb-member-order",
+        title: "아임웹 회원/주문 연동",
+        description: "회원 매칭, 주문 이벤트 수신, 처리 상태를 관리합니다",
+        status: imwebStatus,
+        icon: ShoppingCart,
+        accentClassName: "bg-blue-500/10 text-blue-400",
+        note:
+          imwebSummary?.note ??
+          "로그인보다 상품/주문 운영 매핑이 우선입니다.",
+      },
+      {
+        key: "imweb-membership-mapping",
+        title: "상품 → 멤버십 매핑",
+        description: "아임웹 상품과 membershipCode 매핑 상태를 관리합니다",
+        status: membershipStatus,
+        icon: Crown,
+        accentClassName: "bg-amber-500/10 text-amber-400",
+        note: "기간형 멤버십 상품만 매핑 대상으로 봅니다.",
+      },
+      {
+        key: "imweb-credit-mapping",
+        title: "포인트상품 → 크레딧 매핑",
+        description: "아임웹 포인트상품과 creditAmount 매핑 상태를 관리합니다",
+        status: pointStatus,
+        icon: Coins,
+        accentClassName: "bg-violet-500/10 text-violet-400",
+        note: "실제 AI 호출 / 사용량형 기능용 크레딧만 대상으로 봅니다.",
+      },
+      {
+        key: "notification-provider",
+        title: "알림/발송 연동",
+        description: "email, kakao, sms provider 설정 상태를 관리합니다",
+        status: notificationProviders.some((provider) => provider.enabled)
+          ? "connected"
+          : "disconnected",
+        icon: Bell,
+        accentClassName: "bg-pink-500/10 text-pink-400",
+        note: "발송 provider는 아직 placeholder 상태를 유지합니다.",
+      },
+      {
+        key: "sync-history",
+        title: "동기화 이력 / 예외 처리",
+        description: "처리 이력, 실패 건, 수동 재처리 준비 상태를 관리합니다",
+        status: syncStatus,
+        icon: RefreshCw,
+        accentClassName: "bg-slate-500/10 text-slate-300",
+        note: "실제 주문 웹훅 연결 전에는 일부 placeholder가 남아 있을 수 있습니다.",
+      },
+    ],
+    [imwebStatus, membershipStatus, pointStatus, syncStatus, imwebSummary],
+  );
+
+  const notificationProviderRows: Array<
+    NotificationProviderSummary & { icon: ComponentType<{ className?: string }> }
+  > = useMemo(
+    () =>
+      notificationProviders.map((provider) => ({
+        ...provider,
+        icon: providerIconMap[provider.provider],
+      })),
+    [],
+  );
+
   return (
     <div className="space-y-6">
-      <Card className="bg-card/60 border-border/60">
+      <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-primary" />
-            연동 상태
-          </CardTitle>
+          <CardTitle>연동 상태</CardTitle>
           <CardDescription>
-            실제 연결과 placeholder를 구분해 현재 상태를 오해하지 않도록 표시합니다
+            실제 연결과 placeholder를 구분해 현재 상태를 오해하지 않도록 표시합니다.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <CardContent className="space-y-4">
+          {loadError ? (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {loadError}
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 lg:grid-cols-2">
             {integrations.map((item) => {
               const Icon = item.icon;
-              const status = statusConfig[item.status];
 
               return (
                 <div
                   key={item.key}
-                  className="rounded-xl border border-border/60 bg-background/40 p-4"
+                  className="rounded-2xl border border-border/60 bg-background/60 p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="mb-3 flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.accentClassName}`}
+                        className={`rounded-xl p-2 ${item.accentClassName}`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="space-y-1">
-                        <div className="font-medium">{item.title}</div>
+                        <p className="font-semibold text-foreground">
+                          {item.title}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {item.description}
                         </p>
@@ -364,310 +348,295 @@ export default function OperatorIntegrationTab() {
                   </div>
 
                   {item.note ? (
-                    <p className="mt-3 text-xs text-muted-foreground">
+                    <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                       {item.note}
-                    </p>
+                    </div>
                   ) : null}
                 </div>
               );
             })}
           </div>
+
+          <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            {isLoading
+              ? "외부 연동 상태를 불러오는 중입니다."
+              : "현재 외부 연동은 실제 연결 상태와 placeholder 상태를 분리해 표시합니다. 실제 API 키 등록, 서버사이드 호출, 주문 이벤트 수신, 자동 멤버십/크레딧 반영, 발송 provider 활성화가 끝나기 전에는 연결됨이나 처리 완료처럼 보이지 않도록 유지합니다."}
+          </div>
         </CardContent>
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="bg-card/60 border-border/60">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-emerald-400" />
-                  OpenAI 연동
-                </CardTitle>
-                <CardDescription>
-                  프론트 직접 호출 없이 서버사이드 호출 구조로 관리합니다
-                </CardDescription>
-              </div>
-              <StatusBadge status="ready" />
-            </div>
+            <CardTitle>OpenAI 연동</CardTitle>
+            <CardDescription>
+              프론트 직접 호출 없이 서버사이드 호출 구조로 관리합니다.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <KeyValueRow label="provider" value="openai" />
-            <KeyValueRow label="model" value="미설정" />
-            <KeyValueRow label="API 키 등록 상태" value="미등록" />
-            <KeyValueRow label="서버사이드 호출 구조" value="연결 준비" />
-            <KeyValueRow label="promptVersion" value="미설정" />
-            <KeyValueRow label="최근 테스트" value="없음" />
-            <KeyValueRow label="최근 오류" value="없음" />
-
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-3 text-xs text-amber-200">
-              API 키는 프론트 코드에 직접 두지 않고, 서버 시크릿/Edge Function에서만 관리하는 전제입니다.
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" disabled>
-                API 키 등록 준비
-              </Button>
-              <Button type="button" variant="outline" disabled>
-                테스트 호출 준비
-              </Button>
+            <KeyValueRow
+              label="모델"
+              value={openAIIntegrationSummary.model}
+            />
+            <KeyValueRow
+              label="프롬프트 버전"
+              value={openAIIntegrationSummary.promptVersion}
+            />
+            <KeyValueRow
+              label="API 키 등록"
+              value={openAIIntegrationSummary.apiKeyConfigured ? "완료" : "준비"}
+            />
+            <KeyValueRow
+              label="서버사이드 준비"
+              value={openAIIntegrationSummary.serverSideReady ? "완료" : "준비"}
+            />
+            <KeyValueRow
+              label="최근 테스트"
+              value={formatDateTime(openAIIntegrationSummary.lastTestedAt)}
+            />
+            <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+              {openAIIntegrationSummary.note}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 border-border/60">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-blue-400" />
-                  아임웹 회원/주문 연동
-                </CardTitle>
-                <CardDescription>
-                  회원 매칭보다 상품/주문 운영 매핑을 우선하는 구조입니다
-                </CardDescription>
-              </div>
-              <StatusBadge status="disconnected" />
-            </div>
+            <CardTitle>아임웹 회원/주문 연동</CardTitle>
+            <CardDescription>
+              회원 매칭보다 상품/주문 운영 매핑을 우선하는 구조입니다.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <KeyValueRow label="webhook URL" value="미설정" />
-            <KeyValueRow label="회원 구조" value="placeholder" />
-            <KeyValueRow label="주문 구조" value="placeholder" />
-            <KeyValueRow label="최근 이벤트 수신" value="없음" />
-            <KeyValueRow label="최근 동기화 상태" value="미연결" />
-            <KeyValueRow label="예외 처리" value="구조만 준비" />
-
+            <KeyValueRow
+              label="상태"
+              value={externalStatusMeta[imwebStatus].label}
+            />
+            <KeyValueRow
+              label="Webhook URL"
+              value={imwebSummary?.webhookUrl ?? "—"}
+            />
+            <KeyValueRow
+              label="최근 동기화"
+              value={formatDateTime(imwebSummary?.lastSyncedAt)}
+            />
+            <KeyValueRow
+              label="최근 이벤트"
+              value={imwebSummary?.lastEventLabel ?? "—"}
+            />
             <div className="flex gap-2">
-              <Button type="button" variant="outline" disabled>
+              <Button variant="outline" size="sm" disabled>
                 webhook 준비
               </Button>
-              <Button type="button" variant="outline" disabled>
+              <Button variant="outline" size="sm" disabled>
                 수동 재처리 준비
               </Button>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+              {imwebSummary?.note ??
+                "연동 데이터가 없으면 미연결/연결 준비 상태로 유지합니다."}
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="bg-card/60 border-border/60">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-amber-400" />
-                  상품 → 멤버십 매핑
-                </CardTitle>
-                <CardDescription>
-                  아임웹 상품 구매 시 어떤 membershipCode를 부여할지 관리합니다
-                </CardDescription>
-              </div>
-              <StatusBadge status="ready" />
-            </div>
+            <CardTitle>상품 → 멤버십 매핑</CardTitle>
+            <CardDescription>
+              아임웹 상품 구매 시 어떤 membershipCode를 부여할지 관리합니다.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {productMembershipMappings.map((mapping, index) => (
+            {membershipMappings.map((mapping, index) => (
               <div
-                key={`${mapping.membershipCode}-${index}`}
-                className="rounded-xl border border-border/60 bg-background/40 p-4"
+                key={`${mapping.externalProductCode}-${index}`}
+                className="rounded-xl border border-border/60 bg-background/50 px-4 py-3"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{mapping.membershipCode}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {mapping.externalProductName}
-                    </div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {mapping.mappedMembershipCode}
+                    </Badge>
+                    <span className="text-sm font-medium text-foreground">
+                      {mapping.mappedMembershipLabel}
+                    </span>
                   </div>
-                  <StatusBadge status={mapping.status} />
+                  <StatusBadge
+                    status={mapping.isActive ? "connected" : "pending"}
+                  />
                 </div>
-
-                <div className="mt-3 grid gap-2">
-                  <KeyValueRow label="externalProductCode" value={mapping.externalProductCode} />
-                  <KeyValueRow label="membershipCode" value={mapping.membershipCode} />
-                  <KeyValueRow label="note" value={mapping.note} />
-                </div>
+                <p className="text-sm font-medium text-foreground">
+                  {mapping.externalProductName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  코드: {mapping.externalProductCode}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {mapping.note}
+                </p>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 border-border/60">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-violet-400" />
-                  포인트상품 → 크레딧 매핑
-                </CardTitle>
-                <CardDescription>
-                  포인트상품 구매 시 내부 creditAmount 반영 기준을 관리합니다
-                </CardDescription>
-              </div>
-              <StatusBadge status="ready" />
-            </div>
+            <CardTitle>포인트상품 → 크레딧 매핑</CardTitle>
+            <CardDescription>
+              포인트상품 구매 시 내부 creditAmount 반영 기준을 관리합니다.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {pointCreditMappings.map((mapping, index) => (
+            {pointMappings.map((mapping, index) => (
               <div
-                key={`${mapping.creditAmount}-${index}`}
-                className="rounded-xl border border-border/60 bg-background/40 p-4"
+                key={`${mapping.externalPointProductCode}-${index}`}
+                className="rounded-xl border border-border/60 bg-background/50 px-4 py-3"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{mapping.creditAmount} credits</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {mapping.externalPointProductName}
-                    </div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {mapping.mappedCreditAmount} credits
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {mapping.grantMode}
+                    </span>
                   </div>
-                  <StatusBadge status={mapping.status} />
-                </div>
-
-                <div className="mt-3 grid gap-2">
-                  <KeyValueRow
-                    label="externalPointProductCode"
-                    value={mapping.externalPointProductCode}
+                  <StatusBadge
+                    status={mapping.isActive ? "connected" : "pending"}
                   />
-                  <KeyValueRow label="grantMode" value={mapping.grantMode} />
-                  <KeyValueRow label="note" value={mapping.note} />
                 </div>
+                <p className="text-sm font-medium text-foreground">
+                  {mapping.externalPointProductName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  코드: {mapping.externalPointProductCode}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {mapping.note}
+                </p>
               </div>
             ))}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-card/60 border-border/60">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-pink-400" />
-                알림 / 발송 provider
-              </CardTitle>
-              <CardDescription>
-                email, kakao, sms provider별 enabled / configured / lastTestedAt 상태를 구분합니다
-              </CardDescription>
-            </div>
-            <StatusBadge status="disconnected" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {providerConfigs.map((provider) => {
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle>알림 / 발송 provider</CardTitle>
+            <CardDescription>
+              email, kakao, sms provider별 enabled / configured / lastTestedAt
+              상태를 구분합니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {notificationProviderRows.map((provider) => {
               const Icon = provider.icon;
 
               return (
                 <div
-                  key={provider.key}
-                  className="rounded-xl border border-border/60 bg-background/40 p-4"
+                  key={provider.provider}
+                  className="rounded-xl border border-border/60 bg-background/50 px-4 py-3"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{provider.name}</span>
+                      <span className="font-medium capitalize text-foreground">
+                        {provider.provider}
+                      </span>
                     </div>
                     <StatusBadge status={provider.status} />
                   </div>
-
-                  <div className="mt-3 grid gap-2">
-                    <KeyValueRow label="enabled" value={provider.enabled ? "true" : "false"} />
+                  <div className="grid gap-2 md:grid-cols-3">
                     <KeyValueRow
-                      label="configured"
+                      label="Enabled"
+                      value={provider.enabled ? "true" : "false"}
+                    />
+                    <KeyValueRow
+                      label="Configured"
                       value={provider.configured ? "true" : "false"}
                     />
                     <KeyValueRow
-                      label="lastTestedAt"
-                      value={provider.lastTestedAt ?? "없음"}
+                      label="Last Tested"
+                      value={formatDateTime(provider.lastTestedAt)}
                     />
-                    <KeyValueRow label="note" value={provider.note} />
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {provider.note}
+                  </p>
                 </div>
               );
             })}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="bg-card/60 border-border/60">
+        <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-slate-300" />
-              동기화 이력
-            </CardTitle>
+            <CardTitle>동기화 이력</CardTitle>
             <CardDescription>
-              최근 처리 이력과 actionType placeholder를 확인합니다
+              최근 처리 이력과 actionType 상태를 확인합니다.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {syncHistories.map((history) => (
               <div
-                key={history.id}
-                className="rounded-xl border border-border/60 bg-background/40 p-4"
+                key={history.historyId}
+                className="rounded-xl border border-border/60 bg-background/50 px-4 py-3"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="font-medium">{history.actionType}</div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <Badge variant="outline">{history.actionType}</Badge>
                   <StatusBadge status={history.status} />
                 </div>
-
-                <div className="mt-3 grid gap-2">
-                  <KeyValueRow label="processedAt" value={history.processedAt ?? "없음"} />
-                  <KeyValueRow label="processedBy" value={history.processedBy} />
-                  <KeyValueRow label="note" value={history.note} />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/60 border-border/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-300" />
-              예외 처리 / 수동 재처리
-            </CardTitle>
-            <CardDescription>
-              실패 유형 분류와 운영자 검토 placeholder를 확인합니다
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {exceptionItems.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-border/60 bg-background/40 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="font-medium">{item.issueType}</div>
-                  <StatusBadge status={item.status} />
-                </div>
-
-                <div className="mt-3 grid gap-2">
+                <div className="grid gap-2 md:grid-cols-2">
                   <KeyValueRow
-                    label="lastDetectedAt"
-                    value={item.lastDetectedAt ?? "없음"}
+                    label="처리시각"
+                    value={formatDateTime(history.processedAt)}
                   />
-                  <KeyValueRow label="note" value={item.note} />
+                  <KeyValueRow
+                    label="처리주체"
+                    value={history.processedBy}
+                  />
                 </div>
-
-                <div className="mt-3">
-                  <Button type="button" variant="outline" disabled>
-                    수동 재처리 준비
-                  </Button>
-                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {history.note}
+                </p>
               </div>
             ))}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-amber-500/20 bg-amber-500/5">
-        <CardContent className="pt-6">
-          <p className="text-sm leading-6 text-amber-100">
-            현재 외부 연동은 실제 연결과 placeholder를 분리해 표시합니다. 실제 API 키 등록,
-            서버사이드 호출, 주문 이벤트 수신, 자동 멤버십/크레딧 반영, 발송 provider 활성화가
-            끝나기 전에는 연결됨이나 처리 완료처럼 보이지 않도록 유지합니다.
-          </p>
+      <Card className="border-border/60 bg-card/60 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>예외 처리 / 수동 재처리</CardTitle>
+          <CardDescription>
+            실패 유형 분류와 운영자 검토 대상을 확인합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {exceptionItems.map((item) => (
+            <div
+              key={item.exceptionId}
+              className="rounded-xl border border-border/60 bg-background/50 px-4 py-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <Badge variant="outline">{item.exceptionType}</Badge>
+                <StatusBadge status={item.status} />
+              </div>
+              <p className="text-sm text-muted-foreground">{item.note}</p>
+              <div className="mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!item.canRetry}
+                >
+                  수동 재처리 준비
+                </Button>
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>
