@@ -249,15 +249,15 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   return (
     <div className="flex flex-col border border-border/50 rounded-xl bg-card/30 backdrop-blur-sm overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Bot className="h-4 w-4 text-primary" />
+      <div className="px-4 py-2.5 border-b border-border/50 flex items-center gap-2">
+        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Bot className="h-3.5 w-3.5 text-primary" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold">AI 작업실</h3>
-          <p className="text-[10px] text-muted-foreground">{label} 맞춤 · 결과 즉시 저장/내보내기 가능</p>
+          <h3 className="text-xs font-semibold">보조 AI 작업실</h3>
+          <p className="text-[9px] text-muted-foreground">추가 요청 · 수정 · 자유형 요청</p>
         </div>
-        <Badge variant="outline" className="ml-auto text-[9px] bg-primary/5 text-primary border-primary/20">파일럿</Badge>
+        <Badge variant="outline" className="ml-auto text-[9px] bg-muted/30 text-muted-foreground border-border/30">보조</Badge>
       </div>
 
       {/* Chat Area */}
