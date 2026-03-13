@@ -1,5 +1,6 @@
 /**
- * CampaignPlannerPage — AI 추천 캠페인을 운영 가능한 캠페인 카드로 관리
+ * CampaignPlannerPage — 캠페인 관리
+ * 직접 입력 + AI 비서 + 내보내기 + 추적 하이브리드 구조
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -14,6 +15,11 @@ import { Megaphone, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { fetchCampaigns, insertCampaign, updateCampaign, deleteCampaign, type AssistantCampaign } from "@/lib/repositories/assistant-repository";
+import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
+import { OperationalExportMenu } from "@/components/OperationalExportMenu";
+import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 import { toast } from "@/hooks/use-toast";
 
 const statusOptions = [
@@ -21,6 +27,19 @@ const statusOptions = [
   { value: "review", label: "검토중", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
   { value: "active", label: "진행중", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
   { value: "done", label: "완료", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+];
+
+const exportColumns = [
+  { header: "캠페인명", accessor: (c: AssistantCampaign) => c.title },
+  { header: "상태", accessor: (c: AssistantCampaign) => statusOptions.find(s => s.value === c.status)?.label || c.status },
+  { header: "목적", accessor: (c: AssistantCampaign) => c.purpose || "" },
+  { header: "대상", accessor: (c: AssistantCampaign) => c.target_segment || "" },
+  { header: "채널", accessor: (c: AssistantCampaign) => c.channel || "" },
+  { header: "시작일", accessor: (c: AssistantCampaign) => c.start_date || "" },
+  { header: "종료일", accessor: (c: AssistantCampaign) => c.end_date || "" },
+  { header: "혜택", accessor: (c: AssistantCampaign) => c.benefit || "" },
+  { header: "메모", accessor: (c: AssistantCampaign) => c.memo || "" },
+  { header: "수정일", accessor: (c: AssistantCampaign) => c.updated_at || "" },
 ];
 
 export default function CampaignPlannerPage() {
@@ -69,6 +88,38 @@ export default function CampaignPlannerPage() {
     toast({ title: "삭제 완료" });
   };
 
+  const handleAISubmit = async (input: string): Promise<ProcessingResult | null> => {
+    const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
+    let count = 0;
+    for (const line of lines) {
+      await insertCampaign({
+        title: line,
+        source_type: "user_created",
+      });
+      count++;
+    }
+    if (count > 0) {
+      await load();
+      return {
+        id: crypto.randomUUID(),
+        summary: `캠페인 ${count}개를 추가했습니다.`,
+        timestamp: new Date(),
+      };
+    }
+    return null;
+  };
+
+  const handleCsvExport = () => {
+    const csv = buildCsv(campaigns, exportColumns);
+    downloadCsv(csv, `캠페인_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast({ title: "CSV 다운로드 완료" });
+  };
+
+  const handleXlsxExport = () => {
+    downloadXlsx(campaigns, exportColumns, `캠페인_${new Date().toISOString().slice(0, 10)}.xlsx`, "캠페인");
+    toast({ title: "XLSX 다운로드 완료" });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <div>
@@ -86,9 +137,12 @@ export default function CampaignPlannerPage() {
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">{campaigns.length}개 캠페인</p>
-        <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5">
-          <Plus className="h-3 w-3" /> 캠페인 추가
-        </Button>
+        <div className="flex items-center gap-2">
+          <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={campaigns.length === 0} />
+          <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5">
+            <Plus className="h-3 w-3" /> 캠페인 추가
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -98,7 +152,7 @@ export default function CampaignPlannerPage() {
           <CardContent className="py-12 text-center">
             <Megaphone className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">등록된 캠페인이 없습니다</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">AI 비서에서 생성하거나 직접 추가하세요</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">직접 추가하거나 AI 비서에 요청하세요</p>
           </CardContent>
         </Card>
       ) : (
@@ -112,7 +166,6 @@ export default function CampaignPlannerPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium">{c.title}</span>
                       <Badge variant="outline" className={`text-[9px] ${st?.color || ""}`}>{st?.label || c.status}</Badge>
-                      {c.source_type === "ai_generated" && <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">AI</Badge>}
                     </div>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-red-400" onClick={() => handleDelete(c.id)}>
                       <Trash2 className="h-3 w-3" />
@@ -125,6 +178,7 @@ export default function CampaignPlannerPage() {
                     {c.start_date && <span>기간: {c.start_date}{c.end_date ? ` ~ ${c.end_date}` : ""}</span>}
                   </div>
                   {c.benefit && <p className="text-[10px] text-muted-foreground">혜택: {c.benefit}</p>}
+                  <OperationalMetaBadges sourceType={c.source_type} updatedAt={c.updated_at} compact />
                   <div className="flex justify-end">
                     <Select value={c.status} onValueChange={v => handleStatusChange(c.id, v)}>
                       <SelectTrigger className="h-7 w-24 text-[10px]"><SelectValue /></SelectTrigger>
@@ -139,6 +193,13 @@ export default function CampaignPlannerPage() {
           })}
         </div>
       )}
+
+      {/* AI 비서 */}
+      <OperationalAIAssistantPanel
+        description="캠페인 초안 · 수정 · 일정 요청"
+        placeholder={"캠페인명을 줄바꿈으로 입력하거나 자유롭게 요청하세요.\n예: 봄맞이 재등록 캠페인\n여름 프로모션 기획"}
+        onSubmit={handleAISubmit}
+      />
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

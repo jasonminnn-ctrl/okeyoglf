@@ -1,6 +1,6 @@
 /**
- * ChecklistManagerPage — 업종별 체크리스트를 실제 체크 가능한 관리형 구조로 운영
- * CSV 다운로드 지원
+ * ChecklistManagerPage — 업종별 체크리스트 관리
+ * 직접 입력 + AI 비서 + 내보내기 + 담당자/완료자 추적 하이브리드 구조
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ClipboardCheck, Plus, ArrowLeft, Loader2, Trash2, Download, PlusCircle } from "lucide-react";
+import { ClipboardCheck, Plus, ArrowLeft, Loader2, Trash2, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import {
@@ -20,11 +20,17 @@ import {
   fetchChecklistItems, insertChecklistItem, updateChecklistItem, deleteChecklistItem,
   type AssistantChecklist, type AssistantChecklistItem,
 } from "@/lib/repositories/assistant-repository";
+import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
+import { OperationalExportMenu } from "@/components/OperationalExportMenu";
+import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ChecklistManagerPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [checklists, setChecklists] = useState<AssistantChecklist[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [items, setItems] = useState<AssistantChecklistItem[]>([]);
@@ -77,22 +83,31 @@ export default function ChecklistManagerPage() {
 
   const handleAddItem = async () => {
     if (!addItemText.trim() || !selectedId) return;
+    // Parse "업무명-담당자" format
+    const parts = addItemText.trim().split("-");
+    const label = parts[0]?.trim();
+    const assignee = parts[1]?.trim() || null;
+    if (!label) return;
     await insertChecklistItem({
       checklist_id: selectedId,
-      label: addItemText.trim(),
+      label,
       sort_order: items.length,
-    });
+      assignee_name: assignee,
+    } as any);
     setAddItemText("");
     loadItems(selectedId);
   };
 
   const handleToggle = async (item: AssistantChecklistItem) => {
     const checked = !item.is_checked;
-    await updateChecklistItem(item.id, {
+    const updates: any = {
       is_checked: checked,
       checked_at: checked ? new Date().toISOString() : null,
-    } as any);
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_checked: checked, checked_at: checked ? new Date().toISOString() : null } : i));
+      completed_by_name: checked ? (user?.name || user?.email || "사용자") : null,
+      completed_by_user_id: checked ? (user?.id || null) : null,
+    };
+    await updateChecklistItem(item.id, updates);
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, ...updates } : i));
   };
 
   const handleDeleteItem = async (id: string) => {
@@ -104,16 +119,62 @@ export default function ChecklistManagerPage() {
   const checkedCount = items.filter(i => i.is_checked).length;
   const progress = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
 
-  const handleCsvDownload = () => {
+  const exportColumns = [
+    { header: "항목", accessor: (i: AssistantChecklistItem) => i.label },
+    { header: "완료", accessor: (i: AssistantChecklistItem) => i.is_checked ? "✅" : "☐" },
+    { header: "담당자", accessor: (i: AssistantChecklistItem) => i.assignee_name || "" },
+    { header: "완료자", accessor: (i: AssistantChecklistItem) => i.completed_by_name || "" },
+    { header: "완료시각", accessor: (i: AssistantChecklistItem) => i.checked_at || "" },
+    { header: "메모", accessor: (i: AssistantChecklistItem) => i.memo || "" },
+  ];
+
+  const handleCsvExport = () => {
     if (!selectedChecklist || items.length === 0) return;
-    const csv = buildCsv(items, [
-      { header: "항목", accessor: i => i.label },
-      { header: "완료", accessor: i => i.is_checked ? "✅" : "☐" },
-      { header: "완료시각", accessor: i => i.checked_at || "" },
-      { header: "메모", accessor: i => i.memo || "" },
-    ]);
+    const csv = buildCsv(items, exportColumns);
     downloadCsv(csv, `${selectedChecklist.title}_체크리스트.csv`);
     toast({ title: "CSV 다운로드 완료" });
+  };
+
+  const handleXlsxExport = () => {
+    if (!selectedChecklist || items.length === 0) return;
+    downloadXlsx(items, exportColumns, `${selectedChecklist.title}_체크리스트.xlsx`, "체크리스트");
+    toast({ title: "XLSX 다운로드 완료" });
+  };
+
+  const handleAISubmit = async (input: string): Promise<ProcessingResult | null> => {
+    if (!selectedId) {
+      toast({ title: "체크리스트를 먼저 선택하세요", variant: "destructive" });
+      return null;
+    }
+    const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
+    let count = 0;
+    const assigneeSummary: Record<string, number> = {};
+    for (const line of lines) {
+      const parts = line.split("-");
+      const label = parts[0]?.trim();
+      const assignee = parts[1]?.trim() || null;
+      if (!label) continue;
+      await insertChecklistItem({
+        checklist_id: selectedId,
+        label,
+        sort_order: items.length + count,
+        assignee_name: assignee,
+      } as any);
+      count++;
+      const key = assignee || "미지정";
+      assigneeSummary[key] = (assigneeSummary[key] || 0) + 1;
+    }
+    if (count > 0) {
+      await loadItems(selectedId);
+      const details = Object.entries(assigneeSummary).map(([k, v]) => `${k} ${v}건`).join(", ");
+      return {
+        id: crypto.randomUUID(),
+        summary: `${selectedChecklist?.title || "체크리스트"}에 ${count}개 항목을 추가했습니다.`,
+        details,
+        timestamp: new Date(),
+      };
+    }
+    return null;
   };
 
   return (
@@ -183,9 +244,7 @@ export default function ChecklistManagerPage() {
                     <CardTitle className="text-base">{selectedChecklist.title}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">{checkedCount}/{items.length}</Badge>
-                      <Button size="sm" variant="outline" onClick={handleCsvDownload} disabled={items.length === 0} className="text-xs gap-1 h-7">
-                        <Download className="h-3 w-3" /> CSV
-                      </Button>
+                      <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={items.length === 0} />
                     </div>
                   </div>
                   <Progress value={progress} className="h-1.5 mt-2" />
@@ -198,8 +257,15 @@ export default function ChecklistManagerPage() {
                   ) : items.map(item => (
                     <div key={item.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-muted/10 group">
                       <Checkbox checked={item.is_checked} onCheckedChange={() => handleToggle(item)} />
-                      <span className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}>{item.label}</span>
-                      {item.checked_at && <span className="text-[9px] text-muted-foreground">{new Date(item.checked_at).toLocaleDateString("ko-KR")}</span>}
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}>{item.label}</span>
+                        <OperationalMetaBadges
+                          assignee={item.assignee_name}
+                          completedByName={item.completed_by_name}
+                          completedAt={item.checked_at}
+                          compact
+                        />
+                      </div>
                       <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400"
                         onClick={() => handleDeleteItem(item.id)}>
                         <Trash2 className="h-2.5 w-2.5" />
@@ -210,7 +276,7 @@ export default function ChecklistManagerPage() {
                   {/* Quick add item */}
                   <div className="flex gap-2 pt-2 border-t border-border/30 mt-2">
                     <Input
-                      placeholder="항목 추가..."
+                      placeholder="항목명-담당자 (예: 걸레빨기-직원A)"
                       value={addItemText}
                       onChange={e => setAddItemText(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handleAddItem()}
@@ -233,6 +299,13 @@ export default function ChecklistManagerPage() {
           )}
         </div>
       </div>
+
+      {/* AI 비서 */}
+      <OperationalAIAssistantPanel
+        description="체크리스트 추가 · 수정 · 업무 분배 요청"
+        placeholder={"항목을 줄바꿈으로 입력하세요.\n- 뒤에 담당자를 지정할 수 있습니다.\n\n예:\n걸레빨기-직원A\n뭐뭐하기-직원B\n청소하기"}
+        onSubmit={handleAISubmit}
+      />
 
       {/* Add Checklist Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

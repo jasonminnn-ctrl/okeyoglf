@@ -1,5 +1,6 @@
 /**
  * ReminderBoardPage — 일정/마감 리마인드 관리 보드
+ * 직접 입력 + AI 비서 + 내보내기 + 추적 하이브리드 구조
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -14,6 +15,11 @@ import { CalendarClock, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { fetchReminders, insertReminder, updateReminder, deleteReminder, type AssistantReminder } from "@/lib/repositories/assistant-repository";
+import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
+import { OperationalExportMenu } from "@/components/OperationalExportMenu";
+import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { downloadXlsx } from "@/lib/xlsx-export";
 import { toast } from "@/hooks/use-toast";
 
 const typeOptions = [
@@ -28,6 +34,16 @@ const statusOptions = [
   { value: "active", label: "활성", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
   { value: "snoozed", label: "연기", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
   { value: "done", label: "완료", color: "bg-muted/30 text-muted-foreground border-border/30" },
+];
+
+const exportColumns = [
+  { header: "제목", accessor: (r: AssistantReminder) => r.title },
+  { header: "상태", accessor: (r: AssistantReminder) => statusOptions.find(s => s.value === r.status)?.label || r.status },
+  { header: "유형", accessor: (r: AssistantReminder) => typeOptions.find(t => t.value === r.reminder_type)?.label || r.reminder_type },
+  { header: "기준일", accessor: (r: AssistantReminder) => r.due_date || "" },
+  { header: "반복", accessor: (r: AssistantReminder) => r.is_recurring ? "Y" : "N" },
+  { header: "메모", accessor: (r: AssistantReminder) => r.memo || "" },
+  { header: "수정일", accessor: (r: AssistantReminder) => r.updated_at || "" },
 ];
 
 export default function ReminderBoardPage() {
@@ -72,6 +88,48 @@ export default function ReminderBoardPage() {
     toast({ title: "삭제 완료" });
   };
 
+  const handleAISubmit = async (input: string): Promise<ProcessingResult | null> => {
+    const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
+    let count = 0;
+    for (const line of lines) {
+      // Parse patterns like "매달 25일 정산 리마인드"
+      const isRecurring = /매달|매주|매일|매월|반복/.test(line);
+      const typeMatch = line.match(/정산|계약|프로모션|운영/);
+      const reminderType = typeMatch
+        ? (typeMatch[0] === "정산" ? "settlement" : typeMatch[0] === "계약" ? "contract" : typeMatch[0] === "프로모션" ? "promotion" : "ops_check")
+        : "general";
+
+      await insertReminder({
+        title: line,
+        reminder_type: reminderType,
+        is_recurring: isRecurring,
+        source_type: "user_created",
+      });
+      count++;
+    }
+    if (count > 0) {
+      await load();
+      return {
+        id: crypto.randomUUID(),
+        summary: `리마인드 ${count}개를 추가했습니다.`,
+        details: lines.some(l => /매달|매주|매일/.test(l)) ? "반복 설정이 감지된 항목이 있습니다" : undefined,
+        timestamp: new Date(),
+      };
+    }
+    return null;
+  };
+
+  const handleCsvExport = () => {
+    const csv = buildCsv(reminders, exportColumns);
+    downloadCsv(csv, `리마인드_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast({ title: "CSV 다운로드 완료" });
+  };
+
+  const handleXlsxExport = () => {
+    downloadXlsx(reminders, exportColumns, `리마인드_${new Date().toISOString().slice(0, 10)}.xlsx`, "리마인드");
+    toast({ title: "XLSX 다운로드 완료" });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <div>
@@ -89,9 +147,12 @@ export default function ReminderBoardPage() {
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">{reminders.length}개 리마인드</p>
-        <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5">
-          <Plus className="h-3 w-3" /> 리마인드 추가
-        </Button>
+        <div className="flex items-center gap-2">
+          <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={reminders.length === 0} />
+          <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5">
+            <Plus className="h-3 w-3" /> 리마인드 추가
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -118,12 +179,12 @@ export default function ReminderBoardPage() {
                         <Badge variant="outline" className={`text-[9px] ${st?.color || ""}`}>{st?.label || r.status}</Badge>
                         <Badge variant="outline" className="text-[9px]">{tp?.label || r.reminder_type}</Badge>
                         {r.is_recurring && <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-400 border-violet-500/20">반복</Badge>}
-                        {r.source_type === "ai_generated" && <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">AI</Badge>}
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
                         {r.due_date && <span>기준일: {r.due_date}</span>}
                         {r.memo && <span>메모: {r.memo}</span>}
                       </div>
+                      <OperationalMetaBadges sourceType={r.source_type} updatedAt={r.updated_at} compact />
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Select value={r.status} onValueChange={v => handleStatusChange(r.id, v)}>
@@ -143,6 +204,13 @@ export default function ReminderBoardPage() {
           })}
         </div>
       )}
+
+      {/* AI 비서 */}
+      <OperationalAIAssistantPanel
+        description="리마인드 추가 · 수정 · 반복 설정 요청"
+        placeholder={"리마인드를 줄바꿈으로 입력하세요.\n예: 매달 25일 정산 리마인드\n금요일 프로모션 마감 알림\n계약 갱신일 확인"}
+        onSubmit={handleAISubmit}
+      />
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
