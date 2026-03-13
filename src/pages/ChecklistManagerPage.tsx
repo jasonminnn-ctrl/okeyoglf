@@ -199,6 +199,14 @@ export default function ChecklistManagerPage() {
 
       <BusinessContextBanner module="AI 비서" />
 
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <OperationalSourceTabs
+          value={sourceTab}
+          onValueChange={setSourceTab}
+          config={{ totalCount: checklists.length, aiLabel: "AI 추가", opsLabel: "운영 기본" }}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Checklist list */}
         <div className="space-y-3">
