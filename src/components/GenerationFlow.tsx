@@ -284,18 +284,28 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
 
               <Separator />
 
-              {/* Action Buttons - only in result area */}
+              {/* Action Buttons - available immediately after generation */}
               <div className="flex flex-wrap gap-2">
+                {/* Instant TXT Download — always available */}
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleDirectDownload}>
+                  <Download className="h-3 w-3" /> TXT 다운로드
+                </Button>
+
+                {/* Export Dialog — always available */}
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
+                  <Download className="h-3 w-3" /> 내보내기
+                </Button>
+
+                {/* Save */}
                 {resultActions.save.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled || !!savedResultId}>
                     <Bookmark className="h-3 w-3" /> {savedResultId ? "저장됨" : "결과 저장"}
                   </Button>
                 )}
+
+                {/* Post-save actions */}
                 {savedResultId && (
                   <>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
-                      <Download className="h-3 w-3" /> 다운로드
-                    </Button>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setSavedResultId(result!.id); setDrawerOpen(true); }}>
                       <ExternalLink className="h-3 w-3" /> 저장된 결과 열기
                     </Button>
@@ -304,6 +314,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     </Button>
                   </>
                 )}
+
+                {/* Copy */}
                 {resultActions.copy.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
                     {resultActions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -311,6 +323,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     {!resultActions.copy.enabled && <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.copy.lockReason}</span>}
                   </Button>
                 )}
+
+                {/* Regenerate */}
                 {resultActions.regenerate.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleRegenerate} disabled={!resultActions.regenerate.enabled}>
                     {resultActions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -320,6 +334,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     )}
                   </Button>
                 )}
+
+                {/* Consultant */}
                 {resultActions.consultantTransfer.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleConsultant} disabled={!resultActions.consultantTransfer.enabled}>
                     {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
