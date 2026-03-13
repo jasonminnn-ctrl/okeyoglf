@@ -497,7 +497,7 @@ export async function getPointCreditMappings(
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data ?? []) as ImwebPointCreditMappingRow[]).map(mapPointCreditMapping);
+  return ((data ?? []) as unknown as ImwebPointCreditMappingRow[]).map(mapPointCreditMapping);
 }
 
 export async function upsertPointCreditMapping(
