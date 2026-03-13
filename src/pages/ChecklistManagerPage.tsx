@@ -156,7 +156,20 @@ export default function ChecklistManagerPage() {
     return null;
   };
 
-  // Checklist detail
+  /** Add checklist from operator_recommendations DB */
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    const created = await insertChecklist({
+      title: rec.title,
+      memo: rec.description,
+      checklist_type: "daily",
+      source_type: "ops_recommended",
+    } as any);
+    toast({ title: "운영 권장 체크리스트 추가 완료" });
+    await loadChecklists();
+    if (created) setSelectedId(created.id);
+  };
+
+
   const openChecklistDetail = (cl: AssistantChecklist) => {
     setDetailChecklist(cl);
     setDetailEdits({ title: cl.title, memo: cl.memo || "", focus_area: cl.focus_area || "" });
