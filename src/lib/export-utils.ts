@@ -5,12 +5,33 @@
  */
 
 import type { SavedResult } from "@/contexts/ResultStoreContext";
+import type { GenerationResult, GenerationResultSection } from "@/lib/ai-generation";
 
 // ──────────────────────────────────
 // Format types
 // ──────────────────────────────────
 
 export type ExportFormat = "txt" | "doc" | "pdf" | "ppt";
+
+/**
+ * Minimal shape accepted by export helpers — works with both
+ * SavedResult (saved) and GenerationResult (unsaved).
+ */
+export interface ExportableResult {
+  title: string;
+  businessType: string;
+  module?: string;
+  subtool?: string;
+  sourceMenu?: string;
+  sourceTool?: string;
+  sections: GenerationResultSection[];
+  createdAt: string;
+  status: string;
+  version?: number;
+  category?: string;
+  sourceNote?: string;
+  referenceNote?: string;
+}
 
 export interface FormatOption {
   format: ExportFormat;
