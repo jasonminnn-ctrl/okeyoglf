@@ -10,6 +10,7 @@ import { ResultStoreProvider } from "@/contexts/ResultStoreContext";
 import { RouteGuard } from "@/components/RouteGuard";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AIAssistantPage from "@/pages/AIAssistantPage";
 import AIOperationsPage from "@/pages/AIOperationsPage";

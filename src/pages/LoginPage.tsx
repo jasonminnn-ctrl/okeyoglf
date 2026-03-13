@@ -7,12 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const navigate = useNavigate();
   const { login, signup, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
@@ -55,6 +58,57 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast({ title: "오류", description: "이메일을 입력해 주세요.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "오류", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "이메일 전송 완료", description: "비밀번호 재설정 링크가 이메일로 전송되었습니다." });
+      setShowForgotPassword(false);
+    }
+  };
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
+              <span className="text-primary-foreground font-bold text-xl">O</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">비밀번호 재설정</h1>
+            <p className="text-muted-foreground text-sm mt-1">가입한 이메일을 입력해 주세요</p>
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">이메일</Label>
+                  <Input id="reset-email" type="email" placeholder="email@company.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "전송 중..." : "재설정 링크 보내기"}
+                </Button>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => setShowForgotPassword(false)}>
+                  로그인으로 돌아가기
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -90,6 +144,9 @@ export default function LoginPage() {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "로그인 중..." : "로그인"}
+                  </Button>
+                  <Button type="button" variant="link" className="w-full text-sm text-muted-foreground" onClick={() => setShowForgotPassword(true)}>
+                    비밀번호를 잊으셨나요?
                   </Button>
                 </form>
               </CardContent>
