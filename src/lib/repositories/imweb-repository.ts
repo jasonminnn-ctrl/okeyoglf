@@ -432,7 +432,7 @@ export async function upsertImwebSiteConnection(
     .single();
 
   if (error) throw error;
-  return data as ImwebSiteConnectionRow;
+  return data as unknown as ImwebSiteConnectionRow;
 }
 
 export async function getProductMembershipMappings(
