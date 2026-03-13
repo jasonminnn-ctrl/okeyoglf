@@ -221,6 +221,15 @@ export default function ChecklistManagerPage() {
         />
       </div>
 
+      {sourceTab === "ops" && (
+        <RecommendationSupplyPanel
+          category="checklist"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={checklists.filter(c => c.source_type === "ops_recommended").map(c => c.title)}
+          headerLabel="운영 권장 체크리스트"
+        />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Checklist list */}
         <div className="space-y-3">

@@ -251,27 +251,37 @@ export default function OpsCheckPage() {
       )}
 
       {tab === "ops" && (
-        <Card className="bg-amber-500/5 border-amber-500/20">
-          <CardContent className="py-3 px-4">
-            <p className="text-xs font-medium mb-2 flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-amber-400" />운영팀 권장 점검 항목</p>
-            <div className="space-y-1.5">
-              {OPS_RECOMMENDED_ITEMS.map((item, i) => {
-                const alreadyAdded = tasks.some(t => t.title === item.title && t.risk_source === "ops_recommended");
-                return (
-                  <div key={i} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded bg-background/50">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium">{item.title}</span>
-                      <p className="text-[10px] text-muted-foreground">{item.description}</p>
+        <div className="space-y-3">
+          {/* Real DB recommendations */}
+          <RecommendationSupplyPanel
+            category="ops_check"
+            onAdd={handleAddFromRecommendation}
+            addedTitles={tasks.filter(t => t.risk_source === "ops_recommended").map(t => t.title)}
+            headerLabel="운영팀 권장 점검 항목 (DB)"
+          />
+          {/* Legacy static items */}
+          <Card className="bg-amber-500/5 border-amber-500/20">
+            <CardContent className="py-3 px-4">
+              <p className="text-xs font-medium mb-2 flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-amber-400" />기본 권장 점검 항목</p>
+              <div className="space-y-1.5">
+                {OPS_RECOMMENDED_ITEMS.map((item, i) => {
+                  const alreadyAdded = tasks.some(t => t.title === item.title && t.risk_source === "ops_recommended");
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded bg-background/50">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-medium">{item.title}</span>
+                        <p className="text-[10px] text-muted-foreground">{item.description}</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={alreadyAdded} onClick={() => handleAddOpsRecommended(item)}>
+                        {alreadyAdded ? "추가됨" : "추가"}
+                      </Button>
                     </div>
-                    <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={alreadyAdded} onClick={() => handleAddOpsRecommended(item)}>
-                      {alreadyAdded ? "추가됨" : "추가"}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {loading ? (
