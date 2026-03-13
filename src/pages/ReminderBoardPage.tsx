@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { CalendarClock, Plus, ArrowLeft, Loader2, Trash2, ListChecks, Sparkles } from "lucide-react";
+import { CalendarClock, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { fetchReminders, insertReminder, updateReminder, deleteReminder, type AssistantReminder } from "@/lib/repositories/assistant-repository";
@@ -101,9 +101,7 @@ export default function ReminderBoardPage() {
     return null;
   };
 
-  const filteredReminders = tab === "all" ? reminders
-    : tab === "ai" ? reminders.filter(r => r.source_type === "ai_generated")
-    : reminders.filter(r => r.source_type === "user_created" || !r.source_type);
+  const filteredReminders = filterBySourceTab(reminders, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredReminders, exportColumns), `리마인드_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
   const handleXlsxExport = () => { downloadXlsx(filteredReminders, exportColumns, `리마인드_${new Date().toISOString().slice(0, 10)}.xlsx`, "리마인드"); toast({ title: "XLSX 다운로드 완료" }); };
@@ -139,13 +137,11 @@ export default function ReminderBoardPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({reminders.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 제안</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OperationalSourceTabs
+          value={tab}
+          onValueChange={setTab}
+          config={{ totalCount: reminders.length, aiLabel: "AI 제안", opsLabel: "운영 템플릿" }}
+        />
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredReminders.length === 0} />
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 리마인드 추가</Button>

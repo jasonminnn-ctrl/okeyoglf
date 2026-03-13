@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3, Search, FileBarChart, Bell } from "lucide-react";
+import { Shield, FileText, Database, Cpu, BookOpen, Eye, ShieldCheck, ShieldAlert, Globe, Lock, Tag, ToggleRight, History, LayoutTemplate, MessageSquare, Wrench, CheckCircle, AlertCircle, Zap, Activity, Crown, Wallet, Link2, Users, BarChart3, Search, FileBarChart, Bell } from "lucide-react";
 import { FeatureVisibilityEditor } from "@/components/FeatureVisibilityEditor";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import OperatorIntegrationTab from "@/components/operator/OperatorIntegrationTab";
@@ -11,6 +11,7 @@ import OperatorKpiBoard from "@/components/operator/OperatorKpiBoard";
 import OperatorResultsBoard from "@/components/operator/OperatorResultsBoard";
 import OperatorResearchBoard from "@/components/operator/OperatorResearchBoard";
 import OperatorNoticeTab from "@/components/operator/OperatorNoticeTab";
+import OperatorRecommendationTab from "@/components/operator/OperatorRecommendationTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -89,6 +90,7 @@ export default function OperatorPage() {
           <TabsTrigger value="research" className="text-xs px-3 py-1.5 gap-1.5"><Search className="h-3 w-3" />시장조사</TabsTrigger>
           <TabsTrigger value="integration" className="text-xs px-3 py-1.5 gap-1.5"><Link2 className="h-3 w-3" />외부 연동</TabsTrigger>
           <TabsTrigger value="notice" className="text-xs px-3 py-1.5 gap-1.5"><Bell className="h-3 w-3" />공지 관리</TabsTrigger>
+          <TabsTrigger value="recommendation" className="text-xs px-3 py-1.5 gap-1.5"><ShieldAlert className="h-3 w-3" />운영 권장</TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
@@ -265,6 +267,11 @@ export default function OperatorPage() {
         {/* Notice Tab */}
         <TabsContent value="notice" className="space-y-6">
           <OperatorNoticeTab />
+        </TabsContent>
+
+        {/* Recommendation Tab */}
+        <TabsContent value="recommendation" className="space-y-6">
+          <OperatorRecommendationTab />
         </TabsContent>
       </Tabs>
     </div>

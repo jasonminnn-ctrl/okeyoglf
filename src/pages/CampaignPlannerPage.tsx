@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Megaphone, Plus, ArrowLeft, Loader2, Trash2, ListChecks, Sparkles } from "lucide-react";
+import { Megaphone, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { fetchCampaigns, insertCampaign, updateCampaign, deleteCampaign, type AssistantCampaign } from "@/lib/repositories/assistant-repository";
@@ -94,9 +94,7 @@ export default function CampaignPlannerPage() {
     return null;
   };
 
-  const filteredCampaigns = tab === "all" ? campaigns
-    : tab === "ai" ? campaigns.filter(c => c.source_type === "ai_generated")
-    : campaigns.filter(c => c.source_type === "user_created" || !c.source_type);
+  const filteredCampaigns = filterBySourceTab(campaigns, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredCampaigns, exportColumns), `캠페인_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
   const handleXlsxExport = () => { downloadXlsx(filteredCampaigns, exportColumns, `캠페인_${new Date().toISOString().slice(0, 10)}.xlsx`, "캠페인"); toast({ title: "XLSX 다운로드 완료" }); };
@@ -141,13 +139,11 @@ export default function CampaignPlannerPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({campaigns.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 초안</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OperationalSourceTabs
+          value={tab}
+          onValueChange={setTab}
+          config={{ totalCount: campaigns.length, aiLabel: "AI 초안", opsLabel: "운영 템플릿" }}
+        />
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredCampaigns.length === 0} />
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 캠페인 추가</Button>

@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ClipboardCheck, Plus, ArrowLeft, Loader2, Trash2, PlusCircle, Eye } from "lucide-react";
+import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import {
@@ -35,6 +36,7 @@ export default function ChecklistManagerPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [checklists, setChecklists] = useState<AssistantChecklist[]>([]);
+  const [sourceTab, setSourceTab] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [items, setItems] = useState<AssistantChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +116,8 @@ export default function ChecklistManagerPage() {
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  const selectedChecklist = checklists.find(c => c.id === selectedId);
+  const filteredChecklists = filterBySourceTab(checklists, sourceTab);
+  const selectedChecklist = filteredChecklists.find(c => c.id === selectedId) || checklists.find(c => c.id === selectedId);
   const checkedCount = items.filter(i => i.is_checked).length;
   const progress = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
 
@@ -196,6 +199,14 @@ export default function ChecklistManagerPage() {
 
       <BusinessContextBanner module="AI 비서" />
 
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <OperationalSourceTabs
+          value={sourceTab}
+          onValueChange={setSourceTab}
+          config={{ totalCount: checklists.length, aiLabel: "AI 추가", opsLabel: "운영 기본" }}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Checklist list */}
         <div className="space-y-3">
@@ -206,9 +217,9 @@ export default function ChecklistManagerPage() {
 
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>
-          ) : checklists.length === 0 ? (
+          ) : filteredChecklists.length === 0 ? (
             <Card className="bg-card/50 border-border/50"><CardContent className="py-8 text-center"><p className="text-xs text-muted-foreground">체크리스트가 없습니다</p></CardContent></Card>
-          ) : checklists.map(cl => (
+          ) : filteredChecklists.map(cl => (
             <button
               key={cl.id}
               onClick={() => setSelectedId(cl.id)}

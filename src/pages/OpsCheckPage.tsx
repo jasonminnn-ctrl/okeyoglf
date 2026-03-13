@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertCircle, Plus, ArrowLeft, Loader2, Trash2, ShieldAlert, Sparkles, ListChecks } from "lucide-react";
+import { AlertCircle, Plus, ArrowLeft, Loader2, Trash2, ShieldAlert, Sparkles } from "lucide-react";
+import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { fetchTasks, insertTask, updateTask, deleteTask, type AssistantTask } from "@/lib/repositories/assistant-repository";
@@ -145,10 +145,7 @@ export default function OpsCheckPage() {
     return null;
   };
 
-  const filteredTasks = tab === "all" ? tasks
-    : tab === "ai" ? tasks.filter(t => t.risk_source === "ai_suggested")
-    : tab === "ops" ? tasks.filter(t => t.risk_source === "ops_recommended")
-    : tasks.filter(t => t.risk_source === "user_created" || !t.risk_source);
+  const filteredTasks = filterBySourceTab(tasks, tab);
 
   const handleCsvExport = () => {
     downloadCsv(buildCsv(filteredTasks, exportColumns), `운영점검_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -203,14 +200,11 @@ export default function OpsCheckPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 제안</TabsTrigger>
-            <TabsTrigger value="ops" className="text-xs h-7 px-3 gap-1"><ShieldAlert className="h-3 w-3" /> 운영 권장</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OperationalSourceTabs
+          value={tab}
+          onValueChange={setTab}
+          config={{ totalCount: tasks.length }}
+        />
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredTasks.length === 0} />
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 항목 추가</Button>
