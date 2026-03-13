@@ -10,6 +10,7 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
 import { ExportDialog } from "@/components/ExportDialog";
+import { buildPlainTextExport, downloadAsTextFile, buildFileName } from "@/lib/export-utils";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
