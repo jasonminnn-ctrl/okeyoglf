@@ -140,9 +140,13 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     setResult(null);
   };
 
-  const handleSave = () => {
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const handleSave = async () => {
     if (result && config) {
-      saveResult({
+      await saveResult({
         id: result.id,
         type: "generation",
         title: result.title,
@@ -159,7 +163,19 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
         sourceNote: result.sourceNote,
         referenceNote: result.referenceNote,
       });
-      toast({ title: "저장 완료", description: `${config.saveCategory}에 저장되었습니다` });
+      setSavedResultId(result.id);
+      toast({
+        title: "저장 완료",
+        description: `${config.saveCategory}에 저장되었습니다 — 클릭하여 열기`,
+        action: (
+          <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => {
+            setSavedResultId(result.id);
+            setDrawerOpen(true);
+          }}>
+            <ExternalLink className="h-3 w-3" /> 열기
+          </Button>
+        ),
+      });
     }
   };
 
