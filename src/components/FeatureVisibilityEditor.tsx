@@ -1,19 +1,28 @@
 /**
  * FeatureVisibilityEditor — Operator-only component
- * Allows toggling feature access modes via organization overrides.
+ * DB-backed: reads from feature_overrides, writes via Edge Function.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ToggleRight, Crown } from "lucide-react";
+import { ToggleRight, Crown, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import {
   defaultFeaturePolicies, membershipTiers, FEATURE_KEYS,
   type MembershipCode, type FeatureKey, type AccessMode,
   type OrganizationFeatureOverride,
 } from "@/lib/membership";
+import {
+  fetchFeatureOverrides,
+  upsertFeatureOverride,
+  deleteFeatureOverride,
+  type FeatureOverrideRow,
+} from "@/lib/repositories/feature-override-repository";
+import { DEV_ORG_ID } from "@/lib/repositories/constants";
 
 interface FeatureRow {
   label: string;
@@ -126,6 +135,19 @@ const tierBadgeColorMap: Record<string, string> = {
   enterprise: "bg-violet-500/10 text-violet-400",
 };
 
+/* ── DB row → app model ── */
+function rowToOverride(row: FeatureOverrideRow): OrganizationFeatureOverride {
+  return {
+    organizationId: row.org_id,
+    featureKey: row.feature_key as FeatureKey,
+    membershipCode: (row.membership_code ?? "trial") as MembershipCode,
+    accessMode: (row.access_mode ?? (row.enabled ? "enabled" : "hidden")) as AccessMode,
+    creditCost: row.custom_credit_cost ?? undefined,
+    note: row.reason ?? undefined,
+    isActive: true,
+  };
+}
+
 interface Props {
   membershipCode: MembershipCode;
   overrides: OrganizationFeatureOverride[];
@@ -134,8 +156,22 @@ interface Props {
   tierBadgeColor: Record<string, string>;
 }
 
-export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride, removeOverride, tierBadgeColor }: Props) {
+export function FeatureVisibilityEditor({ membershipCode, overrides: contextOverrides, addOverride: contextAddOverride, removeOverride: contextRemoveOverride, tierBadgeColor }: Props) {
   const [editingTier, setEditingTier] = useState<MembershipCode>(membershipCode);
+  const [dbOverrides, setDbOverrides] = useState<OrganizationFeatureOverride[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Use DB overrides as primary source; fall back to context overrides if DB is empty and context has data
+  const overrides = dbOverrides.length > 0 ? dbOverrides : contextOverrides;
+
+  const loadOverrides = useCallback(async () => {
+    setLoading(true);
+    const rows = await fetchFeatureOverrides(DEV_ORG_ID);
+    setDbOverrides(rows.map(rowToOverride));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadOverrides(); }, [loadOverrides]);
 
   // Resolve effective access mode for a feature key
   const getEffective = (key: FeatureKey): { mode: AccessMode; isOverridden: boolean } => {
@@ -145,20 +181,56 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
     return { mode: base?.accessMode ?? "hidden", isOverridden: false };
   };
 
-  const handleToggle = (key: FeatureKey, newMode: AccessMode) => {
+  const handleToggle = async (key: FeatureKey, newMode: AccessMode) => {
     // Check if newMode matches the base policy — if so, remove override
     const base = defaultFeaturePolicies.find(p => p.featureKey === key && p.membershipCode === editingTier && p.isActive);
     if (base && base.accessMode === newMode) {
-      removeOverride(key, editingTier);
+      // Remove override
+      const ok = await deleteFeatureOverride(DEV_ORG_ID, key, editingTier);
+      if (ok) {
+        setDbOverrides(prev => prev.filter(o => !(o.featureKey === key && o.membershipCode === editingTier)));
+        contextRemoveOverride(key, editingTier);
+        toast({ title: "Override 제거됨", description: `${key} → 기본 정책 복원` });
+      } else {
+        toast({ title: "Override 제거 실패", variant: "destructive" });
+      }
     } else {
-      addOverride({
-        organizationId: "org-001",
-        featureKey: key,
-        membershipCode: editingTier,
-        accessMode: newMode,
-        isActive: true,
-        note: `운영자 수동 변경: ${accessModeLabel[newMode]} (${editingTier})`,
-      });
+      // Upsert override
+      const reason = `운영자 수동 변경: ${accessModeLabel[newMode]} (${editingTier})`;
+      const ok = await upsertFeatureOverride(DEV_ORG_ID, key, editingTier, newMode, null, reason);
+      if (ok) {
+        const newOverride: OrganizationFeatureOverride = {
+          organizationId: DEV_ORG_ID,
+          featureKey: key,
+          membershipCode: editingTier,
+          accessMode: newMode,
+          isActive: true,
+          note: reason,
+        };
+        setDbOverrides(prev => [
+          ...prev.filter(o => !(o.featureKey === key && o.membershipCode === editingTier)),
+          newOverride,
+        ]);
+        contextAddOverride(newOverride);
+        toast({ title: "Override 저장됨", description: `${key} → ${accessModeLabel[newMode]}` });
+      } else {
+        toast({ title: "Override 저장 실패", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleRemoveOverride = async (key: FeatureKey, mc?: MembershipCode) => {
+    const ok = await deleteFeatureOverride(DEV_ORG_ID, key, mc);
+    if (ok) {
+      setDbOverrides(prev => prev.filter(o => {
+        if (o.featureKey !== key) return true;
+        if (mc && o.membershipCode !== mc) return true;
+        return false;
+      }));
+      contextRemoveOverride(key, mc);
+      toast({ title: "Override 제거됨" });
+    } else {
+      toast({ title: "Override 제거 실패", variant: "destructive" });
     }
   };
 
@@ -171,6 +243,9 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
               <ToggleRight className="h-4 w-4 text-primary" />기능 노출 제어
             </CardTitle>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7" onClick={loadOverrides}>
+                <RefreshCw className="h-3 w-3" />새로고침
+              </Button>
               <span className="text-[10px] text-muted-foreground">기준 멤버십:</span>
               <Select value={editingTier} onValueChange={(v) => setEditingTier(v as MembershipCode)}>
                 <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
@@ -182,69 +257,78 @@ export function FeatureVisibilityEditor({ membershipCode, overrides, addOverride
               </Select>
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">각 기능의 접근 상태를 활성/잠금/숨김으로 변경합니다. 변경 시 즉시 반영됩니다.</p>
+          <p className="text-[11px] text-muted-foreground mt-1">각 기능의 접근 상태를 활성/잠금/숨김으로 변경합니다. 변경은 DB에 즉시 반영됩니다.</p>
         </CardHeader>
         <CardContent className="space-y-5">
-          {featureGroups.map(group => (
-            <div key={group.category}>
-              <p className="text-xs font-medium mb-2 text-muted-foreground">{group.category}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {group.items.map(item => {
-                  const { mode, isOverridden } = getEffective(item.key);
-                  return (
-                    <div key={item.key} className="p-2.5 rounded-lg bg-muted/20 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[11px] truncate">{item.label}</span>
-                        {isOverridden && (
-                          <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary flex-shrink-0">override</Badge>
-                        )}
-                      </div>
-                      <Select value={mode} onValueChange={(v) => handleToggle(item.key, v as AccessMode)}>
-                        <SelectTrigger className="h-6 w-[80px] text-[10px] border-none bg-transparent p-0 justify-end gap-1">
-                          <Badge variant="outline" className={`text-[9px] ${accessModeBadge[mode]}`}>
-                            {accessModeLabel[mode]}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="enabled"><span className="text-emerald-400">활성</span></SelectItem>
-                          <SelectItem value="locked"><span className="text-amber-400">잠금</span></SelectItem>
-                          <SelectItem value="hidden"><span className="text-muted-foreground">숨김</span></SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                })}
-              </div>
+          {loading ? (
+            <div className="text-center py-6">
+              <RefreshCw className="h-5 w-5 text-muted-foreground mx-auto mb-2 animate-spin" />
+              <p className="text-xs text-muted-foreground">데이터 로딩 중...</p>
             </div>
-          ))}
-
-          <Separator />
-
-          {/* Active overrides summary */}
-          <div>
-            <p className="text-xs font-medium mb-2">현재 조직 Override ({overrides.filter(o => o.isActive).length}건)</p>
-            {overrides.filter(o => o.isActive).length === 0 ? (
-              <p className="text-[11px] text-muted-foreground">기본 정책과 동일 — 조직별 override 없음</p>
-            ) : (
-              <div className="space-y-1">
-                {overrides.filter(o => o.isActive).map(o => (
-                  <div key={o.featureKey} className="flex items-center justify-between p-2 rounded bg-primary/5 text-[11px]">
-                    <span className="font-mono text-[10px] text-muted-foreground">{o.featureKey}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[9px]">{o.membershipCode}</Badge>
-                      <Badge variant="outline" className={`text-[9px] ${accessModeBadge[o.accessMode]}`}>{accessModeLabel[o.accessMode]}</Badge>
-                      <button
-                        onClick={() => removeOverride(o.featureKey, o.membershipCode)}
-                        className="text-[9px] text-destructive hover:underline"
-                      >
-                        제거
-                      </button>
-                    </div>
+          ) : (
+            <>
+              {featureGroups.map(group => (
+                <div key={group.category}>
+                  <p className="text-xs font-medium mb-2 text-muted-foreground">{group.category}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {group.items.map(item => {
+                      const { mode, isOverridden } = getEffective(item.key);
+                      return (
+                        <div key={item.key} className="p-2.5 rounded-lg bg-muted/20 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[11px] truncate">{item.label}</span>
+                            {isOverridden && (
+                              <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary flex-shrink-0">override</Badge>
+                            )}
+                          </div>
+                          <Select value={mode} onValueChange={(v) => handleToggle(item.key, v as AccessMode)}>
+                            <SelectTrigger className="h-6 w-[80px] text-[10px] border-none bg-transparent p-0 justify-end gap-1">
+                              <Badge variant="outline" className={`text-[9px] ${accessModeBadge[mode]}`}>
+                                {accessModeLabel[mode]}
+                              </Badge>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="enabled"><span className="text-emerald-400">활성</span></SelectItem>
+                              <SelectItem value="locked"><span className="text-amber-400">잠금</span></SelectItem>
+                              <SelectItem value="hidden"><span className="text-muted-foreground">숨김</span></SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                </div>
+              ))}
+
+              <Separator />
+
+              {/* Active overrides summary */}
+              <div>
+                <p className="text-xs font-medium mb-2">현재 조직 Override ({overrides.filter(o => o.isActive).length}건)</p>
+                {overrides.filter(o => o.isActive).length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground">기본 정책과 동일 — 조직별 override 없음</p>
+                ) : (
+                  <div className="space-y-1">
+                    {overrides.filter(o => o.isActive).map(o => (
+                      <div key={`${o.featureKey}-${o.membershipCode}`} className="flex items-center justify-between p-2 rounded bg-primary/5 text-[11px]">
+                        <span className="font-mono text-[10px] text-muted-foreground">{o.featureKey}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[9px]">{o.membershipCode}</Badge>
+                          <Badge variant="outline" className={`text-[9px] ${accessModeBadge[o.accessMode]}`}>{accessModeLabel[o.accessMode]}</Badge>
+                          <button
+                            onClick={() => handleRemoveOverride(o.featureKey, o.membershipCode)}
+                            className="text-[9px] text-destructive hover:underline"
+                          >
+                            제거
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
