@@ -534,30 +534,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      deduct_credit:
-        | {
-            Args: {
-              _amount: number
-              _module?: string
-              _org_id: string
-              _reason: string
-              _result_id?: string
-              _type: Database["public"]["Enums"]["ledger_type"]
-            }
-            Returns: boolean
-          }
-        | {
-            Args: {
-              _actor_type?: string
-              _amount: number
-              _module?: string
-              _org_id: string
-              _reason: string
-              _result_id?: string
-              _type: Database["public"]["Enums"]["ledger_type"]
-            }
-            Returns: boolean
-          }
+      deduct_credit: {
+        Args: {
+          _actor_type?: string
+          _amount: number
+          _module?: string
+          _org_id: string
+          _reason: string
+          _result_id?: string
+          _type: Database["public"]["Enums"]["ledger_type"]
+        }
+        Returns: boolean
+      }
       grant_credit: {
         Args: {
           _amount: number
