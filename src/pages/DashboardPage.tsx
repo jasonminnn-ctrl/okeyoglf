@@ -282,12 +282,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentResearch.length > 0 ? (
+              {recentResearch.length > 0 ? (
               <div className="space-y-1.5">
                 {recentResearch.map(r => (
-                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                  <div key={r.id} className="flex items-center justify-between text-[11px] cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" onClick={() => handleOpenResult(r.id)}>
                     <span className="text-muted-foreground truncate mr-2">{r.title}</span>
-                    <Badge className={`${r.status === "전달 완료" ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"} text-[9px]`} variant="outline">{r.status}</Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge className={`${r.status === "전달 완료" ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"} text-[9px]`} variant="outline">{r.status}</Badge>
+                      <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    </div>
                   </div>
                 ))}
               </div>
