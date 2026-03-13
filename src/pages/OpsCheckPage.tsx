@@ -68,7 +68,7 @@ const exportColumns = [
 
 export default function OpsCheckPage() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<AssistantTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
