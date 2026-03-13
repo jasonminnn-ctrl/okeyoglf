@@ -465,7 +465,7 @@ export default function OperatorIntegrationTab() {
                     </span>
                   </div>
                   <StatusBadge
-                    status={mapping.isActive ? "connected" : "pending"}
+                    status={mapping.isActive ? "test_connected" : "pending"}
                   />
                 </div>
                 <p className="text-sm font-medium text-foreground">
