@@ -18,6 +18,13 @@ export default function DashboardPage() {
   const { membershipCode, membershipName, creditBalance, ledger } = useMembership();
   const { recentResults, recentByType, totalCount } = useResultStore();
   const tier = getMembershipTier(membershipCode);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  const handleOpenResult = (id: string) => {
+    setSelectedResultId(id);
+    setDrawerOpen(true);
+  };
 
   const recentGenerated = recentResults(3);
   const recentResearch = recentByType("research", 3);
