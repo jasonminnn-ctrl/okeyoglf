@@ -141,19 +141,29 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
 
   const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
-  const toExportable = useCallback((result: GenerationResult): ExportableResult => ({
-    title: result.title,
-    businessType: result.businessType,
-    module: result.module,
-    subtool: result.subtool,
-    sections: result.sections,
-    createdAt: result.createdAt,
-    status: result.status,
-    version: 1,
-    category: "AI 비서 결과",
-    sourceNote: result.sourceNote,
-    referenceNote: result.referenceNote,
-  }), []);
+  /** Resolve pipeline config for current context */
+  const resolvePipeline = useCallback((cardKey: string | null) => {
+    const pipelineKey = (cardKey && CARD_KEY_TO_PIPELINE[cardKey]) || DEFAULT_PIPELINE_KEY;
+    const config = pipelineConfigs[pipelineKey];
+    return { pipelineKey, config: config || pipelineConfigs[DEFAULT_PIPELINE_KEY]! };
+  }, []);
+
+  const toExportable = useCallback((result: GenerationResult, cardKey: string | null): ExportableResult => {
+    const { config } = resolvePipeline(cardKey);
+    return {
+      title: result.title,
+      businessType: result.businessType,
+      module: config.module,
+      subtool: config.subtool,
+      sections: result.sections,
+      createdAt: result.createdAt,
+      status: result.status,
+      version: 1,
+      category: config.saveCategory,
+      sourceNote: result.sourceNote,
+      referenceNote: result.referenceNote,
+    };
+  }, [resolvePipeline]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
