@@ -199,7 +199,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
       );
 
       if (access.requiresCredit && access.creditCost > 0) {
-        deductCredit(access.creditCost, "generate", `AI 작업실 — ${text.slice(0, 30)}`, config.module, genResult.id);
+        deductCredit(access.creditCost, "generate", `AI 비서 — ${text.slice(0, 30)}`, config.module, genResult.id);
       }
 
       const assistantMsg: ChatMessage = {
