@@ -8,7 +8,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type {
   MembershipCode, CreditLedgerEntry, LedgerType,
-  FeatureKey, OrganizationFeatureOverride,
+  FeatureKey, AccessMode, OrganizationFeatureOverride,
 } from "@/lib/membership";
 import { getMembershipTier } from "@/lib/membership";
 import { checkFeatureAccess, checkResultActions, type FeatureAccessResult, type ResultActionsAccess } from "@/lib/feature-access";
