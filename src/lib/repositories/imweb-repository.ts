@@ -387,7 +387,7 @@ export async function getImwebSiteConnections(
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as ImwebSiteConnectionRow[];
+  return (data ?? []) as unknown as ImwebSiteConnectionRow[];
 }
 
 export async function getImwebMemberSyncSummary(
@@ -403,7 +403,7 @@ export async function getImwebMemberSyncSummary(
 
   if (error) throw error;
   if (!data) return null;
-  return mapSiteConnectionToSummary(data as ImwebSiteConnectionRow);
+  return mapSiteConnectionToSummary(data as unknown as ImwebSiteConnectionRow);
 }
 
 export async function upsertImwebSiteConnection(
@@ -432,7 +432,7 @@ export async function upsertImwebSiteConnection(
     .single();
 
   if (error) throw error;
-  return data as ImwebSiteConnectionRow;
+  return data as unknown as ImwebSiteConnectionRow;
 }
 
 export async function getProductMembershipMappings(
@@ -449,7 +449,7 @@ export async function getProductMembershipMappings(
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data ?? []) as ImwebProductMembershipMappingRow[]).map(
+  return ((data ?? []) as unknown as ImwebProductMembershipMappingRow[]).map(
     mapMembershipMapping,
   );
 }
@@ -480,7 +480,7 @@ export async function upsertProductMembershipMapping(
     .single();
 
   if (error) throw error;
-  return data as ImwebProductMembershipMappingRow;
+  return data as unknown as ImwebProductMembershipMappingRow;
 }
 
 export async function getPointCreditMappings(
@@ -497,7 +497,7 @@ export async function getPointCreditMappings(
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data ?? []) as ImwebPointCreditMappingRow[]).map(mapPointCreditMapping);
+  return ((data ?? []) as unknown as ImwebPointCreditMappingRow[]).map(mapPointCreditMapping);
 }
 
 export async function upsertPointCreditMapping(
@@ -524,7 +524,7 @@ export async function upsertPointCreditMapping(
     .single();
 
   if (error) throw error;
-  return data as ImwebPointCreditMappingRow;
+  return data as unknown as ImwebPointCreditMappingRow;
 }
 
 export async function getOrderEvents(
@@ -545,7 +545,7 @@ export async function getOrderEvents(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []) as ImwebOrderEventRow[];
+  return (data ?? []) as unknown as ImwebOrderEventRow[];
 }
 
 export async function upsertOrderEvent(
@@ -583,7 +583,7 @@ export async function upsertOrderEvent(
     .single();
 
   if (error) throw error;
-  return data as ImwebOrderEventRow;
+  return data as unknown as ImwebOrderEventRow;
 }
 
 export async function getSyncHistoryItems(
@@ -622,7 +622,7 @@ export async function getMemberLinks(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []) as ImwebMemberLinkRow[];
+  return (data ?? []) as unknown as ImwebMemberLinkRow[];
 }
 
 export async function upsertMemberLink(
@@ -653,5 +653,5 @@ export async function upsertMemberLink(
     .single();
 
   if (error) throw error;
-  return data as ImwebMemberLinkRow;
+  return data as unknown as ImwebMemberLinkRow;
 }
