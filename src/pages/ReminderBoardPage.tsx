@@ -101,9 +101,7 @@ export default function ReminderBoardPage() {
     return null;
   };
 
-  const filteredReminders = tab === "all" ? reminders
-    : tab === "ai" ? reminders.filter(r => r.source_type === "ai_generated")
-    : reminders.filter(r => r.source_type === "user_created" || !r.source_type);
+  const filteredReminders = filterBySourceTab(reminders, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredReminders, exportColumns), `리마인드_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
   const handleXlsxExport = () => { downloadXlsx(filteredReminders, exportColumns, `리마인드_${new Date().toISOString().slice(0, 10)}.xlsx`, "리마인드"); toast({ title: "XLSX 다운로드 완료" }); };
