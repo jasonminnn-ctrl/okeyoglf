@@ -200,6 +200,34 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     toast({ title: "전담 컨설턴트 전환", description: "전담 컨설턴트에게 요청이 전달되었습니다 (데모)" });
   };
 
+  /** Build an ExportableResult shape from the current GenerationResult */
+  const toExportable = useCallback(() => {
+    if (!result || !config) return null;
+    return {
+      title: result.title,
+      businessType: result.businessType,
+      module: result.module,
+      subtool: result.subtool,
+      sections: result.sections,
+      createdAt: result.createdAt,
+      status: result.status,
+      version: 1,
+      category: config.saveCategory,
+      sourceNote: result.sourceNote,
+      referenceNote: result.referenceNote,
+    };
+  }, [result, config]);
+
+  /** Direct TXT download — no save required */
+  const handleDirectDownload = () => {
+    const exportable = toExportable();
+    if (!exportable) return;
+    const content = buildPlainTextExport(exportable);
+    const fileName = buildFileName(exportable, "txt");
+    downloadAsTextFile(content, fileName);
+    toast({ title: "다운로드 완료", description: `${fileName} 파일이 다운로드되었습니다` });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
