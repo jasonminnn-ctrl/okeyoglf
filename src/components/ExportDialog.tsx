@@ -8,14 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileText, File, FileSpreadsheet, Check } from "lucide-react";
-import { useResultStore, type SavedResult } from "@/contexts/ResultStoreContext";
-import { getRecommendedFormats, buildPlainTextExport, downloadAsTextFile, buildFileName, type ExportFormat } from "@/lib/export-utils";
+import { useResultStore } from "@/contexts/ResultStoreContext";
+import { getRecommendedFormats, buildPlainTextExport, downloadAsTextFile, buildFileName, type ExportFormat, type ExportableResult } from "@/lib/export-utils";
 import { toast } from "@/hooks/use-toast";
 
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  result: SavedResult;
+  /** Accepts both SavedResult and GenerationResult-compatible shapes */
+  result: ExportableResult;
+  /** If provided, marks the result as exported in the store */
+  savedResultId?: string;
 }
 
 const formatIcons: Record<ExportFormat, React.ReactNode> = {
