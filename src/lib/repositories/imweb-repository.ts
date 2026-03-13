@@ -524,7 +524,7 @@ export async function upsertPointCreditMapping(
     .single();
 
   if (error) throw error;
-  return data as ImwebPointCreditMappingRow;
+  return data as unknown as ImwebPointCreditMappingRow;
 }
 
 export async function getOrderEvents(
