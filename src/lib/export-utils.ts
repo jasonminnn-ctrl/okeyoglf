@@ -166,7 +166,7 @@ export function buildFileName(result: ExportableResult, format: ExportFormat): s
 // Share text builder
 // ──────────────────────────────────
 
-export function buildShareText(result: SavedResult): string {
+export function buildShareText(result: ExportableResult): string {
   const lines: string[] = [];
   lines.push(`📄 ${result.title}`);
   lines.push(`업종: ${result.businessType}`);
