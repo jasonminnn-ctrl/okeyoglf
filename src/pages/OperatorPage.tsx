@@ -268,6 +268,11 @@ export default function OperatorPage() {
         <TabsContent value="notice" className="space-y-6">
           <OperatorNoticeTab />
         </TabsContent>
+
+        {/* Recommendation Tab */}
+        <TabsContent value="recommendation" className="space-y-6">
+          <OperatorRecommendationTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
