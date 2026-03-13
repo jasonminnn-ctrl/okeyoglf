@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Wallet, ArrowUpRight } from "lucide-react";
+import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Wallet, ArrowUpRight, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
 
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
