@@ -128,6 +128,20 @@ export default function OpsCheckPage() {
     load();
   };
 
+  /** Add from operator_recommendations DB */
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    await insertTask({
+      title: rec.title,
+      description: rec.description,
+      category: "ops_check",
+      priority: rec.priority,
+      source_type: "user_created",
+      risk_source: "ops_recommended",
+    } as any);
+    toast({ title: "운영 권장 항목 추가 완료" });
+    load();
+  };
+
   const handleAIAssistantSubmit = async (input: string): Promise<ProcessingResult | null> => {
     const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
     let count = 0;
