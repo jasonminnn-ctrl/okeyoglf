@@ -133,6 +133,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   useEffect(() => {
     if (injectedPrompt) {
       setInput(injectedPrompt.text);
+      setLastCardKey(injectedPrompt.cardKey);
       onPromptConsumed?.();
       textareaRef.current?.focus();
     }
