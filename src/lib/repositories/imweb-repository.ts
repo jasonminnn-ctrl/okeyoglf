@@ -622,7 +622,7 @@ export async function getMemberLinks(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []) as ImwebMemberLinkRow[];
+  return (data ?? []) as unknown as ImwebMemberLinkRow[];
 }
 
 export async function upsertMemberLink(
