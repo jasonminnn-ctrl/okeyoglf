@@ -28,7 +28,7 @@ const formatIcons: Record<ExportFormat, React.ReactNode> = {
   ppt: <FileSpreadsheet className="h-4 w-4" />,
 };
 
-export function ExportDialog({ open, onOpenChange, result }: ExportDialogProps) {
+export function ExportDialog({ open, onOpenChange, result, savedResultId }: ExportDialogProps) {
   const { markResultExported } = useResultStore();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat | null>(null);
   const formats = getRecommendedFormats(result);
@@ -44,12 +44,15 @@ export function ExportDialog({ open, onOpenChange, result }: ExportDialogProps) 
       downloadAsTextFile(content, fileName);
     }
 
-    markResultExported(result.id, {
-      id: `exp-${Date.now()}`,
-      format: selectedFormat,
-      fileName,
-      exportedAt: new Date().toISOString(),
-    });
+    // Only record export history if result is saved
+    if (savedResultId) {
+      markResultExported(savedResultId, {
+        id: `exp-${Date.now()}`,
+        format: selectedFormat,
+        fileName,
+        exportedAt: new Date().toISOString(),
+      });
+    }
 
     toast({
       title: isReal ? "다운로드 완료" : "내보내기 요청 기록",
