@@ -1,6 +1,6 @@
 /**
  * OpsCheckPage — 놓치고 있는 운영 항목 관리
- * 직접 입력 + AI 비서 + 결과 관리 + 내보내기 + 추적 하이브리드 구조
+ * 직접 입력 + AI 비서 + 결과 관리 + 내보내기 + 추적 + 상세 보기 하이브리드 구조
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertCircle, Plus, ArrowLeft, Loader2, Trash2, ShieldAlert, Sparkles, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import { fetchTasks, insertTask, updateTask, deleteTask, type AssistantTask } fr
 import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
 import { OperationalExportMenu } from "@/components/OperationalExportMenu";
 import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
+import { OperationalDetailDialog, type DetailField } from "@/components/OperationalDetailDialog";
 import { buildCsv, downloadCsv } from "@/lib/csv-export";
 import { downloadXlsx } from "@/lib/xlsx-export";
 import { toast } from "@/hooks/use-toast";
@@ -38,7 +39,6 @@ const priorityOptions = [
   { value: "low", label: "낮음", color: "text-muted-foreground" },
 ];
 
-// AI 제안 리스크 템플릿 (규칙 기반)
 const AI_SUGGESTED_RISKS = [
   { title: "미방문 회원 추적 누락", description: "30일 이상 미방문 회원에 대한 재방문 유도가 누락되고 있습니다", priority: "high" },
   { title: "재등록 리마인드 미실행", description: "이용권 만료 7일 전 재등록 안내가 자동화되지 않고 있습니다", priority: "high" },
@@ -46,7 +46,6 @@ const AI_SUGGESTED_RISKS = [
   { title: "레슨 후기 수집 미실행", description: "레슨 완료 후 만족도 조사 또는 후기 요청이 실행되지 않고 있습니다", priority: "low" },
 ];
 
-// 운영 권장 항목 (컨설턴트/운영팀 제공 템플릿)
 const OPS_RECOMMENDED_ITEMS = [
   { title: "월간 시설 점검 실시", description: "타석, 스크린, 에어컨, 조명 등 주요 시설 월간 점검 실시 권장", priority: "normal" },
   { title: "직원 CS 교육 실시", description: "분기별 고객 응대 교육 및 클레임 처리 매뉴얼 점검", priority: "normal" },
@@ -74,6 +73,8 @@ export default function OpsCheckPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", priority: "normal", due_date: "", assignee: "", memo: "" });
   const [tab, setTab] = useState("all");
+  const [detailTask, setDetailTask] = useState<AssistantTask | null>(null);
+  const [detailEdits, setDetailEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,16 +87,7 @@ export default function OpsCheckPage() {
 
   const handleAdd = async () => {
     if (!form.title.trim()) return;
-    await insertTask({
-      title: form.title,
-      description: form.description || null,
-      category: "ops_check",
-      priority: form.priority,
-      due_date: form.due_date || null,
-      assignee: form.assignee || null,
-      memo: form.memo || null,
-      source_type: "user_created",
-    });
+    await insertTask({ title: form.title, description: form.description || null, category: "ops_check", priority: form.priority, due_date: form.due_date || null, assignee: form.assignee || null, memo: form.memo || null, source_type: "user_created" });
     setForm({ title: "", description: "", priority: "normal", due_date: "", assignee: "", memo: "" });
     setAddOpen(false);
     toast({ title: "항목 추가 완료" });
@@ -124,33 +116,18 @@ export default function OpsCheckPage() {
   };
 
   const handleAddAiSuggested = async (item: typeof AI_SUGGESTED_RISKS[0]) => {
-    await insertTask({
-      title: item.title,
-      description: item.description,
-      category: "ops_check",
-      priority: item.priority,
-      source_type: "ai_generated",
-      risk_source: "ai_suggested",
-    } as any);
+    await insertTask({ title: item.title, description: item.description, category: "ops_check", priority: item.priority, source_type: "ai_generated", risk_source: "ai_suggested" } as any);
     toast({ title: "AI 제안 항목 추가 완료" });
     load();
   };
 
   const handleAddOpsRecommended = async (item: typeof OPS_RECOMMENDED_ITEMS[0]) => {
-    await insertTask({
-      title: item.title,
-      description: item.description,
-      category: "ops_check",
-      priority: item.priority,
-      source_type: "user_created",
-      risk_source: "ops_recommended",
-    } as any);
+    await insertTask({ title: item.title, description: item.description, category: "ops_check", priority: item.priority, source_type: "user_created", risk_source: "ops_recommended" } as any);
     toast({ title: "운영 권장 항목 추가 완료" });
     load();
   };
 
   const handleAIAssistantSubmit = async (input: string): Promise<ProcessingResult | null> => {
-    // Parse lines as tasks
     const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
     let count = 0;
     for (const line of lines) {
@@ -158,23 +135,12 @@ export default function OpsCheckPage() {
       const title = parts[0]?.trim();
       const assignee = parts[1]?.trim() || null;
       if (!title) continue;
-      await insertTask({
-        title,
-        category: "ops_check",
-        priority: "normal",
-        assignee,
-        source_type: "user_created",
-      });
+      await insertTask({ title, category: "ops_check", priority: "normal", assignee, source_type: "user_created" });
       count++;
     }
     if (count > 0) {
       await load();
-      return {
-        id: crypto.randomUUID(),
-        summary: `운영 점검 항목에 ${count}개 항목을 추가했습니다.`,
-        details: lines.length > 1 ? `${lines.length}줄 입력 → ${count}건 처리` : undefined,
-        timestamp: new Date(),
-      };
+      return { id: crypto.randomUUID(), summary: `운영 점검 항목에 ${count}개 항목을 추가했습니다.`, timestamp: new Date() };
     }
     return null;
   };
@@ -185,14 +151,40 @@ export default function OpsCheckPage() {
     : tasks.filter(t => t.risk_source === "user_created" || !t.risk_source);
 
   const handleCsvExport = () => {
-    const csv = buildCsv(filteredTasks, exportColumns);
-    downloadCsv(csv, `운영점검_${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsv(buildCsv(filteredTasks, exportColumns), `운영점검_${new Date().toISOString().slice(0, 10)}.csv`);
     toast({ title: "CSV 다운로드 완료" });
   };
-
   const handleXlsxExport = () => {
     downloadXlsx(filteredTasks, exportColumns, `운영점검_${new Date().toISOString().slice(0, 10)}.xlsx`, "운영점검");
     toast({ title: "XLSX 다운로드 완료" });
+  };
+
+  // Detail dialog
+  const openDetail = (task: AssistantTask) => {
+    setDetailTask(task);
+    setDetailEdits({ title: task.title, description: task.description || "", assignee: task.assignee || "", due_date: task.due_date || "", memo: task.memo || "" });
+  };
+
+  const detailFields: DetailField[] = detailTask ? [
+    { key: "title", label: "제목", type: "text", value: detailEdits.title || "" },
+    { key: "description", label: "상세 내용", type: "textarea", value: detailEdits.description || "" },
+    { key: "assignee", label: "담당자", type: "text", value: detailEdits.assignee || "" },
+    { key: "due_date", label: "기한", type: "date", value: detailEdits.due_date || "" },
+    { key: "memo", label: "메모", type: "textarea", value: detailEdits.memo || "" },
+  ] : [];
+
+  const handleDetailSave = async () => {
+    if (!detailTask) return;
+    await updateTask(detailTask.id, {
+      title: detailEdits.title,
+      description: detailEdits.description || null,
+      assignee: detailEdits.assignee || null,
+      due_date: detailEdits.due_date || null,
+      memo: detailEdits.memo || null,
+    } as any);
+    toast({ title: "수정 완료" });
+    setDetailTask(null);
+    load();
   };
 
   return (
@@ -210,38 +202,25 @@ export default function OpsCheckPage() {
 
       <BusinessContextBanner module="AI 비서" />
 
-      {/* Tabs + Actions */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="h-8">
             <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1">
-              <ListChecks className="h-3 w-3" /> 직접 등록
-            </TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1">
-              <Sparkles className="h-3 w-3" /> AI 제안
-            </TabsTrigger>
-            <TabsTrigger value="ops" className="text-xs h-7 px-3 gap-1">
-              <ShieldAlert className="h-3 w-3" /> 운영 권장
-            </TabsTrigger>
+            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
+            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 제안</TabsTrigger>
+            <TabsTrigger value="ops" className="text-xs h-7 px-3 gap-1"><ShieldAlert className="h-3 w-3" /> 운영 권장</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredTasks.length === 0} />
-          <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5">
-            <Plus className="h-3 w-3" /> 항목 추가
-          </Button>
+          <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 항목 추가</Button>
         </div>
       </div>
 
-      {/* AI Suggested section */}
       {tab === "ai" && (
         <Card className="bg-violet-500/5 border-violet-500/20">
           <CardContent className="py-3 px-4">
-            <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-violet-400" />
-              AI가 제안하는 운영 리스크
-            </p>
+            <p className="text-xs font-medium mb-2 flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-violet-400" />AI가 제안하는 운영 리스크</p>
             <div className="space-y-1.5">
               {AI_SUGGESTED_RISKS.map((item, i) => {
                 const alreadyAdded = tasks.some(t => t.title === item.title && t.risk_source === "ai_suggested");
@@ -251,13 +230,7 @@ export default function OpsCheckPage() {
                       <span className="text-xs font-medium">{item.title}</span>
                       <p className="text-[10px] text-muted-foreground">{item.description}</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-[10px] h-6 px-2"
-                      disabled={alreadyAdded}
-                      onClick={() => handleAddAiSuggested(item)}
-                    >
+                    <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={alreadyAdded} onClick={() => handleAddAiSuggested(item)}>
                       {alreadyAdded ? "추가됨" : "추가"}
                     </Button>
                   </div>
@@ -268,14 +241,10 @@ export default function OpsCheckPage() {
         </Card>
       )}
 
-      {/* Ops Recommended section */}
       {tab === "ops" && (
         <Card className="bg-amber-500/5 border-amber-500/20">
           <CardContent className="py-3 px-4">
-            <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
-              <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
-              운영팀 권장 점검 항목
-            </p>
+            <p className="text-xs font-medium mb-2 flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-amber-400" />운영팀 권장 점검 항목</p>
             <div className="space-y-1.5">
               {OPS_RECOMMENDED_ITEMS.map((item, i) => {
                 const alreadyAdded = tasks.some(t => t.title === item.title && t.risk_source === "ops_recommended");
@@ -285,13 +254,7 @@ export default function OpsCheckPage() {
                       <span className="text-xs font-medium">{item.title}</span>
                       <p className="text-[10px] text-muted-foreground">{item.description}</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-[10px] h-6 px-2"
-                      disabled={alreadyAdded}
-                      onClick={() => handleAddOpsRecommended(item)}
-                    >
+                    <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={alreadyAdded} onClick={() => handleAddOpsRecommended(item)}>
                       {alreadyAdded ? "추가됨" : "추가"}
                     </Button>
                   </div>
@@ -302,19 +265,14 @@ export default function OpsCheckPage() {
         </Card>
       )}
 
-      {/* Task list */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 text-primary animate-spin" />
-        </div>
+        <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>
       ) : filteredTasks.length === 0 ? (
         <Card className="bg-card/50 border-border/50">
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              {tab === "ai" ? "AI 제안 항목이 없습니다. 위에서 추가해보세요" :
-               tab === "ops" ? "운영 권장 항목이 없습니다. 위에서 추가해보세요" :
-               "등록된 운영 점검 항목이 없습니다"}
+              {tab === "ai" ? "AI 제안 항목이 없습니다. 위에서 추가해보세요" : tab === "ops" ? "운영 권장 항목이 없습니다. 위에서 추가해보세요" : "등록된 운영 점검 항목이 없습니다"}
             </p>
           </CardContent>
         </Card>
@@ -324,7 +282,7 @@ export default function OpsCheckPage() {
             const st = statusOptions.find(s => s.value === task.status);
             const pr = priorityOptions.find(p => p.value === task.priority);
             return (
-              <Card key={task.id} className="bg-card/50 border-border/50">
+              <Card key={task.id} className="bg-card/50 border-border/50 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openDetail(task)}>
                 <CardContent className="py-3 px-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
@@ -333,25 +291,16 @@ export default function OpsCheckPage() {
                         <Badge variant="outline" className={`text-[9px] ${st?.color || ""}`}>{st?.label || task.status}</Badge>
                         <Badge variant="outline" className={`text-[9px] ${pr?.color || ""}`}>{pr?.label || task.priority}</Badge>
                       </div>
-                      {task.description && <p className="text-xs text-muted-foreground mt-1">{task.description}</p>}
+                      {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.description}</p>}
                       <div className="mt-1.5">
-                        <OperationalMetaBadges
-                          assignee={task.assignee}
-                          completedByName={task.completed_by_name}
-                          completedAt={task.completed_at}
-                          updatedAt={task.updated_at}
-                          sourceType={task.source_type}
-                          riskSource={task.risk_source}
-                        />
+                        <OperationalMetaBadges assignee={task.assignee} completedByName={task.completed_by_name} completedAt={task.completed_at} updatedAt={task.updated_at} sourceType={task.source_type} riskSource={task.risk_source} />
                       </div>
                       {task.due_date && <span className="text-[10px] text-muted-foreground">기한: {task.due_date}</span>}
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       <Select value={task.status} onValueChange={v => handleStatusChange(task.id, v)}>
                         <SelectTrigger className="h-7 w-24 text-[10px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {statusOptions.map(o => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}
-                        </SelectContent>
+                        <SelectContent>{statusOptions.map(o => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}</SelectContent>
                       </Select>
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400" onClick={() => handleDelete(task.id)}>
                         <Trash2 className="h-3 w-3" />
@@ -365,7 +314,6 @@ export default function OpsCheckPage() {
         </div>
       )}
 
-      {/* AI 비서 */}
       <OperationalAIAssistantPanel
         description="운영 리스크 추가 · 수정 · 분배 요청"
         placeholder={"항목을 줄바꿈으로 입력하세요.\n예: 미방문 회원 알림-직원A\n정산 마감 확인\n프로모션 마감 점검-직원B"}
@@ -375,18 +323,14 @@ export default function OpsCheckPage() {
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base">운영 점검 항목 추가</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="text-base">운영 점검 항목 추가</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <Input placeholder="항목 제목" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="text-sm" />
-            <Textarea placeholder="설명 (선택)" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="text-sm min-h-[60px]" />
+            <Textarea placeholder="상세 내용 (선택)" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="text-sm min-h-[60px]" />
             <div className="grid grid-cols-2 gap-2">
               <Select value={form.priority} onValueChange={v => setForm(p => ({ ...p, priority: v }))}>
                 <SelectTrigger className="text-xs"><SelectValue placeholder="우선순위" /></SelectTrigger>
-                <SelectContent>
-                  {priorityOptions.map(o => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{priorityOptions.map(o => <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>)}</SelectContent>
               </Select>
               <Input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} className="text-xs" />
             </div>
@@ -399,6 +343,21 @@ export default function OpsCheckPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Detail Dialog */}
+      {detailTask && (
+        <OperationalDetailDialog
+          open={!!detailTask}
+          onOpenChange={open => { if (!open) setDetailTask(null); }}
+          title="운영 점검 상세"
+          entityType="task"
+          entityId={detailTask.id}
+          fields={detailFields}
+          onFieldChange={(key, val) => setDetailEdits(prev => ({ ...prev, [key]: val }))}
+          onSave={handleDetailSave}
+          meta={{ assignee: detailTask.assignee, completedByName: detailTask.completed_by_name, completedAt: detailTask.completed_at, updatedAt: detailTask.updated_at, sourceType: detailTask.source_type, riskSource: detailTask.risk_source }}
+        />
+      )}
     </div>
   );
 }

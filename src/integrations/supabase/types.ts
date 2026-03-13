@@ -905,8 +905,56 @@ export type Database = {
           },
         ]
       }
+      operational_attachments: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          file_size_bytes: number | null
+          id: string
+          mime_type: string | null
+          org_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_path?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          org_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_attachments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operator_notices: {
         Row: {
+          body: string | null
           created_at: string
           created_by: string | null
           expires_at: string | null
@@ -925,6 +973,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          body?: string | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -943,6 +992,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          body?: string | null
           created_at?: string
           created_by?: string | null
           expires_at?: string | null

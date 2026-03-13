@@ -6,8 +6,11 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap, Bell, Star, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap, Bell, Star, ExternalLink, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { OperationalAttachmentSection } from "@/components/OperationalAttachmentSection";
 
 const sectionKeys = [
   { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", url: "/ai-assistant/daily-tasks", featureKey: FEATURE_KEYS.ASSISTANT_DAILY,
@@ -20,12 +23,11 @@ const sectionKeys = [
   { key: "업종별 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400", url: "/ai-assistant/checklist-manager", featureKey: FEATURE_KEYS.ASSISTANT_CHECKLIST },
 ];
 
-type NoticeType = "notice" | "update" | "event" | "ops_tip";
-
 interface Notice {
   id: string;
   title: string;
   summary: string | null;
+  body: string | null;
   notice_type: string;
   important: boolean;
   link_url: string | null;
@@ -52,16 +54,17 @@ export default function AIAssistantPage() {
   const { checkAccess } = useMembership();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loadingNotices, setLoadingNotices] = useState(true);
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
     const fetchNotices = async () => {
       const { data, error } = await supabase
         .from("operator_notices" as any)
-        .select("id, title, summary, notice_type, important, link_url, link_label, created_at")
+        .select("id, title, summary, body, notice_type, important, link_url, link_label, created_at")
         .eq("is_active", true)
         .order("important", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (!error && data) {
         setNotices(data as unknown as Notice[]);
@@ -88,15 +91,7 @@ export default function AIAssistantPage() {
           const access = checkAccess(s.featureKey);
           if (!access.visible) return null;
           return (
-            <MenuLandingCard
-              key={s.key}
-              title={s.key}
-              description={config.assistantExamples[s.key] || "준비 중"}
-              icon={s.icon}
-              color={s.color}
-              url={s.url}
-              access={access}
-            />
+            <MenuLandingCard key={s.key} title={s.key} description={config.assistantExamples[s.key] || "준비 중"} icon={s.icon} color={s.color} url={s.url} access={access} />
           );
         })}
       </MenuLandingGrid>
@@ -119,10 +114,9 @@ export default function AIAssistantPage() {
               {notices.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex items-start gap-3 py-2.5 px-3 rounded-md border ${
-                    n.important
-                      ? "bg-primary/5 border-primary/20"
-                      : "bg-muted/20 border-border/20"
+                  onClick={() => setSelectedNotice(n)}
+                  className={`flex items-start gap-3 py-2.5 px-3 rounded-md border cursor-pointer transition-colors hover:border-primary/30 ${
+                    n.important ? "bg-primary/5 border-primary/20" : "bg-muted/20 border-border/20"
                   }`}
                 >
                   {n.important && (
@@ -136,18 +130,7 @@ export default function AIAssistantPage() {
                       </Badge>
                     </div>
                     {n.summary && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{n.summary}</p>
-                    )}
-                    {n.link_url && (
-                      <a
-                        href={n.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
-                      >
-                        <ExternalLink className="h-2.5 w-2.5" />
-                        {n.link_label || "자세히 보기"}
-                      </a>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{n.summary}</p>
                     )}
                   </div>
                   <span className="text-[9px] text-muted-foreground flex-shrink-0 whitespace-nowrap">
@@ -159,6 +142,67 @@ export default function AIAssistantPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Notice Detail Dialog */}
+      <Dialog open={!!selectedNotice} onOpenChange={open => { if (!open) setSelectedNotice(null); }}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2 flex-wrap">
+              <DialogTitle className="text-base">{selectedNotice?.title}</DialogTitle>
+              {selectedNotice && (
+                <Badge variant="outline" className={`text-[9px] ${typeBadgeColor[selectedNotice.notice_type] || ""}`}>
+                  {typeLabel[selectedNotice.notice_type] || selectedNotice.notice_type}
+                </Badge>
+              )}
+              {selectedNotice?.important && (
+                <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">중요</Badge>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground">{selectedNotice?.created_at?.slice(0, 10)}</p>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {selectedNotice?.summary && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">요약</p>
+                <p className="text-sm">{selectedNotice.summary}</p>
+              </div>
+            )}
+
+            {selectedNotice?.body && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">내용</p>
+                <div className="text-sm whitespace-pre-wrap bg-muted/20 rounded-md p-3 border border-border/30">
+                  {selectedNotice.body}
+                </div>
+              </div>
+            )}
+
+            {selectedNotice?.link_url && (
+              <a
+                href={selectedNotice.link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {selectedNotice.link_label || "자세히 보기"}
+              </a>
+            )}
+
+            {/* Attachments */}
+            {selectedNotice && (
+              <div className="pt-2 border-t border-border/30">
+                <OperationalAttachmentSection entityType="notice" entityId={selectedNotice.id} />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedNotice(null)} className="text-xs">닫기</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
