@@ -394,10 +394,14 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
       {/* Result Detail Drawer */}
       <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={savedResultId} />
 
-      {/* Export Dialog */}
-      {savedResultId && (() => {
-        const savedItem = getResultById(savedResultId);
-        return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} /> : null;
+      {/* Export Dialog — works with both saved and unsaved results */}
+      {(() => {
+        if (savedResultId) {
+          const savedItem = getResultById(savedResultId);
+          return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} savedResultId={savedResultId} /> : null;
+        }
+        const exportable = toExportable();
+        return exportable ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={exportable} /> : null;
       })()}
     </div>
   );
