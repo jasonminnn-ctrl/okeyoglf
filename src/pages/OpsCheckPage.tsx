@@ -200,14 +200,11 @@ export default function OpsCheckPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 제안</TabsTrigger>
-            <TabsTrigger value="ops" className="text-xs h-7 px-3 gap-1"><ShieldAlert className="h-3 w-3" /> 운영 권장</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OperationalSourceTabs
+          value={tab}
+          onValueChange={setTab}
+          config={{ totalCount: tasks.length }}
+        />
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredTasks.length === 0} />
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 항목 추가</Button>
