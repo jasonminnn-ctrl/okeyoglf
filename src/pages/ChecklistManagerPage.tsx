@@ -30,7 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function ChecklistManagerPage() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const [checklists, setChecklists] = useState<AssistantChecklist[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [items, setItems] = useState<AssistantChecklistItem[]>([]);
