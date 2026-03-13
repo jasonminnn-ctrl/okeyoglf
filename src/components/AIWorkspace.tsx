@@ -119,6 +119,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   const [savedIds, setSavedIds] = useState<Record<string, string>>({});
   const [drawerResultId, setDrawerResultId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [lastCardKey, setLastCardKey] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
