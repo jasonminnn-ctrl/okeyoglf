@@ -116,7 +116,8 @@ export default function ChecklistManagerPage() {
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  const selectedChecklist = checklists.find(c => c.id === selectedId);
+  const filteredChecklists = filterBySourceTab(checklists, sourceTab);
+  const selectedChecklist = filteredChecklists.find(c => c.id === selectedId) || checklists.find(c => c.id === selectedId);
   const checkedCount = items.filter(i => i.is_checked).length;
   const progress = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
 
