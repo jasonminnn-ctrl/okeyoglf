@@ -105,7 +105,7 @@ export function getRecommendedFormats(result: ExportableResult): FormatOption[] 
 // TXT generation & download (real)
 // ──────────────────────────────────
 
-export function buildPlainTextExport(result: SavedResult): string {
+export function buildPlainTextExport(result: ExportableResult): string {
   const lines: string[] = [];
   lines.push(`# ${result.title}`);
   lines.push(`업종: ${result.businessType}`);
