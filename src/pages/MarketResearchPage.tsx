@@ -89,6 +89,7 @@ export default function MarketResearchPage() {
   const [loading, setLoading] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
