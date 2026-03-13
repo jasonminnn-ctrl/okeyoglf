@@ -449,7 +449,7 @@ export async function getProductMembershipMappings(
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data ?? []) as ImwebProductMembershipMappingRow[]).map(
+  return ((data ?? []) as unknown as ImwebProductMembershipMappingRow[]).map(
     mapMembershipMapping,
   );
 }
