@@ -137,13 +137,11 @@ export default function ReminderBoardPage() {
       <BusinessContextBanner module="AI 비서" />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">전체 ({reminders.length})</TabsTrigger>
-            <TabsTrigger value="manual" className="text-xs h-7 px-3 gap-1"><ListChecks className="h-3 w-3" /> 직접 등록</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs h-7 px-3 gap-1"><Sparkles className="h-3 w-3" /> AI 제안</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <OperationalSourceTabs
+          value={tab}
+          onValueChange={setTab}
+          config={{ totalCount: reminders.length, aiLabel: "AI 제안", opsLabel: "운영 템플릿" }}
+        />
         <div className="flex items-center gap-2">
           <OperationalExportMenu onCsv={handleCsvExport} onXlsx={handleXlsxExport} disabled={filteredReminders.length === 0} />
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 리마인드 추가</Button>
