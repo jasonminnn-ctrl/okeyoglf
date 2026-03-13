@@ -42,6 +42,22 @@ OperatorPage에 신규 탭 추가 (고객 비노출):
 
 > 원칙: 로그인보다 운영 매핑이 먼저. 운영자가 주문 → 멤버십/크레딧 흐름을 이해하고 관리할 수 있게.
 
+### 1-3A. DB 스키마 선행 원칙
+
+아임웹 연동 구현 전, 아래 DB 구조를 먼저 문서로 확정한다.
+
+- imweb_site_connections
+- imweb_product_membership_mappings
+- imweb_point_credit_mappings
+- imweb_order_events
+- imweb_member_links
+
+원칙:
+- `profiles.imweb_member_id` 단독 추가로 처리하지 않는다.
+- 로그인보다 사이트 연결 / 운영 매핑 / 주문 이벤트 처리가 우선이다.
+- 주문 웹훅 원본 payload와 처리 상태를 함께 저장한다.
+- migration은 위 설계 문서 확정 후 작성한다.
+
 ### 1-4. 알림/발송 provider 구조
 
 - provider 인터페이스 정의 (send, getStatus)
