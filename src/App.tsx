@@ -10,6 +10,7 @@ import { ResultStoreProvider } from "@/contexts/ResultStoreContext";
 import { RouteGuard } from "@/components/RouteGuard";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AIAssistantPage from "@/pages/AIAssistantPage";
 import AIOperationsPage from "@/pages/AIOperationsPage";
@@ -52,6 +53,7 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   {/* All customer routes — auth required */}
                   <Route element={<RouteGuard />}>
