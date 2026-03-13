@@ -3,6 +3,7 @@ export type ExternalConnectionStatus =
   | "pending"
   | "disconnected"
   | "testing"
+  | "test_connected"
   | "error";
 
 export const externalStatusMeta: Record<
@@ -10,8 +11,12 @@ export const externalStatusMeta: Record<
   { label: string; badgeClassName: string }
 > = {
   connected: {
-    label: "연결됨",
+    label: "운영 연결",
     badgeClassName: "bg-emerald-500/20 text-emerald-400",
+  },
+  test_connected: {
+    label: "테스트 연결",
+    badgeClassName: "bg-blue-500/20 text-blue-400",
   },
   pending: {
     label: "연결 준비",
