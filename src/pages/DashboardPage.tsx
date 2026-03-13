@@ -334,14 +334,21 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-1.5">
               {recentLedger.slice(0, 3).map(entry => (
-                <div key={entry.id} className="flex items-center justify-between text-[11px]">
+                <div
+                  key={entry.id}
+                  className={`flex items-center justify-between text-[11px] ${entry.relatedResultId ? "cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" : "px-1 py-0.5"}`}
+                  onClick={() => entry.relatedResultId && handleOpenResult(entry.relatedResultId)}
+                >
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Badge variant="outline" className="text-[9px] flex-shrink-0">{ledgerTypeLabels[entry.type]}</Badge>
                     <span className="text-muted-foreground truncate">{entry.relatedModule || "시스템"}</span>
                   </div>
-                  <span className={entry.amountDelta < 0 ? "text-destructive" : "text-emerald-400"}>
-                    {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={entry.amountDelta < 0 ? "text-destructive" : "text-emerald-400"}>
+                      {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
+                    </span>
+                    {entry.relatedResultId && <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />}
+                  </div>
                 </div>
               ))}
             </div>
