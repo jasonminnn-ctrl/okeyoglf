@@ -307,12 +307,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentConsultant.length > 0 ? (
+              {recentConsultant.length > 0 ? (
               <div className="space-y-1.5">
                 {recentConsultant.map(r => (
-                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                  <div key={r.id} className="flex items-center justify-between text-[11px] cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" onClick={() => handleOpenResult(r.id)}>
                     <span className="text-muted-foreground truncate mr-2">{r.title}</span>
-                    <Badge className="bg-muted text-muted-foreground text-[9px]" variant="outline">{r.status}</Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge className="bg-muted text-muted-foreground text-[9px]" variant="outline">{r.status}</Badge>
+                      <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    </div>
                   </div>
                 ))}
               </div>
