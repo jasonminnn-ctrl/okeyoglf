@@ -9,7 +9,7 @@ import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
-import { ResultActionBar } from "@/components/result/ResultActionBar";
+import { ResultActionBar } from "@/components/result/ResultActionBar.tsx";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { ExportableResult } from "@/lib/export-utils";
