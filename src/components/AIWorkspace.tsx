@@ -185,9 +185,11 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
     setInput("");
     setLoading(true);
 
+    // Capture the cardKey at send time so it stays associated with this message
+    const currentCardKey = lastCardKey;
+
     try {
-      const pipelineKey = "ai-assistant/daily-tasks";
-      const config = pipelineConfigs[pipelineKey];
+      const { config } = resolvePipeline(currentCardKey);
       if (!config) throw new Error("Pipeline not found");
 
       const genResult = await generateMockResult(
