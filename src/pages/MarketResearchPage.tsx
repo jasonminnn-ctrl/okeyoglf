@@ -459,8 +459,10 @@ export default function MarketResearchPage() {
             keywordValue={keywordValue}
             count={inputs.count}
             resultActions={resultActions}
-            onSave={handleSave}
+            onSave={() => { handleSave(); setIsSaved(true); }}
             onConsultantTransfer={handleConsultantTransfer}
+            isSaved={isSaved}
+            onOpenSaved={() => currentRequestId && handleOpenResult(currentRequestId)}
           />
         </TabsContent>
 
