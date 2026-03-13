@@ -261,6 +261,11 @@ export default function OperatorPage() {
         <TabsContent value="integration" className="space-y-6">
           <OperatorIntegrationTab />
         </TabsContent>
+
+        {/* Notice Tab */}
+        <TabsContent value="notice" className="space-y-6">
+          <OperatorNoticeTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
