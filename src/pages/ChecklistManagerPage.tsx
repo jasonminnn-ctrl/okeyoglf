@@ -36,6 +36,7 @@ export default function ChecklistManagerPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [checklists, setChecklists] = useState<AssistantChecklist[]>([]);
+  const [sourceTab, setSourceTab] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [items, setItems] = useState<AssistantChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
