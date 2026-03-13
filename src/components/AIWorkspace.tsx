@@ -261,7 +261,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
       </div>
 
       {/* Chat Area */}
-      <div ref={scrollRef} className="flex-1 min-h-[350px] max-h-[600px] overflow-y-auto p-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 min-h-[200px] max-h-[400px] overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
             <Sparkles className="h-10 w-10 text-muted-foreground/20 mb-3" />
