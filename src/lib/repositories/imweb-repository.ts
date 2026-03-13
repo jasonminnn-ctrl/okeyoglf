@@ -403,7 +403,7 @@ export async function getImwebMemberSyncSummary(
 
   if (error) throw error;
   if (!data) return null;
-  return mapSiteConnectionToSummary(data as ImwebSiteConnectionRow);
+  return mapSiteConnectionToSummary(data as unknown as ImwebSiteConnectionRow);
 }
 
 export async function upsertImwebSiteConnection(
