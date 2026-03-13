@@ -653,5 +653,5 @@ export async function upsertMemberLink(
     .single();
 
   if (error) throw error;
-  return data as ImwebMemberLinkRow;
+  return data as unknown as ImwebMemberLinkRow;
 }
