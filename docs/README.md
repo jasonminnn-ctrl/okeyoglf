@@ -35,6 +35,7 @@
 - 기능 잠금, enabled/locked/hidden 기준은 `standards/09_기능잠금_운영정책.md`에서 관리한다.
 - 운영형 데이터보드, CSV/XLSX, KPI 차트 기준은 `standards/10_운영형_데이터보드_정의.md`에서 관리한다.
 - 기존 레거시 문서는 참고용으로만 두며, 기준 판단은 `standards/`를 우선한다.
+- 레포 문서와 Google Docs가 충돌하면 특별한 지시가 없는 한 `docs/standards/`를 우선한다.
 
 ## 문서 수정 순서
 
