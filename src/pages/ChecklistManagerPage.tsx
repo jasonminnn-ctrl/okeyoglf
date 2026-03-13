@@ -20,8 +20,9 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import {
   fetchChecklists, insertChecklist, updateChecklist, deleteChecklist,
   fetchChecklistItems, insertChecklistItem, updateChecklistItem, deleteChecklistItem,
-  type AssistantChecklist, type AssistantChecklistItem,
+  type AssistantChecklist, type AssistantChecklistItem, type OperatorRecommendation,
 } from "@/lib/repositories/assistant-repository";
+import { RecommendationSupplyPanel } from "@/components/RecommendationSupplyPanel";
 import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
 import { OperationalExportMenu } from "@/components/OperationalExportMenu";
 import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
