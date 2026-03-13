@@ -76,10 +76,11 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function init() {
-      const [org, wallet, ledgerRows] = await Promise.all([
+      const [org, wallet, ledgerRows, overrideRows] = await Promise.all([
         fetchOrganization(DEV_ORG_ID),
         fetchWallet(DEV_ORG_ID),
         fetchLedger(DEV_ORG_ID),
+        fetchFeatureOverrides(DEV_ORG_ID),
       ]);
 
       if (cancelled) return;
@@ -91,6 +92,21 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         setCreditBalance(wallet.balance);
       }
       setLedger(ledgerRows.map(ledgerRowToEntry));
+
+      // Load DB overrides into context
+      if (overrideRows.length > 0) {
+        const mapped: OrganizationFeatureOverride[] = overrideRows.map((row: FeatureOverrideRow) => ({
+          organizationId: row.org_id,
+          featureKey: row.feature_key as FeatureKey,
+          membershipCode: (row.membership_code ?? "trial") as MembershipCode,
+          accessMode: ((row as any).access_mode ?? (row.enabled ? "enabled" : "hidden")) as AccessMode,
+          creditCost: row.custom_credit_cost ?? undefined,
+          note: row.reason ?? undefined,
+          isActive: true,
+        }));
+        setOverrides(mapped);
+      }
+
       setLoaded(true);
     }
 
