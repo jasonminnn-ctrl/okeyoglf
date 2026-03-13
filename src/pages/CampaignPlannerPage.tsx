@@ -95,7 +95,13 @@ export default function CampaignPlannerPage() {
     return null;
   };
 
-  const filteredCampaigns = filterBySourceTab(campaigns, tab);
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    await insertCampaign({ title: rec.title, purpose: rec.description, source_type: "ops_recommended" });
+    toast({ title: "운영 권장 캠페인 추가 완료" });
+    load();
+  };
+
+
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredCampaigns, exportColumns), `캠페인_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
   const handleXlsxExport = () => { downloadXlsx(filteredCampaigns, exportColumns, `캠페인_${new Date().toISOString().slice(0, 10)}.xlsx`, "캠페인"); toast({ title: "XLSX 다운로드 완료" }); };
