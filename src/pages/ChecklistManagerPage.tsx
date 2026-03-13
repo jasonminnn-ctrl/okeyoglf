@@ -217,9 +217,9 @@ export default function ChecklistManagerPage() {
 
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>
-          ) : checklists.length === 0 ? (
+          ) : filteredChecklists.length === 0 ? (
             <Card className="bg-card/50 border-border/50"><CardContent className="py-8 text-center"><p className="text-xs text-muted-foreground">체크리스트가 없습니다</p></CardContent></Card>
-          ) : checklists.map(cl => (
+          ) : filteredChecklists.map(cl => (
             <button
               key={cl.id}
               onClick={() => setSelectedId(cl.id)}
