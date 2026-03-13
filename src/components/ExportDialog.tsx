@@ -47,9 +47,11 @@ export function ExportDialog({ open, onOpenChange, result, savedResultId }: Expo
 
     // Record export history only for saved results
     if (savedResultId) {
+      // Cast to ExportFileRecord format type (xlsx not yet in DB enum)
+      const recordFormat = selectedFormat as "txt" | "doc" | "pdf" | "ppt" | "csv";
       markResultExported(savedResultId, {
         id: `exp-${Date.now()}`,
-        format: selectedFormat,
+        format: recordFormat,
         fileName,
         exportedAt: new Date().toISOString(),
       });
