@@ -172,6 +172,7 @@ export type Database = {
       }
       feature_overrides: {
         Row: {
+          access_mode: string
           created_at: string
           created_by: string | null
           custom_credit_cost: number | null
@@ -184,6 +185,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_mode?: string
           created_at?: string
           created_by?: string | null
           custom_credit_cost?: number | null
@@ -198,6 +200,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_mode?: string
           created_at?: string
           created_by?: string | null
           custom_credit_cost?: number | null
