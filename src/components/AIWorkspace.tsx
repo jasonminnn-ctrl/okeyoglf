@@ -1,29 +1,29 @@
 /**
  * AIWorkspace — Chat-style AI workspace pilot for AI 비서 page.
  * Cards inject template prompts; responses render as result cards with full actions.
+ * Uses shared ResultActionBar for standardized action ordering.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Bot, Send, Loader2, Copy, Check, Bookmark, RefreshCw, MessageSquare,
-  Download, ExternalLink, FileText, Sparkles, User,
+  Bot, Send, Loader2, Copy, Check, FileText, Sparkles, User,
 } from "lucide-react";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
-import { ExportDialog } from "@/components/ExportDialog";
-import { buildPlainTextExport, downloadAsTextFile, buildFileName, type ExportableResult } from "@/lib/export-utils";
+import { ResultActionBar } from "@/components/result/ResultActionBar";
+import type { ExportableResult } from "@/lib/export-utils";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection } from "@/lib/ai-generation";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { toast } from "@/hooks/use-toast";
+import { ExternalLink } from "lucide-react";
 
 // ──────────────────────────────────
 // Types
@@ -43,7 +43,7 @@ interface AIWorkspaceProps {
 }
 
 // ──────────────────────────────────
-// Result Section renderer (reused from GenerationFlow pattern)
+// Result Section renderer
 // ──────────────────────────────────
 
 function MiniResultSection({ section }: { section: GenerationResultSection }) {
@@ -93,86 +93,13 @@ function MiniResultSection({ section }: { section: GenerationResultSection }) {
 }
 
 // ──────────────────────────────────
-// Result Actions bar
-// ──────────────────────────────────
-
-function ResultActions({
-  result,
-  onSave,
-  onDownload,
-  onExport,
-  onRegenerate,
-  savedId,
-  onOpenDrawer,
-}: {
-  result: GenerationResult;
-  onSave: () => void;
-  onDownload: () => void;
-  onExport: () => void;
-  onRegenerate: () => void;
-  savedId: string | null;
-  onOpenDrawer: () => void;
-}) {
-  const { getResultActions } = useMembership();
-  const actions = getResultActions();
-  const [allCopied, setAllCopied] = useState(false);
-
-  const handleCopyAll = async () => {
-    const text = result.sections.map(s => `${s.title}\n${s.content}`).join("\n\n");
-    await navigator.clipboard.writeText(text);
-    setAllCopied(true);
-    toast({ title: "전체 복사 완료" });
-    setTimeout(() => setAllCopied(false), 2000);
-  };
-
-  const handleConsultant = () => {
-    if (!actions.consultantTransfer.enabled) {
-      toast({ title: "기능 제한", description: actions.consultantTransfer.lockReason || "전환이 제한됩니다", variant: "destructive" });
-      return;
-    }
-    toast({ title: "전담 컨설턴트 전환", description: "전담 컨설턴트에게 요청이 전달되었습니다 (데모)" });
-  };
-
-  return (
-    <div className="flex flex-wrap gap-1.5 pt-2">
-      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={onDownload}>
-        <Download className="h-3 w-3" /> TXT
-      </Button>
-      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={onExport}>
-        <Download className="h-3 w-3" /> 내보내기
-      </Button>
-      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={onSave} disabled={!!savedId}>
-        <Bookmark className="h-3 w-3" /> {savedId ? "저장됨" : "저장"}
-      </Button>
-      {savedId && (
-        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={onOpenDrawer}>
-          <ExternalLink className="h-3 w-3" /> 열기
-        </Button>
-      )}
-      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={handleCopyAll}>
-        {allCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-        복사
-      </Button>
-      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={onRegenerate}>
-        <RefreshCw className="h-3 w-3" /> 다시 생성
-      </Button>
-      {actions.consultantTransfer.visible && (
-        <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={handleConsultant} disabled={!actions.consultantTransfer.enabled}>
-          <MessageSquare className="h-3 w-3" /> 컨설턴트
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// ──────────────────────────────────
 // Main Component
 // ──────────────────────────────────
 
 export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspaceProps) {
   const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, deductCredit } = useMembership();
-  const { saveResult, getResultById } = useResultStore();
+  const { saveResult } = useResultStore();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -180,20 +107,16 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   const [savedIds, setSavedIds] = useState<Record<string, string>>({});
   const [drawerResultId, setDrawerResultId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [exportResult, setExportResult] = useState<ExportableResult | null>(null);
-  const [exportOpen, setExportOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
 
-  // Handle injected prompt from card clicks
   useEffect(() => {
     if (injectedPrompt) {
       setInput(injectedPrompt.text);
@@ -239,7 +162,6 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
     setLoading(true);
 
     try {
-      // Pick a pipeline config — default to daily-tasks
       const pipelineKey = "ai-assistant/daily-tasks";
       const config = pipelineConfigs[pipelineKey];
       if (!config) throw new Error("Pipeline not found");
@@ -315,22 +237,13 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
     });
   };
 
-  const handleDownload = (result: GenerationResult) => {
-    const exportable = toExportable(result);
-    const content = buildPlainTextExport(exportable);
-    const fileName = buildFileName(exportable, "txt");
-    downloadAsTextFile(content, fileName);
-    toast({ title: "다운로드 완료", description: `${fileName}` });
-  };
-
-  const handleExport = (result: GenerationResult) => {
-    setExportResult(toExportable(result));
-    setExportOpen(true);
-  };
-
   const handleRegenerate = (originalText: string) => {
     setInput(originalText);
     textareaRef.current?.focus();
+  };
+
+  const handleConsultant = () => {
+    toast({ title: "전담 컨설턴트 전환", description: "전담 컨설턴트에게 요청이 전달되었습니다 (데모)" });
   };
 
   return (
@@ -342,7 +255,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
         </div>
         <div>
           <h3 className="text-sm font-semibold">AI 작업실</h3>
-          <p className="text-[10px] text-muted-foreground">{label} 맞춤 · 결과 즉시 저장/다운로드 가능</p>
+          <p className="text-[10px] text-muted-foreground">{label} 맞춤 · 결과 즉시 저장/내보내기 가능</p>
         </div>
         <Badge variant="outline" className="ml-auto text-[9px] bg-primary/5 text-primary border-primary/20">파일럿</Badge>
       </div>
@@ -395,22 +308,22 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
                     </div>
                   )}
                   <Separator className="my-1" />
-                  <ResultActions
-                    result={msg.result}
+                  <ResultActionBar
+                    exportable={toExportable(msg.result)}
+                    savedResultId={savedIds[msg.id] || null}
                     onSave={() => handleSaveResult(msg.id, msg.result!)}
-                    onDownload={() => handleDownload(msg.result!)}
-                    onExport={() => handleExport(msg.result!)}
                     onRegenerate={() => {
-                      // Find the user message before this assistant message
                       const idx = messages.findIndex(m => m.id === msg.id);
                       const prevUser = idx > 0 ? messages[idx - 1] : null;
                       handleRegenerate(prevUser?.role === "user" ? prevUser.content : "");
                     }}
-                    savedId={savedIds[msg.id] || null}
-                    onOpenDrawer={() => {
+                    onConsultantTransfer={handleConsultant}
+                    onOpenSaved={() => {
                       setDrawerResultId(savedIds[msg.id] || msg.result!.id);
                       setDrawerOpen(true);
                     }}
+                    isSaved={!!savedIds[msg.id]}
+                    compact
                   />
                 </div>
               ) : (
@@ -465,16 +378,8 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
         </div>
       </div>
 
-      {/* Drawers & Dialogs */}
+      {/* Drawer */}
       <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={drawerResultId} />
-      {exportResult && (
-        <ExportDialog
-          open={exportOpen}
-          onOpenChange={setExportOpen}
-          result={exportResult}
-          savedResultId={savedIds[Object.keys(savedIds).find(k => savedIds[k]) || ""] || undefined}
-        />
-      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Loader2, Lock, Info, Clock, History, ChevronRight, Layers } from "lucide-react";
+import { Search, Building2, MapPin, Tag, Hash, Play, FileText, Lightbulb, Target, MessageSquare, Bookmark, Loader2, Lock, Info, Clock, History, ChevronRight, Layers, Download, Send } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { ResultActionBar } from "@/components/result/ResultActionBar";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { ContextSummary } from "@/components/ContextSummary";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
@@ -88,6 +89,7 @@ export default function MarketResearchPage() {
   const [loading, setLoading] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
@@ -457,8 +459,10 @@ export default function MarketResearchPage() {
             keywordValue={keywordValue}
             count={inputs.count}
             resultActions={resultActions}
-            onSave={handleSave}
+            onSave={() => { handleSave(); setIsSaved(true); }}
             onConsultantTransfer={handleConsultantTransfer}
+            isSaved={isSaved}
+            onOpenSaved={() => currentRequestId && handleOpenResult(currentRequestId)}
           />
         </TabsContent>
 
@@ -593,11 +597,13 @@ interface ResearchResultCardProps {
   resultActions: ReturnType<ReturnType<typeof useMembership>["getResultActions"]>;
   onSave: () => void;
   onConsultantTransfer: () => void;
+  isSaved?: boolean;
+  onOpenSaved?: () => void;
 }
 
 function ResearchResultCard({
   hasResult, template, researchLabel, regionValue, keywordValue, count,
-  resultActions, onSave, onConsultantTransfer,
+  resultActions, onSave, onConsultantTransfer, isSaved, onOpenSaved,
 }: ResearchResultCardProps) {
   const items = [
     { icon: FileText, label: "조사 요약", desc: hasResult ? `${researchLabel} 업종 기준 ${template.title} 완료. 입력 기준에 따른 분석 결과입니다.` : "수집된 데이터 요약 리포트" },
@@ -663,19 +669,39 @@ function ResearchResultCard({
 
         <Separator />
 
-        <div className="flex items-center gap-2 pt-1">
-          {resultActions.save.visible && (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.save.enabled} onClick={onSave}>
-              <Bookmark className="h-3 w-3" /> 결과 저장
+        {hasResult ? (
+          <ResultActionBar
+            exportable={{
+              title: `시장조사 — ${template.title} (${researchLabel})`,
+              businessType: researchLabel,
+              module: "시장조사",
+              subtool: template.title,
+              sections: [
+                { title: "조사 요약", type: "summary" as const, content: `${researchLabel} 업종 기준 ${template.title} 완료.\n\n⚠️ AI 내부 분석 기반 결과이며, 외부 데이터 수집은 추후 연동 예정입니다.` },
+                { title: "분석 결과", type: "detail" as const, content: `업종: ${researchLabel}\n지역: ${regionValue}\n키워드: ${keywordValue}\n범위: ${template.title}\n수집: ${count}건` },
+                { title: "인사이트", type: "recommendation" as const, content: "외부 수집 데이터 연동 시 상세 인사이트 보강 예정." },
+              ],
+              createdAt: new Date().toISOString(),
+              status: "생성 완료",
+              version: 1,
+              category: "시장조사 결과",
+              sourceNote: "OkeyGolf AI 리서치 엔진 기반 생성 (외부 수집 미연동)",
+            }}
+            onSave={onSave}
+            onConsultantTransfer={onConsultantTransfer}
+            isSaved={isSaved}
+            onOpenSaved={onOpenSaved}
+          />
+        ) : (
+          <div className="flex items-center gap-2 pt-1">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 opacity-50" disabled>
+              <Bookmark className="h-3 w-3" /> 저장
             </Button>
-          )}
-          {resultActions.consultantTransfer.visible && (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.consultantTransfer.enabled} onClick={onConsultantTransfer}>
-              {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-              전담 컨설턴트 전환
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 opacity-50" disabled>
+              <Download className="h-3 w-3" /> 내보내기
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
