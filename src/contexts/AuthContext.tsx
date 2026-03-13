@@ -81,10 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
-      if (session) {
-        const authUser = await buildAuthUser(session);
-        if (mounted) setUser(authUser);
-      } else {
+      try {
+        if (session) {
+          const authUser = await buildAuthUser(session);
+          if (mounted) setUser(authUser);
+        } else {
+          if (mounted) setUser(null);
+        }
+      } catch (err) {
+        console.error("AuthContext: buildAuthUser failed", err);
         if (mounted) setUser(null);
       }
       if (mounted) setIsLoading(false);
@@ -93,9 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 2. Then get existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      if (session) {
-        const authUser = await buildAuthUser(session);
-        if (mounted) setUser(authUser);
+      try {
+        if (session) {
+          const authUser = await buildAuthUser(session);
+          if (mounted) setUser(authUser);
+        }
+      } catch (err) {
+        console.error("AuthContext: getSession buildAuthUser failed", err);
+        if (mounted) setUser(null);
       }
       if (mounted) setIsLoading(false);
     });
