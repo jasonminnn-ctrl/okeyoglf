@@ -154,7 +154,7 @@ export function downloadAsTextFile(content: string, fileName: string) {
 // Safe filename
 // ──────────────────────────────────
 
-export function buildFileName(result: SavedResult, format: ExportFormat): string {
+export function buildFileName(result: ExportableResult, format: ExportFormat): string {
   const safe = result.title
     .replace(/[^\w가-힣\s-]/g, "")
     .replace(/\s+/g, "_")
