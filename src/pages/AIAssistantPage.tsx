@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { MenuLandingCard, MenuLandingGrid } from "@/components/MenuLandingCard";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import { useBusinessContext } from "@/contexts/BusinessContext";
@@ -5,7 +6,8 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { FEATURE_KEYS } from "@/lib/membership";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap, Bell, Star } from "lucide-react";
+import { Bot, ListChecks, AlertCircle, Megaphone, CalendarClock, ClipboardCheck, Zap, Bell, Star, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const sectionKeys = [
   { key: "오늘의 할 일", icon: ListChecks, color: "bg-primary/10 text-primary", url: "/ai-assistant/daily-tasks", featureKey: FEATURE_KEYS.ASSISTANT_DAILY,
@@ -18,59 +20,56 @@ const sectionKeys = [
   { key: "업종별 체크리스트", icon: ClipboardCheck, color: "bg-emerald-500/10 text-emerald-400", url: "/ai-assistant/checklist-manager", featureKey: FEATURE_KEYS.ASSISTANT_CHECKLIST },
 ];
 
-type NoticeType = "공지" | "업데이트" | "이벤트" | "운영 팁";
+type NoticeType = "notice" | "update" | "event" | "ops_tip";
 
 interface Notice {
   id: string;
   title: string;
-  summary: string;
-  type: NoticeType;
-  date: string;
-  important?: boolean;
+  summary: string | null;
+  notice_type: string;
+  important: boolean;
+  link_url: string | null;
+  link_label: string | null;
+  created_at: string;
 }
 
-const MOCK_NOTICES: Notice[] = [
-  {
-    id: "1",
-    title: "운영형 페이지 공통화 2차 업데이트 완료",
-    summary: "체크리스트/운영점검/캠페인/리마인드 페이지에 AI 비서 하단 패널, CSV/XLSX 내보내기, 담당자·완료자 추적이 적용되었습니다.",
-    type: "업데이트",
-    date: "2026-03-13",
-    important: true,
-  },
-  {
-    id: "2",
-    title: "골프연습장 시즌 점검 체크리스트 제공 시작",
-    summary: "업종별 체크리스트에서 봄 시즌 점검 항목을 확인할 수 있습니다.",
-    type: "운영 팁",
-    date: "2026-03-12",
-  },
-  {
-    id: "3",
-    title: "전담 컨설턴트 요청 시 크레딧 차감 기준 안내",
-    summary: "전담 컨설턴트 요청 유형별 크레딧 차감 기준이 정리되었습니다. 이용현황 탭에서 확인하세요.",
-    type: "공지",
-    date: "2026-03-11",
-  },
-  {
-    id: "4",
-    title: "3월 골프장 조기 오픈 프로모션 기획 예시",
-    summary: "AI 마케팅팀에서 시즌 캠페인 제안을 확인해 보세요.",
-    type: "이벤트",
-    date: "2026-03-10",
-  },
-];
+const typeBadgeColor: Record<string, string> = {
+  notice: "bg-primary/10 text-primary border-primary/20",
+  update: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  event: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  ops_tip: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+};
 
-const typeBadgeColor: Record<NoticeType, string> = {
-  "공지": "bg-primary/10 text-primary border-primary/20",
-  "업데이트": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "이벤트": "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  "운영 팁": "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+const typeLabel: Record<string, string> = {
+  notice: "공지",
+  update: "업데이트",
+  event: "이벤트",
+  ops_tip: "운영 팁",
 };
 
 export default function AIAssistantPage() {
   const { config } = useBusinessContext();
   const { checkAccess } = useMembership();
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loadingNotices, setLoadingNotices] = useState(true);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      const { data, error } = await supabase
+        .from("operator_notices" as any)
+        .select("id, title, summary, notice_type, important, link_url, link_label, created_at")
+        .eq("is_active", true)
+        .order("important", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setNotices(data as unknown as Notice[]);
+      }
+      setLoadingNotices(false);
+    };
+    fetchNotices();
+  }, []);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -102,7 +101,7 @@ export default function AIAssistantPage() {
         })}
       </MenuLandingGrid>
 
-      {/* 공지사항 영역 */}
+      {/* 공지사항 영역 — DB 연동 */}
       <Card className="bg-card/50 border-border/50">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -111,36 +110,53 @@ export default function AIAssistantPage() {
             <span className="text-[10px] text-muted-foreground">— 운영 공지 · 업데이트 · 이벤트 · 중요 안내</span>
           </div>
 
-          <div className="space-y-2">
-            {MOCK_NOTICES.map((n) => (
-              <div
-                key={n.id}
-                className={`flex items-start gap-3 py-2.5 px-3 rounded-md border ${
-                  n.important
-                    ? "bg-primary/5 border-primary/20"
-                    : "bg-muted/20 border-border/20"
-                }`}
-              >
-                {n.important && (
-                  <Star className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0 fill-primary" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-medium">{n.title}</span>
-                    <Badge variant="outline" className={`text-[9px] ${typeBadgeColor[n.type]}`}>
-                      {n.type}
-                    </Badge>
+          {loadingNotices ? (
+            <p className="text-xs text-muted-foreground py-4 text-center">불러오는 중...</p>
+          ) : notices.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-6 text-center">등록된 공지가 없습니다.</p>
+          ) : (
+            <div className="space-y-2">
+              {notices.map((n) => (
+                <div
+                  key={n.id}
+                  className={`flex items-start gap-3 py-2.5 px-3 rounded-md border ${
+                    n.important
+                      ? "bg-primary/5 border-primary/20"
+                      : "bg-muted/20 border-border/20"
+                  }`}
+                >
+                  {n.important && (
+                    <Star className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0 fill-primary" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-medium">{n.title}</span>
+                      <Badge variant="outline" className={`text-[9px] ${typeBadgeColor[n.notice_type] || ""}`}>
+                        {typeLabel[n.notice_type] || n.notice_type}
+                      </Badge>
+                    </div>
+                    {n.summary && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{n.summary}</p>
+                    )}
+                    {n.link_url && (
+                      <a
+                        href={n.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" />
+                        {n.link_label || "자세히 보기"}
+                      </a>
+                    )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{n.summary}</p>
+                  <span className="text-[9px] text-muted-foreground flex-shrink-0 whitespace-nowrap">
+                    {n.created_at?.slice(0, 10)}
+                  </span>
                 </div>
-                <span className="text-[9px] text-muted-foreground flex-shrink-0 whitespace-nowrap">
-                  {n.date}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-[9px] text-muted-foreground text-right">공지 관리 기능 연동 예정</p>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -199,7 +199,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
       );
 
       if (access.requiresCredit && access.creditCost > 0) {
-        deductCredit(access.creditCost, "generate", `AI 작업실 — ${text.slice(0, 30)}`, config.module, genResult.id);
+        deductCredit(access.creditCost, "generate", `AI 비서 — ${text.slice(0, 30)}`, config.module, genResult.id);
       }
 
       const assistantMsg: ChatMessage = {
@@ -284,7 +284,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
           <Bot className="h-3.5 w-3.5 text-primary" />
         </div>
         <div>
-          <h3 className="text-xs font-semibold">보조 AI 작업실</h3>
+          <h3 className="text-xs font-semibold">AI 비서</h3>
           <p className="text-[9px] text-muted-foreground">추가 요청 · 수정 · 자유형 요청</p>
         </div>
         <Badge variant="outline" className="ml-auto text-[9px] bg-muted/30 text-muted-foreground border-border/30">보조</Badge>
