@@ -90,6 +90,7 @@ export default function OperatorPage() {
           <TabsTrigger value="research" className="text-xs px-3 py-1.5 gap-1.5"><Search className="h-3 w-3" />시장조사</TabsTrigger>
           <TabsTrigger value="integration" className="text-xs px-3 py-1.5 gap-1.5"><Link2 className="h-3 w-3" />외부 연동</TabsTrigger>
           <TabsTrigger value="notice" className="text-xs px-3 py-1.5 gap-1.5"><Bell className="h-3 w-3" />공지 관리</TabsTrigger>
+          <TabsTrigger value="recommendation" className="text-xs px-3 py-1.5 gap-1.5"><ShieldAlert className="h-3 w-3" />운영 권장</TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
