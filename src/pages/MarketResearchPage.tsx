@@ -265,7 +265,15 @@ export default function MarketResearchPage() {
       await updateResearchStatus(currentRequestId, "completed", { resultId });
     }
 
-    toast({ title: "저장 완료", description: "시장조사 결과에 저장되었습니다" });
+    toast({
+      title: "저장 완료",
+      description: "시장조사 결과에 저장되었습니다 — 클릭하여 열기",
+      action: (
+        <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => handleOpenResult(resultId)}>
+          <ChevronRight className="h-3 w-3" /> 열기
+        </Button>
+      ),
+    });
   };
 
   const handleConsultantTransfer = () => {

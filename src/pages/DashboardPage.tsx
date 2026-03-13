@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Wallet, ArrowUpRight } from "lucide-react";
+import { Brain, FileText, Megaphone, TrendingUp, Users, Target, Calendar, AlertTriangle, CheckCircle, Building2, Crown, CreditCard, Search, MessageSquare, Wallet, ArrowUpRight, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { ConsultantCTA } from "@/components/ConsultantCTA";
+import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
 
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
@@ -16,6 +18,13 @@ export default function DashboardPage() {
   const { membershipCode, membershipName, creditBalance, ledger } = useMembership();
   const { recentResults, recentByType, totalCount } = useResultStore();
   const tier = getMembershipTier(membershipCode);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+
+  const handleOpenResult = (id: string) => {
+    setSelectedResultId(id);
+    setDrawerOpen(true);
+  };
 
   const recentGenerated = recentResults(3);
   const recentResearch = recentByType("research", 3);
@@ -224,12 +233,15 @@ export default function DashboardPage() {
             <div className="space-y-1">
               {recentGenerated.length > 0 ? (
                 recentGenerated.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-3.5 w-3.5 text-primary/50" />
+                  <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0 cursor-pointer hover:bg-muted/20 rounded px-1 transition-colors" onClick={() => handleOpenResult(r.id)}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CheckCircle className="h-3.5 w-3.5 text-primary/50 flex-shrink-0" />
                       <span className="text-sm truncate">{r.title}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.updatedAt)}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-muted-foreground">{formatDate(r.updatedAt)}</span>
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    </div>
                   </div>
                 ))
               ) : (
@@ -270,12 +282,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentResearch.length > 0 ? (
+              {recentResearch.length > 0 ? (
               <div className="space-y-1.5">
                 {recentResearch.map(r => (
-                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                  <div key={r.id} className="flex items-center justify-between text-[11px] cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" onClick={() => handleOpenResult(r.id)}>
                     <span className="text-muted-foreground truncate mr-2">{r.title}</span>
-                    <Badge className={`${r.status === "전달 완료" ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"} text-[9px]`} variant="outline">{r.status}</Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge className={`${r.status === "전달 완료" ? "bg-blue-500/20 text-blue-400" : "bg-muted text-muted-foreground"} text-[9px]`} variant="outline">{r.status}</Badge>
+                      <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -292,12 +307,15 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentConsultant.length > 0 ? (
+              {recentConsultant.length > 0 ? (
               <div className="space-y-1.5">
                 {recentConsultant.map(r => (
-                  <div key={r.id} className="flex items-center justify-between text-[11px]">
+                  <div key={r.id} className="flex items-center justify-between text-[11px] cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" onClick={() => handleOpenResult(r.id)}>
                     <span className="text-muted-foreground truncate mr-2">{r.title}</span>
-                    <Badge className="bg-muted text-muted-foreground text-[9px]" variant="outline">{r.status}</Badge>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge className="bg-muted text-muted-foreground text-[9px]" variant="outline">{r.status}</Badge>
+                      <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -316,20 +334,28 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-1.5">
               {recentLedger.slice(0, 3).map(entry => (
-                <div key={entry.id} className="flex items-center justify-between text-[11px]">
+                <div
+                  key={entry.id}
+                  className={`flex items-center justify-between text-[11px] ${entry.relatedResultId ? "cursor-pointer hover:bg-muted/20 rounded px-1 py-0.5 transition-colors" : "px-1 py-0.5"}`}
+                  onClick={() => entry.relatedResultId && handleOpenResult(entry.relatedResultId)}
+                >
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Badge variant="outline" className="text-[9px] flex-shrink-0">{ledgerTypeLabels[entry.type]}</Badge>
                     <span className="text-muted-foreground truncate">{entry.relatedModule || "시스템"}</span>
                   </div>
-                  <span className={entry.amountDelta < 0 ? "text-destructive" : "text-emerald-400"}>
-                    {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={entry.amountDelta < 0 ? "text-destructive" : "text-emerald-400"}>
+                      {entry.amountDelta > 0 ? "+" : ""}{entry.amountDelta}
+                    </span>
+                    {entry.relatedResultId && <ChevronRight className="h-2.5 w-2.5 text-muted-foreground" />}
+                  </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
       </div>
+      <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={selectedResultId} />
     </div>
   );
 }

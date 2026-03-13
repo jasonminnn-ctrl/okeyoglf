@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard, Download, ExternalLink } from "lucide-react";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
+import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
+import { ExportDialog } from "@/components/ExportDialog";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
@@ -91,7 +93,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const navigate = useNavigate();
   const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
-  const { saveResult } = useResultStore();
+  const { saveResult, getResultById } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [isRegenerate, setIsRegenerate] = useState(false);
@@ -138,9 +140,13 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     setResult(null);
   };
 
-  const handleSave = () => {
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const handleSave = async () => {
     if (result && config) {
-      saveResult({
+      await saveResult({
         id: result.id,
         type: "generation",
         title: result.title,
@@ -157,7 +163,19 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
         sourceNote: result.sourceNote,
         referenceNote: result.referenceNote,
       });
-      toast({ title: "저장 완료", description: `${config.saveCategory}에 저장되었습니다` });
+      setSavedResultId(result.id);
+      toast({
+        title: "저장 완료",
+        description: `${config.saveCategory}에 저장되었습니다 — 클릭하여 열기`,
+        action: (
+          <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => {
+            setSavedResultId(result.id);
+            setDrawerOpen(true);
+          }}>
+            <ExternalLink className="h-3 w-3" /> 열기
+          </Button>
+        ),
+      });
     }
   };
 
@@ -268,9 +286,22 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
               {/* Action Buttons - only in result area */}
               <div className="flex flex-wrap gap-2">
                 {resultActions.save.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled}>
-                    <Bookmark className="h-3 w-3" /> 결과 저장
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled || !!savedResultId}>
+                    <Bookmark className="h-3 w-3" /> {savedResultId ? "저장됨" : "결과 저장"}
                   </Button>
+                )}
+                {savedResultId && (
+                  <>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
+                      <Download className="h-3 w-3" /> 다운로드
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setSavedResultId(result!.id); setDrawerOpen(true); }}>
+                      <ExternalLink className="h-3 w-3" /> 저장된 결과 열기
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate("/saved")}>
+                      <Bookmark className="h-3 w-3" /> 저장된 결과 목록
+                    </Button>
+                  </>
                 )}
                 {resultActions.copy.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
@@ -315,6 +346,14 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
           )}
         </div>
       </div>
+      {/* Result Detail Drawer */}
+      <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={savedResultId} />
+
+      {/* Export Dialog */}
+      {savedResultId && (() => {
+        const savedItem = getResultById(savedResultId);
+        return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} /> : null;
+      })()}
     </div>
   );
 }
