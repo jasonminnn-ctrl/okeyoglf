@@ -480,7 +480,7 @@ export async function upsertProductMembershipMapping(
     .single();
 
   if (error) throw error;
-  return data as ImwebProductMembershipMappingRow;
+  return data as unknown as ImwebProductMembershipMappingRow;
 }
 
 export async function getPointCreditMappings(
