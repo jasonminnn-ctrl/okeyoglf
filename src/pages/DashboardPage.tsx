@@ -355,6 +355,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={selectedResultId} />
     </div>
   );
 }

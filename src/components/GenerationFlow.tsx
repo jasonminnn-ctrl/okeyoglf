@@ -93,7 +93,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const navigate = useNavigate();
   const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
-  const { saveResult } = useResultStore();
+  const { saveResult, getResultById } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [isRegenerate, setIsRegenerate] = useState(false);
