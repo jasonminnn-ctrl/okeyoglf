@@ -339,9 +339,9 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
                   )}
                   <Separator className="my-1" />
                   <ResultActionBar
-                    exportable={toExportable(msg.result)}
+                    exportable={toExportable(msg.result, msg.cardKey ?? null)}
                     savedResultId={savedIds[msg.id] || null}
-                    onSave={() => handleSaveResult(msg.id, msg.result!)}
+                    onSave={() => handleSaveResult(msg.id, msg.result!, msg.cardKey ?? null)}
                     onRegenerate={() => {
                       const idx = messages.findIndex(m => m.id === msg.id);
                       const prevUser = idx > 0 ? messages[idx - 1] : null;
