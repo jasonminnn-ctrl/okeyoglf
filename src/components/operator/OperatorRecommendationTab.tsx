@@ -1,6 +1,7 @@
 /**
  * OperatorRecommendationTab — 운영 권장 관리
  * 운영자/컨설턴트가 고객사에 공급할 권장 항목 CRUD
+ * 사용자 단위 타겟팅 지원 (target_user_ids)
  */
 
 import { useState, useEffect } from "react";
@@ -14,8 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShieldAlert, Plus, Pencil, Trash2, Target } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShieldAlert, Plus, Pencil, Trash2, Target, Users, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import RecommendationTargetPicker from "./RecommendationTargetPicker";
+import RecommendationCoverageBoard from "./RecommendationCoverageBoard";
 
 interface Recommendation {
   id: string;
@@ -25,6 +29,7 @@ interface Recommendation {
   target_business_types: string[];
   target_org_id: string | null;
   target_branch_code: string | null;
+  target_user_ids: string[] | null;
   priority: string;
   category: string;
   is_active: boolean;
@@ -74,6 +79,7 @@ export default function OperatorRecommendationTab() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Recommendation | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // form state
   const [title, setTitle] = useState("");
@@ -84,6 +90,7 @@ export default function OperatorRecommendationTab() {
   const [targetBizTypes, setTargetBizTypes] = useState<string[]>([]);
   const [targetOrgId, setTargetOrgId] = useState("");
   const [targetBranch, setTargetBranch] = useState("");
+  const [targetUserIds, setTargetUserIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -105,8 +112,9 @@ export default function OperatorRecommendationTab() {
   const resetForm = () => {
     setTitle(""); setDescription(""); setRecType("ops_recommended");
     setCategory("ops_check"); setPriority("normal"); setTargetBizTypes([]);
-    setTargetOrgId(""); setTargetBranch(""); setIsActive(true);
-    setStartDate(""); setEndDate(""); setLinkUrl(""); setLinkLabel(""); setMemo("");
+    setTargetOrgId(""); setTargetBranch(""); setTargetUserIds([]);
+    setIsActive(true); setStartDate(""); setEndDate("");
+    setLinkUrl(""); setLinkLabel(""); setMemo("");
     setEditing(null);
   };
 
@@ -118,6 +126,7 @@ export default function OperatorRecommendationTab() {
     setRecType(item.recommendation_type); setCategory(item.category);
     setPriority(item.priority); setTargetBizTypes(item.target_business_types || []);
     setTargetOrgId(item.target_org_id || ""); setTargetBranch(item.target_branch_code || "");
+    setTargetUserIds(item.target_user_ids || []);
     setIsActive(item.is_active); setStartDate(item.start_date || "");
     setEndDate(item.end_date || ""); setLinkUrl(item.link_url || "");
     setLinkLabel(item.link_label || ""); setMemo(item.memo || "");
@@ -135,6 +144,7 @@ export default function OperatorRecommendationTab() {
       target_business_types: targetBizTypes.length > 0 ? targetBizTypes : [],
       target_org_id: targetOrgId.trim() || null,
       target_branch_code: targetBranch.trim() || null,
+      target_user_ids: targetUserIds.length > 0 ? targetUserIds : [],
       is_active: isActive,
       start_date: startDate || null,
       end_date: endDate || null,
@@ -153,17 +163,18 @@ export default function OperatorRecommendationTab() {
       toast.success("운영 권장 항목이 등록되었습니다.");
     }
     setDialogOpen(false); resetForm(); fetchItems();
+    setRefreshKey(k => k + 1);
   };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("operator_recommendations" as any).delete().eq("id", id);
     if (error) { toast.error("삭제 실패"); return; }
-    toast.success("삭제 완료"); fetchItems();
+    toast.success("삭제 완료"); fetchItems(); setRefreshKey(k => k + 1);
   };
 
   const handleToggleActive = async (item: Recommendation) => {
     await supabase.from("operator_recommendations" as any).update({ is_active: !item.is_active } as any).eq("id", item.id);
-    fetchItems();
+    fetchItems(); setRefreshKey(k => k + 1);
   };
 
   const toggleBizType = (bt: string) => {
@@ -175,56 +186,75 @@ export default function OperatorRecommendationTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-card/50 border-border/50">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-amber-400" />운영 권장 관리</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px]">{items.length}건</Badge>
-              <Button size="sm" className="h-7 text-xs gap-1" onClick={openCreate}><Plus className="h-3 w-3" />권장 등록</Button>
-            </div>
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-1">고객사에 공급할 위험신호, 운영 권장, 잘하고 있는 점, 권장 액션을 관리합니다</p>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-xs text-muted-foreground py-4 text-center">불러오는 중...</p>
-          ) : items.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">등록된 권장 항목이 없습니다.</p>
-          ) : (
-            <div className="space-y-2">
-              {items.map((item) => (
-                <div key={item.id} className={`flex items-start gap-3 py-2.5 px-3 rounded-md border transition-colors ${!item.is_active ? "bg-muted/10 border-border/10 opacity-50" : "bg-muted/20 border-border/20"}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium">{item.title}</span>
-                      <Badge variant="outline" className={`text-[9px] ${typeBadgeColor[item.recommendation_type] || ""}`}>{typeLabel(item.recommendation_type)}</Badge>
-                      <Badge variant="outline" className="text-[9px]">{catLabel(item.category)}</Badge>
-                      {!item.is_active && <Badge variant="outline" className="text-[9px] bg-muted/30 text-muted-foreground">비활성</Badge>}
-                    </div>
-                    {item.description && <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{item.description}</p>}
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {item.target_business_types?.length > 0 && (
-                        <span className="text-[9px] text-muted-foreground flex items-center gap-0.5"><Target className="h-2.5 w-2.5" />{item.target_business_types.join(", ")}</span>
-                      )}
-                      {item.target_org_id && <span className="text-[9px] text-muted-foreground">조직: {item.target_org_id.slice(0, 8)}...</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-[9px] text-muted-foreground whitespace-nowrap mr-1">{item.created_at?.slice(0, 10)}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleToggleActive(item)}>
-                      <div className={`w-2 h-2 rounded-full ${item.is_active ? "bg-emerald-400" : "bg-muted-foreground"}`} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(item)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(item.id)}><Trash2 className="h-3 w-3" /></Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="manage" className="space-y-4">
+        <TabsList className="h-auto gap-1 bg-muted/30 p-1">
+          <TabsTrigger value="manage" className="text-xs px-3 py-1.5 gap-1"><ShieldAlert className="h-3 w-3" />항목 관리</TabsTrigger>
+          <TabsTrigger value="coverage" className="text-xs px-3 py-1.5 gap-1"><BarChart3 className="h-3 w-3" />현황 보드</TabsTrigger>
+        </TabsList>
 
+        <TabsContent value="manage">
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-amber-400" />운영 권장 관리</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px]">{items.length}건</Badge>
+                  <Button size="sm" className="h-7 text-xs gap-1" onClick={openCreate}><Plus className="h-3 w-3" />권장 등록</Button>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">고객사에 공급할 위험신호, 운영 권장, 잘하고 있는 점, 권장 액션을 관리합니다</p>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <p className="text-xs text-muted-foreground py-4 text-center">불러오는 중...</p>
+              ) : items.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-8 text-center">등록된 권장 항목이 없습니다.</p>
+              ) : (
+                <div className="space-y-2">
+                  {items.map((item) => (
+                    <div key={item.id} className={`flex items-start gap-3 py-2.5 px-3 rounded-md border transition-colors ${!item.is_active ? "bg-muted/10 border-border/10 opacity-50" : "bg-muted/20 border-border/20"}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-medium">{item.title}</span>
+                          <Badge variant="outline" className={`text-[9px] ${typeBadgeColor[item.recommendation_type] || ""}`}>{typeLabel(item.recommendation_type)}</Badge>
+                          <Badge variant="outline" className="text-[9px]">{catLabel(item.category)}</Badge>
+                          {!item.is_active && <Badge variant="outline" className="text-[9px] bg-muted/30 text-muted-foreground">비활성</Badge>}
+                        </div>
+                        {item.description && <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{item.description}</p>}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {item.target_business_types?.length > 0 && (
+                            <span className="text-[9px] text-muted-foreground flex items-center gap-0.5"><Target className="h-2.5 w-2.5" />{item.target_business_types.join(", ")}</span>
+                          )}
+                          {item.target_org_id && <span className="text-[9px] text-muted-foreground">조직: {item.target_org_id.slice(0, 8)}...</span>}
+                          {item.target_user_ids && item.target_user_ids.length > 0 && (
+                            <Badge variant="outline" className="text-[8px] bg-violet-500/10 text-violet-400 border-violet-500/20">
+                              <Users className="h-2 w-2 mr-0.5" />{item.target_user_ids.length}명 지정
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[9px] text-muted-foreground whitespace-nowrap mr-1">{item.created_at?.slice(0, 10)}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleToggleActive(item)}>
+                          <div className={`w-2 h-2 rounded-full ${item.is_active ? "bg-emerald-400" : "bg-muted-foreground"}`} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(item)}><Pencil className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="coverage">
+          <RecommendationCoverageBoard key={refreshKey} />
+        </TabsContent>
+      </Tabs>
+
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -263,7 +293,7 @@ export default function OperatorRecommendationTab() {
               </div>
             </div>
 
-            {/* Target */}
+            {/* Business type targeting */}
             <div>
               <Label className="text-xs">대상 업종 (복수 선택)</Label>
               <div className="flex flex-wrap gap-1.5 mt-1">
@@ -280,16 +310,16 @@ export default function OperatorRecommendationTab() {
               </div>
               <p className="text-[9px] text-muted-foreground mt-1">선택하지 않으면 전체 업종에 노출</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">대상 조직 ID (선택)</Label>
-                <Input value={targetOrgId} onChange={e => setTargetOrgId(e.target.value)} placeholder="UUID" className="mt-1 text-xs" />
-              </div>
-              <div>
-                <Label className="text-xs">대상 사업장 코드 (선택)</Label>
-                <Input value={targetBranch} onChange={e => setTargetBranch(e.target.value)} placeholder="branch_code" className="mt-1 text-xs" />
-              </div>
-            </div>
+
+            {/* Precision targeting with user selection */}
+            <RecommendationTargetPicker
+              targetOrgId={targetOrgId}
+              onOrgIdChange={setTargetOrgId}
+              targetBranch={targetBranch}
+              onBranchChange={setTargetBranch}
+              selectedUserIds={targetUserIds}
+              onUserIdsChange={setTargetUserIds}
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <div>

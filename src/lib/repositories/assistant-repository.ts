@@ -263,6 +263,7 @@ export interface OperatorRecommendation {
   target_business_types: string[];
   target_org_id: string | null;
   target_branch_code: string | null;
+  target_user_ids: string[] | null;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -274,23 +275,24 @@ export interface OperatorRecommendation {
 }
 
 /**
- * Fetch active operator recommendations filtered by category, business type,
- * org_id, and branch_code.
+ * Fetch active operator recommendations with multi-layer targeting:
  *
- * Targeting rules:
- * - target_org_id NULL → visible to all orgs; non-null → only matching org
- * - target_branch_code NULL → visible to all branches; non-null → only matching branch
- * - target_business_types empty → all types; non-empty → must include viewer's type
+ * 1. is_active = true (server-side)
+ * 2. Date range valid (client-side)
+ * 3. Business type match (client-side)
+ * 4. target_org_id: NULL = all, non-null = exact match
+ * 5. target_branch_code: NULL = all, non-null = exact match
+ * 6. target_user_ids: empty = all users, non-empty = must include viewer's user ID
  *
- * NOTE: target_org_id / target_branch_code filtering is done client-side because
- * the current user's org context is resolved in-app (AuthContext → profiles.org_id).
- * A future optimisation could push this into an RPC or server-side filter.
+ * This creates a layered targeting hierarchy:
+ *   전체 공통 → 업종 공통 → 조직 전용 → 사업장 전용 → 사용자 전용
  */
 export async function fetchRecommendations(
   category?: string,
   businessTypeLabel?: string,
   viewerOrgId?: string | null,
   viewerBranchCode?: string | null,
+  viewerUserId?: string | null,
 ): Promise<OperatorRecommendation[]> {
   let query = supabase
     .from("operator_recommendations" as any)
@@ -308,20 +310,24 @@ export async function fetchRecommendations(
 
   const today = new Date().toISOString().slice(0, 10);
   return ((data ?? []) as unknown as OperatorRecommendation[]).filter(r => {
-    // Date range filter
+    // Date range
     if (r.start_date && r.start_date > today) return false;
     if (r.end_date && r.end_date < today) return false;
-    // Business type filter (empty = all types)
+    // Business type (empty = all)
     if (businessTypeLabel && r.target_business_types?.length > 0) {
       if (!r.target_business_types.includes(businessTypeLabel)) return false;
     }
-    // Org targeting: null = all orgs, non-null = exact match only
+    // Org targeting
     if (r.target_org_id) {
       if (!viewerOrgId || r.target_org_id !== viewerOrgId) return false;
     }
-    // Branch targeting: null = all branches, non-null = exact match only
+    // Branch targeting
     if (r.target_branch_code) {
       if (!viewerBranchCode || r.target_branch_code !== viewerBranchCode) return false;
+    }
+    // User targeting: empty array = all users, non-empty = must include viewer
+    if (r.target_user_ids && r.target_user_ids.length > 0) {
+      if (!viewerUserId || !r.target_user_ids.includes(viewerUserId)) return false;
     }
     return true;
   });
