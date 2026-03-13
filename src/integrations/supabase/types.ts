@@ -1012,6 +1012,77 @@ export type Database = {
         }
         Relationships: []
       }
+      operator_recommendations: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          link_label: string | null
+          link_url: string | null
+          memo: string | null
+          priority: string
+          recommendation_type: string
+          start_date: string | null
+          target_branch_code: string | null
+          target_business_types: string[] | null
+          target_org_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          memo?: string | null
+          priority?: string
+          recommendation_type?: string
+          start_date?: string | null
+          target_branch_code?: string | null
+          target_business_types?: string[] | null
+          target_org_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          memo?: string | null
+          priority?: string
+          recommendation_type?: string
+          start_date?: string | null
+          target_branch_code?: string | null
+          target_business_types?: string[] | null
+          target_org_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_recommendations_target_org_id_fkey"
+            columns: ["target_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           branch_code: string | null
