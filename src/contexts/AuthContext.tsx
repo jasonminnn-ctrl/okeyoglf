@@ -1,10 +1,12 @@
 /**
- * AuthContext — Mock role-based auth for customer/operator separation.
- * Provides user role to control sidebar visibility and route access.
- * Designed for future backend Auth migration.
+ * AuthContext — Supabase Auth (Phase 11)
+ * Provides user session, role, org_id to the app.
+ * Maintains same public API as mock version for backward compat.
  */
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 
 export type UserRole = "customer" | "operator";
 
@@ -13,53 +15,119 @@ interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  orgId: string;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   role: UserRole;
   isOperator: boolean;
-  login: (email: string, password: string, role?: UserRole) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  signup: (email: string, password: string, displayName?: string) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  orgId: string | null;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-const AUTH_STORAGE_KEY = "okeygolf-auth-user";
+const DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
-const MOCK_USERS: Record<string, AuthUser> = {
-  customer: { id: "user-001", email: "admin@okeygolf.com", name: "관리자", role: "customer" },
-  operator: { id: "op-001", email: "operator@okeygolf.com", name: "운영자", role: "operator" },
-};
+// ── DB helpers ──
 
-const readStoredUser = (): AuthUser | null => {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
+async function fetchProfileOrgId(userId: string): Promise<{ orgId: string; displayName: string | null }> {
+  const { data } = await supabase
+    .from("profiles" as any)
+    .select("org_id, display_name")
+    .eq("id", userId)
+    .single();
 
-    const parsed = JSON.parse(raw) as AuthUser;
-    if (parsed?.role !== "customer" && parsed?.role !== "operator") return null;
+  if (!data) return { orgId: DEFAULT_ORG_ID, displayName: null };
+  return { orgId: (data as any).org_id ?? DEFAULT_ORG_ID, displayName: (data as any).display_name };
+}
 
-    return MOCK_USERS[parsed.role];
-  } catch {
-    return null;
-  }
-};
+async function fetchUserRole(userId: string): Promise<UserRole> {
+  const { data } = await supabase
+    .from("user_roles" as any)
+    .select("role")
+    .eq("user_id", userId);
+
+  if (data?.some((r: any) => r.role === "operator")) return "operator";
+  return "customer";
+}
+
+async function buildAuthUser(session: Session): Promise<AuthUser> {
+  const userId = session.user.id;
+  const [profile, role] = await Promise.all([fetchProfileOrgId(userId), fetchUserRole(userId)]);
+
+  return {
+    id: userId,
+    email: session.user.email ?? "",
+    name: profile.displayName ?? session.user.email?.split("@")[0] ?? "",
+    role,
+    orgId: profile.orgId,
+  };
+}
+
+// ── Provider ──
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback((email: string, _password: string, role?: UserRole) => {
-    const resolvedRole = role || (email.includes("operator") ? "operator" : "customer");
-    const nextUser = MOCK_USERS[resolvedRole] || MOCK_USERS.customer;
+  useEffect(() => {
+    let mounted = true;
 
-    setUser(nextUser);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
+    // 1. Listen for auth changes FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      if (session) {
+        const authUser = await buildAuthUser(session);
+        if (mounted) setUser(authUser);
+      } else {
+        if (mounted) setUser(null);
+      }
+      if (mounted) setIsLoading(false);
+    });
+
+    // 2. Then get existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      if (session) {
+        const authUser = await buildAuthUser(session);
+        if (mounted) setUser(authUser);
+      }
+      if (mounted) setIsLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
+  const signup = useCallback(async (email: string, password: string, displayName?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { display_name: displayName },
+      },
+    });
+    if (error) return { error: error.message };
+    return {};
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
   }, []);
 
   return (
@@ -68,8 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: user?.role ?? "customer",
       isOperator: user?.role === "operator",
       login,
+      signup,
       logout,
       isAuthenticated: !!user,
+      isLoading,
+      orgId: user?.orgId ?? null,
     }}>
       {children}
     </AuthContext.Provider>

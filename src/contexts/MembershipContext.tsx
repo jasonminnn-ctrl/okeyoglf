@@ -1,8 +1,8 @@
 /**
- * MembershipContext (Phase 10 — DB-backed)
+ * MembershipContext (Phase 11 — Auth-connected)
  * 
- * Reads membership from organizations table, credits from credit_wallets/ledger.
- * Credit operations go through deduct_credit/grant_credit RPC.
+ * Reads org_id from AuthContext instead of DEV_ORG_ID.
+ * Falls back to DEV_ORG_ID when not authenticated (shouldn't happen behind RouteGuard).
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
@@ -15,11 +15,11 @@ import { checkFeatureAccess, checkResultActions, type FeatureAccessResult, type 
 import { fetchOrganization } from "@/lib/repositories/organization-repository";
 import { fetchWallet, fetchLedger, deductCreditRPC, grantCreditRPC, type CreditLedgerRow } from "@/lib/repositories/credit-repository";
 import { fetchFeatureOverrides, type FeatureOverrideRow } from "@/lib/repositories/feature-override-repository";
-import { DEV_ORG_ID } from "@/lib/repositories/constants";
+import { useAuth } from "@/contexts/AuthContext";
 
-// ──────────────────────────────────
-// Context Interface (unchanged public API)
-// ──────────────────────────────────
+const FALLBACK_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+// ── Context Interface (unchanged public API) ──
 
 interface MembershipContextValue {
   membershipCode: MembershipCode;
@@ -39,9 +39,7 @@ interface MembershipContextValue {
 
 const MembershipContext = createContext<MembershipContextValue | undefined>(undefined);
 
-// ──────────────────────────────────
-// Helpers: DB row → context shape
-// ──────────────────────────────────
+// ── Helpers ──
 
 function ledgerRowToEntry(row: CreditLedgerRow): CreditLedgerEntry {
   return {
@@ -58,42 +56,39 @@ function ledgerRowToEntry(row: CreditLedgerRow): CreditLedgerEntry {
   };
 }
 
-// ──────────────────────────────────
-// Provider
-// ──────────────────────────────────
+// ── Provider ──
 
 export function MembershipProvider({ children }: { children: ReactNode }) {
+  const { orgId: authOrgId, isAuthenticated } = useAuth();
+  const orgId = authOrgId ?? FALLBACK_ORG_ID;
+
   const [membershipCode, setMembershipCode] = useState<MembershipCode>("pro");
   const [creditBalance, setCreditBalance] = useState(0);
   const [ledger, setLedger] = useState<CreditLedgerEntry[]>([]);
   const [overrides, setOverrides] = useState<OrganizationFeatureOverride[]>([]);
-  const [loaded, setLoaded] = useState(false);
 
   const tier = getMembershipTier(membershipCode);
 
-  // Initial load from DB
+  // Reload from DB whenever orgId changes (or on first auth)
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     let cancelled = false;
 
     async function init() {
       const [org, wallet, ledgerRows, overrideRows] = await Promise.all([
-        fetchOrganization(DEV_ORG_ID),
-        fetchWallet(DEV_ORG_ID),
-        fetchLedger(DEV_ORG_ID),
-        fetchFeatureOverrides(DEV_ORG_ID),
+        fetchOrganization(orgId),
+        fetchWallet(orgId),
+        fetchLedger(orgId),
+        fetchFeatureOverrides(orgId),
       ]);
 
       if (cancelled) return;
 
-      if (org) {
-        setMembershipCode(org.membership_code);
-      }
-      if (wallet) {
-        setCreditBalance(wallet.balance);
-      }
+      if (org) setMembershipCode(org.membership_code);
+      if (wallet) setCreditBalance(wallet.balance);
       setLedger(ledgerRows.map(ledgerRowToEntry));
 
-      // Load DB overrides into context
       if (overrideRows.length > 0) {
         const mapped: OrganizationFeatureOverride[] = overrideRows.map((row: FeatureOverrideRow) => ({
           organizationId: row.org_id,
@@ -106,71 +101,56 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
         }));
         setOverrides(mapped);
       }
-
-      setLoaded(true);
     }
 
     init();
     return () => { cancelled = true; };
-  }, []);
+  }, [orgId, isAuthenticated]);
 
   const deductCredit = useCallback((amount: number, type: LedgerType, reason: string, module?: string, resultId?: string): boolean => {
     if (creditBalance < amount) return false;
     const newBalance = creditBalance - amount;
 
-    // Optimistic update
     setCreditBalance(newBalance);
-    setLedger(prev => [
-      {
-        id: `led-${Date.now()}`,
-        organizationId: DEV_ORG_ID,
-        type,
-        amountDelta: -amount,
-        balanceAfter: newBalance,
-        reason,
-        relatedModule: module,
-        relatedResultId: resultId,
-        actorType: "user",
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
+    setLedger(prev => [{
+      id: `led-${Date.now()}`,
+      organizationId: orgId,
+      type,
+      amountDelta: -amount,
+      balanceAfter: newBalance,
+      reason,
+      relatedModule: module,
+      relatedResultId: resultId,
+      actorType: "user",
+      createdAt: new Date().toISOString(),
+    }, ...prev]);
 
-    // Fire RPC (async, no await — fire-and-forget with error logging)
-    deductCreditRPC(DEV_ORG_ID, amount, type, reason, module, resultId).then(success => {
-      if (!success) {
-        console.warn("deductCreditRPC returned false — may need to refresh balance");
-      }
+    deductCreditRPC(orgId, amount, type, reason, module, resultId).then(success => {
+      if (!success) console.warn("deductCreditRPC returned false");
     });
 
     return true;
-  }, [creditBalance]);
+  }, [creditBalance, orgId]);
 
   const grantCredit = useCallback((amount: number, type: LedgerType, reason: string) => {
     const newBalance = creditBalance + amount;
 
-    // Optimistic update
     setCreditBalance(newBalance);
-    setLedger(prev => [
-      {
-        id: `led-${Date.now()}`,
-        organizationId: DEV_ORG_ID,
-        type,
-        amountDelta: amount,
-        balanceAfter: newBalance,
-        reason,
-        actorType: "operator",
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
+    setLedger(prev => [{
+      id: `led-${Date.now()}`,
+      organizationId: orgId,
+      type,
+      amountDelta: amount,
+      balanceAfter: newBalance,
+      reason,
+      actorType: "operator",
+      createdAt: new Date().toISOString(),
+    }, ...prev]);
 
-    grantCreditRPC(DEV_ORG_ID, amount, type, reason).then(success => {
-      if (!success) {
-        console.warn("grantCreditRPC returned false — may need to refresh balance");
-      }
+    grantCreditRPC(orgId, amount, type, reason).then(success => {
+      if (!success) console.warn("grantCreditRPC returned false");
     });
-  }, [creditBalance]);
+  }, [creditBalance, orgId]);
 
   const checkAccess = useCallback((featureKey: FeatureKey): FeatureAccessResult => {
     return checkFeatureAccess(featureKey, membershipCode, creditBalance, overrides);
@@ -187,10 +167,10 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  const removeOverride = useCallback((featureKey: FeatureKey, membershipCode?: MembershipCode) => {
+  const removeOverride = useCallback((featureKey: FeatureKey, mc?: MembershipCode) => {
     setOverrides(prev => prev.filter(o => {
       if (o.featureKey !== featureKey) return true;
-      if (membershipCode && o.membershipCode !== membershipCode) return true;
+      if (mc && o.membershipCode !== mc) return true;
       return false;
     }));
   }, []);
