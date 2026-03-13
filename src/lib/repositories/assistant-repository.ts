@@ -20,6 +20,10 @@ export interface AssistantTask {
   memo: string | null;
   source_type: string;
   linked_result_id: string | null;
+  risk_source: string;
+  completed_by_user_id: string | null;
+  completed_by_name: string | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
