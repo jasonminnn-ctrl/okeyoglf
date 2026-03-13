@@ -94,9 +94,7 @@ export default function CampaignPlannerPage() {
     return null;
   };
 
-  const filteredCampaigns = tab === "all" ? campaigns
-    : tab === "ai" ? campaigns.filter(c => c.source_type === "ai_generated")
-    : campaigns.filter(c => c.source_type === "user_created" || !c.source_type);
+  const filteredCampaigns = filterBySourceTab(campaigns, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredCampaigns, exportColumns), `캠페인_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
   const handleXlsxExport = () => { downloadXlsx(filteredCampaigns, exportColumns, `캠페인_${new Date().toISOString().slice(0, 10)}.xlsx`, "캠페인"); toast({ title: "XLSX 다운로드 완료" }); };
