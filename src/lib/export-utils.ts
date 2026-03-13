@@ -56,8 +56,8 @@ const categoryFormatMap: Record<string, ExportFormat[]> = {
   "전담 컨설턴트 결과": ["pdf", "doc"],
 };
 
-export function getRecommendedFormats(result: SavedResult): FormatOption[] {
-  const recommended = categoryFormatMap[result.category] ?? ["txt", "doc"];
+export function getRecommendedFormats(result: ExportableResult): FormatOption[] {
+  const recommended = categoryFormatMap[result.category ?? ""] ?? ["txt", "doc"];
   const primary = recommended[0] ?? "txt";
 
   const allFormats: FormatOption[] = [
