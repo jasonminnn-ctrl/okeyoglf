@@ -593,6 +593,8 @@ interface ResearchResultCardProps {
   resultActions: ReturnType<ReturnType<typeof useMembership>["getResultActions"]>;
   onSave: () => void;
   onConsultantTransfer: () => void;
+  isSaved?: boolean;
+  onOpenSaved?: () => void;
 }
 
 function ResearchResultCard({
