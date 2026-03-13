@@ -1,7 +1,10 @@
 /**
- * Export / Download utility functions for Phase 6.
+ * Export / Download utility functions.
  * Handles format recommendation, TXT generation, and placeholder interfaces
- * for future PDF/DOC/PPT server-side generation.
+ * for future PDF/DOC/PPT/XLSX server-side generation.
+ *
+ * Extensibility: ExportFormat union and categoryFormatMap can be extended
+ * with new formats (e.g. "xlsx") without breaking existing consumers.
  */
 
 import type { SavedResult } from "@/contexts/ResultStoreContext";
@@ -11,7 +14,7 @@ import type { GenerationResult, GenerationResultSection } from "@/lib/ai-generat
 // Format types
 // ──────────────────────────────────
 
-export type ExportFormat = "txt" | "doc" | "pdf" | "ppt";
+export type ExportFormat = "txt" | "doc" | "pdf" | "ppt" | "xlsx";
 
 /**
  * Minimal shape accepted by export helpers — works with both
@@ -56,43 +59,55 @@ const categoryFormatMap: Record<string, ExportFormat[]> = {
   "전담 컨설턴트 결과": ["pdf", "doc"],
 };
 
+/** All format definitions — available flag controls real vs placeholder */
+const allFormatDefinitions: Record<ExportFormat, Omit<FormatOption, "recommended">> = {
+  txt: {
+    format: "txt",
+    label: "텍스트 (TXT)",
+    description: "서식 없는 텍스트 파일 — 즉시 다운로드",
+    available: true,
+  },
+  doc: {
+    format: "doc",
+    label: "문서 (DOC)",
+    description: "보고서·서식 문서 — 서버 연결 후 지원 예정",
+    available: false,
+  },
+  pdf: {
+    format: "pdf",
+    label: "PDF",
+    description: "인쇄·전달용 문서 — 서버 연결 후 지원 예정",
+    available: false,
+  },
+  ppt: {
+    format: "ppt",
+    label: "프레젠테이션 (PPT)",
+    description: "발표·제안용 슬라이드 — 서버 연결 후 지원 예정",
+    available: false,
+  },
+  xlsx: {
+    format: "xlsx",
+    label: "스프레드시트 (XLSX)",
+    description: "체크리스트·업무추적용 — 서버 연결 후 지원 예정",
+    available: false,
+  },
+};
+
 export function getRecommendedFormats(result: ExportableResult): FormatOption[] {
   const recommended = categoryFormatMap[result.category ?? ""] ?? ["txt", "doc"];
   const primary = recommended[0] ?? "txt";
 
-  const allFormats: FormatOption[] = [
-    {
-      format: "txt",
-      label: "텍스트 (TXT)",
-      description: "서식 없는 텍스트 파일 — 즉시 다운로드",
-      available: true,
-      recommended: primary === "txt",
-    },
-    {
-      format: "doc",
-      label: "문서 (DOC)",
-      description: "보고서·서식 문서 — 연결 준비 완료",
-      available: false,
-      recommended: primary === "doc",
-    },
-    {
-      format: "pdf",
-      label: "PDF",
-      description: "인쇄·전달용 문서 — 연결 준비 완료",
-      available: false,
-      recommended: primary === "pdf",
-    },
-    {
-      format: "ppt",
-      label: "프레젠테이션 (PPT)",
-      description: "발표·제안용 슬라이드 — 연결 준비 완료",
-      available: false,
-      recommended: primary === "ppt",
-    },
-  ];
+  // Show: txt always, then category-recommended formats, then remaining
+  const shownFormats: ExportFormat[] = ["txt", "doc", "pdf", "ppt"];
+  // xlsx is structurally ready but not shown in Phase 1
+
+  const options: FormatOption[] = shownFormats.map(fmt => ({
+    ...allFormatDefinitions[fmt],
+    recommended: fmt === primary,
+  }));
 
   // Sort: recommended first, then available first
-  return allFormats.sort((a, b) => {
+  return options.sort((a, b) => {
     if (a.recommended && !b.recommended) return -1;
     if (!a.recommended && b.recommended) return 1;
     if (a.available && !b.available) return -1;
@@ -173,7 +188,6 @@ export function buildShareText(result: ExportableResult): string {
   lines.push(`생성: ${new Date(result.createdAt).toLocaleDateString("ko-KR")}`);
   lines.push(`버전: v${result.version ?? 1}`);
   lines.push("");
-  // Include first section summary
   if (result.sections.length > 0) {
     const firstContent = result.sections[0].content.slice(0, 200);
     lines.push(firstContent + (result.sections[0].content.length > 200 ? "..." : ""));

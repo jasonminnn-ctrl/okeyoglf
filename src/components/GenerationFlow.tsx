@@ -3,19 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard, Download, ExternalLink } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, FileText, ArrowLeft, Lock, CreditCard } from "lucide-react";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
-import { ExportDialog } from "@/components/ExportDialog";
-import { buildPlainTextExport, downloadAsTextFile, buildFileName } from "@/lib/export-utils";
+import { ResultActionBar } from "@/components/result/ResultActionBar";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
+import type { ExportableResult } from "@/lib/export-utils";
 import type { FeatureKey } from "@/lib/membership";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { ExternalLink } from "lucide-react";
 
 interface GenerationFlowProps {
   pipelineKey: string;
@@ -94,7 +95,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const navigate = useNavigate();
   const { businessType, label, orgProfile } = useBusinessContext();
   const { checkAccess, getResultActions, deductCredit, creditBalance } = useMembership();
-  const { saveResult, getResultById } = useResultStore();
+  const { saveResult } = useResultStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [isRegenerate, setIsRegenerate] = useState(false);
@@ -102,9 +103,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   const config = pipelineConfigs[pipelineKey];
   const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
-  // Check feature access
   const generateAccess = checkAccess(featureKey);
-  const resultActions = getResultActions();
 
   const handleGenerate = useCallback(async (inputs: Record<string, string>) => {
     if (!config) return;
@@ -119,7 +118,6 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
         { businessType, businessLabel: label, module: config.module, subtool: config.subtool, userInputs: inputs, contextSummary },
         config,
       );
-      // Deduct credit on successful generation
       const ledgerType = isRegenerate ? "regenerate" : "generate";
       const actionLabel = isRegenerate ? "재생성" : "생성";
       if (generateAccess.requiresCredit && generateAccess.creditCost > 0) {
@@ -133,6 +131,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   }, [businessType, label, config, contextSummary, generateAccess, deductCredit]);
 
   const handleRegenerate = () => {
+    const resultActions = getResultActions();
     if (!resultActions.regenerate.enabled) {
       toast({ title: "기능 제한", description: resultActions.regenerate.lockReason || "재생성이 제한됩니다", variant: "destructive" });
       return;
@@ -143,7 +142,6 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
 
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
 
   const handleSave = async () => {
     if (result && config) {
@@ -180,19 +178,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     }
   };
 
-  const handleCopyAll = async () => {
-    if (!resultActions.copy.enabled) {
-      toast({ title: "기능 제한", description: resultActions.copy.lockReason || "복사가 제한됩니다", variant: "destructive" });
-      return;
-    }
-    if (result) {
-      const text = result.sections.map(s => `${s.title}\n${s.content}`).join("\n\n");
-      await navigator.clipboard.writeText(text);
-      toast({ title: "전체 복사 완료" });
-    }
-  };
-
   const handleConsultant = () => {
+    const resultActions = getResultActions();
     if (!resultActions.consultantTransfer.enabled) {
       toast({ title: "기능 제한", description: resultActions.consultantTransfer.lockReason || "전환이 제한됩니다", variant: "destructive" });
       return;
@@ -201,7 +188,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
   };
 
   /** Build an ExportableResult shape from the current GenerationResult */
-  const toExportable = useCallback(() => {
+  const toExportable = useCallback((): ExportableResult | null => {
     if (!result || !config) return null;
     return {
       title: result.title,
@@ -218,15 +205,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     };
   }, [result, config]);
 
-  /** Direct TXT download — no save required */
-  const handleDirectDownload = () => {
-    const exportable = toExportable();
-    if (!exportable) return;
-    const content = buildPlainTextExport(exportable);
-    const fileName = buildFileName(exportable, "txt");
-    downloadAsTextFile(content, fileName);
-    toast({ title: "다운로드 완료", description: `${fileName} 파일이 다운로드되었습니다` });
-  };
+  const exportable = toExportable();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -273,7 +252,7 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
 
         {/* Result Panel */}
         <div className="lg:col-span-2 space-y-4">
-          {result ? (
+          {result && exportable ? (
             <>
               {/* Result Header */}
               <div className="flex items-center justify-between">
@@ -312,65 +291,23 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
 
               <Separator />
 
-              {/* Action Buttons - available immediately after generation */}
-              <div className="flex flex-wrap gap-2">
-                {/* Instant TXT Download — always available */}
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleDirectDownload}>
-                  <Download className="h-3 w-3" /> TXT 다운로드
+              {/* Standardized Action Bar */}
+              <ResultActionBar
+                exportable={exportable}
+                savedResultId={savedResultId}
+                onSave={handleSave}
+                onRegenerate={handleRegenerate}
+                onConsultantTransfer={handleConsultant}
+                onOpenSaved={() => { setDrawerOpen(true); }}
+                isSaved={!!savedResultId}
+              />
+
+              {/* Post-save: navigate to saved list */}
+              {savedResultId && (
+                <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground" onClick={() => navigate("/saved")}>
+                  저장된 결과 목록 →
                 </Button>
-
-                {/* Export Dialog — always available */}
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
-                  <Download className="h-3 w-3" /> 내보내기
-                </Button>
-
-                {/* Save */}
-                {resultActions.save.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled || !!savedResultId}>
-                    <Bookmark className="h-3 w-3" /> {savedResultId ? "저장됨" : "결과 저장"}
-                  </Button>
-                )}
-
-                {/* Post-save actions */}
-                {savedResultId && (
-                  <>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setSavedResultId(result!.id); setDrawerOpen(true); }}>
-                      <ExternalLink className="h-3 w-3" /> 저장된 결과 열기
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate("/saved")}>
-                      <Bookmark className="h-3 w-3" /> 저장된 결과 목록
-                    </Button>
-                  </>
-                )}
-
-                {/* Copy */}
-                {resultActions.copy.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
-                    {resultActions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    전체 복사
-                    {!resultActions.copy.enabled && <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.copy.lockReason}</span>}
-                  </Button>
-                )}
-
-                {/* Regenerate */}
-                {resultActions.regenerate.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleRegenerate} disabled={!resultActions.regenerate.enabled}>
-                    {resultActions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    다시 생성
-                    {resultActions.regenerate.requiresCredit && resultActions.regenerate.enabled && (
-                      <span className="text-[9px] text-muted-foreground">({resultActions.regenerate.creditCost})</span>
-                    )}
-                  </Button>
-                )}
-
-                {/* Consultant */}
-                {resultActions.consultantTransfer.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleConsultant} disabled={!resultActions.consultantTransfer.enabled}>
-                    {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                    전담 컨설턴트 전환
-                  </Button>
-                )}
-              </div>
+              )}
             </>
           ) : loading ? (
             <Card className="bg-card/50 border-border/50 h-full min-h-[400px] flex items-center justify-center">
@@ -393,16 +330,6 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
       </div>
       {/* Result Detail Drawer */}
       <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={savedResultId} />
-
-      {/* Export Dialog — works with both saved and unsaved results */}
-      {(() => {
-        if (savedResultId) {
-          const savedItem = getResultById(savedResultId);
-          return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} savedResultId={savedResultId} /> : null;
-        }
-        const exportable = toExportable();
-        return exportable ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={exportable} /> : null;
-      })()}
     </div>
   );
 }
