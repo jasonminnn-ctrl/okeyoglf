@@ -35,12 +35,25 @@ interface ChatMessage {
   content: string;
   result?: GenerationResult;
   timestamp: string;
+  cardKey?: string | null;
 }
 
 interface AIWorkspaceProps {
   injectedPrompt?: { text: string; cardKey: string } | null;
   onPromptConsumed?: () => void;
 }
+
+// ── cardKey → pipelineKey mapping ──
+const CARD_KEY_TO_PIPELINE: Record<string, string> = {
+  "오늘의 할 일": "ai-assistant/daily-tasks",
+  "이번 주 추천 액션": "ai-assistant/weekly-actions",
+  "놓치고 있는 운영 항목": "ai-assistant/ops-check",
+  "캠페인 추천": "ai-assistant/campaign-planner",
+  "일정/마감 리마인드": "ai-assistant/reminder-board",
+  "업종별 체크리스트": "ai-assistant/checklist",
+};
+
+const DEFAULT_PIPELINE_KEY = "ai-assistant/daily-tasks";
 
 // ──────────────────────────────────
 // Result Section renderer
@@ -107,6 +120,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   const [savedIds, setSavedIds] = useState<Record<string, string>>({});
   const [drawerResultId, setDrawerResultId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [lastCardKey, setLastCardKey] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -120,6 +134,7 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
   useEffect(() => {
     if (injectedPrompt) {
       setInput(injectedPrompt.text);
+      setLastCardKey(injectedPrompt.cardKey);
       onPromptConsumed?.();
       textareaRef.current?.focus();
     }
@@ -127,19 +142,29 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
 
   const contextSummary = buildContextSummary(businessType, label, orgProfile);
 
-  const toExportable = useCallback((result: GenerationResult): ExportableResult => ({
-    title: result.title,
-    businessType: result.businessType,
-    module: result.module,
-    subtool: result.subtool,
-    sections: result.sections,
-    createdAt: result.createdAt,
-    status: result.status,
-    version: 1,
-    category: "AI 비서 결과",
-    sourceNote: result.sourceNote,
-    referenceNote: result.referenceNote,
-  }), []);
+  /** Resolve pipeline config for current context */
+  const resolvePipeline = useCallback((cardKey: string | null) => {
+    const pipelineKey = (cardKey && CARD_KEY_TO_PIPELINE[cardKey]) || DEFAULT_PIPELINE_KEY;
+    const config = pipelineConfigs[pipelineKey];
+    return { pipelineKey, config: config || pipelineConfigs[DEFAULT_PIPELINE_KEY]! };
+  }, []);
+
+  const toExportable = useCallback((result: GenerationResult, cardKey: string | null): ExportableResult => {
+    const { config } = resolvePipeline(cardKey);
+    return {
+      title: result.title,
+      businessType: result.businessType,
+      module: config.module,
+      subtool: config.subtool,
+      sections: result.sections,
+      createdAt: result.createdAt,
+      status: result.status,
+      version: 1,
+      category: config.saveCategory,
+      sourceNote: result.sourceNote,
+      referenceNote: result.referenceNote,
+    };
+  }, [resolvePipeline]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -161,9 +186,11 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
     setInput("");
     setLoading(true);
 
+    // Capture the cardKey at send time so it stays associated with this message
+    const currentCardKey = lastCardKey;
+
     try {
-      const pipelineKey = "ai-assistant/daily-tasks";
-      const config = pipelineConfigs[pipelineKey];
+      const { config } = resolvePipeline(currentCardKey);
       if (!config) throw new Error("Pipeline not found");
 
       const genResult = await generateMockResult(
@@ -181,8 +208,11 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
         content: "",
         result: genResult,
         timestamp: new Date().toISOString(),
+        cardKey: currentCardKey,
       };
       setMessages(prev => [...prev, assistantMsg]);
+      // Reset cardKey after consumption so next free-form input is generic
+      setLastCardKey(null);
     } catch {
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -203,17 +233,17 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
     }
   };
 
-  const handleSaveResult = async (msgId: string, result: GenerationResult) => {
-    const config = pipelineConfigs["ai-assistant/daily-tasks"];
+  const handleSaveResult = async (msgId: string, result: GenerationResult, cardKey: string | null) => {
+    const { config } = resolvePipeline(cardKey);
     await saveResult({
       id: result.id,
       type: "generation",
       title: result.title,
-      module: result.module,
-      subtool: result.subtool,
-      sourceTool: config?.module || "AI 비서",
+      module: config.module,
+      subtool: config.subtool,
+      sourceTool: config.module,
       sourceMenu: "AI 비서",
-      category: "AI 비서 결과",
+      category: config.saveCategory,
       businessType: result.businessType,
       sections: result.sections,
       contextSummary: result.contextSummary,
@@ -309,9 +339,9 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
                   )}
                   <Separator className="my-1" />
                   <ResultActionBar
-                    exportable={toExportable(msg.result)}
+                    exportable={toExportable(msg.result, msg.cardKey ?? null)}
                     savedResultId={savedIds[msg.id] || null}
-                    onSave={() => handleSaveResult(msg.id, msg.result!)}
+                    onSave={() => handleSaveResult(msg.id, msg.result!, msg.cardKey ?? null)}
                     onRegenerate={() => {
                       const idx = messages.findIndex(m => m.id === msg.id);
                       const prevUser = idx > 0 ? messages[idx - 1] : null;

@@ -92,6 +92,21 @@ export const pipelineConfigs: Record<string, PipelineConfig> = {
     outputStyle: "checklist", maxSections: 3,
     allowConsultantEscalation: false, saveCategory: "AI 비서 결과",
   },
+  "ai-assistant/ops-check": {
+    module: "AI 비서", subtool: "놓치고 있는 운영 항목",
+    outputStyle: "structured", maxSections: 4,
+    allowConsultantEscalation: false, saveCategory: "운영 점검 결과",
+  },
+  "ai-assistant/campaign-planner": {
+    module: "AI 비서", subtool: "캠페인 추천",
+    outputStyle: "structured", maxSections: 4,
+    allowConsultantEscalation: false, saveCategory: "캠페인 결과",
+  },
+  "ai-assistant/reminder-board": {
+    module: "AI 비서", subtool: "일정/마감 리마인드",
+    outputStyle: "structured", maxSections: 3,
+    allowConsultantEscalation: false, saveCategory: "리마인드 결과",
+  },
   // AI 운영팀
   "ai-operations/diagnosis": {
     module: "AI 운영팀", subtool: "AI 진단실",
@@ -258,6 +273,21 @@ function getMockSections(
       { title: "📅 일자별 실행 계획", type: "detail", content: `월요일: 주간 목표 설정 및 팀 공유\n화요일: 프로모션 문구 준비 및 발송\n수요일: 중간 실적 점검\n목요일: 미방문 고객 접촉 캠페인 실행\n금요일: 주간 성과 정리 및 차주 계획 수립` },
       { title: "📈 기대 효과", type: "recommendation", content: `- 비수요 시간대 가동률 15~20% 개선 예상\n- 미방문 고객 복귀율 30% 이상 목표\n- 주간 매출 10% 증가 기대` },
       { title: "⚠️ 주의사항", type: "risk", content: `- 할인 프로모션은 기존 고객 불만 최소화 필요\n- 과도한 접촉은 역효과 가능 — 적정 빈도 유지\n- 인력 부족 시 우선순위 기반 선택 집중` },
+    ],
+    "놓치고 있는 운영 항목": [
+      { title: "⚠️ 놓치고 있는 운영 항목", type: "summary", content: `${biz} 업종 기준으로 현재 놓치고 있을 가능성이 높은 운영 항목을 점검했습니다.\n\n1. 미방문 고객 관리 미흡\n   - 30일 이상 미방문 고객 접촉 이력 없음\n   - 자동 리마인드 시스템 미가동\n\n2. 프로모션 종료 후 후속 조치 부재\n   - 지난 달 프로모션 참여 고객 후속 연락 없음\n\n3. 시설 정기 점검 지연\n   - 월간 점검 일정 초과` },
+      { title: "⚡ 즉시 조치 항목", type: "action", content: `□ 미방문 고객 상위 15명 접촉 시작\n□ 프로모션 후속 안내 문자 발송\n□ 시설 점검 일정 즉시 잡기\n□ 직원 교육 미실시 항목 확인` },
+      { title: "💡 개선 권장사항", type: "recommendation", content: `- 월간 운영 체크리스트 도입으로 누락 방지\n- 자동 리마인드 설정 검토\n- 주간 운영 회의에서 점검 항목 공유` },
+    ],
+    "캠페인 추천": [
+      { title: "📢 추천 캠페인", type: "summary", content: `${biz} 업종 현황 기반 추천 캠페인:\n\n▶ 캠페인 1: 비수요 시간대 활성화\n- 목적: 오전/평일 가동률 개선\n- 대상: 시간 여유 있는 고객군\n- 채널: 카카오톡 + 문자\n\n▶ 캠페인 2: 미방문 고객 복귀\n- 목적: 30일 이상 미방문 고객 재활성화\n- 혜택: 복귀 특별 할인\n- 채널: 문자 + 전화` },
+      { title: "📋 실행 계획", type: "detail", content: `1주차: 대상 고객 리스트 확정 + 문구 작성\n2주차: 캠페인 발송 + 응답 모니터링\n3주차: 중간 성과 점검 + 조정\n4주차: 최종 성과 정리` },
+      { title: "📈 기대 효과", type: "recommendation", content: `- 비수요 시간대 가동률 20% 개선\n- 미방문 고객 복귀율 25% 이상\n- 월 매출 10~15% 증가 기대` },
+    ],
+    "일정/마감 리마인드": [
+      { title: "📅 주요 일정 및 마감 리마인드", type: "summary", content: `${biz} 운영 기준 확인이 필요한 일정:\n\n▶ 이번 주 마감\n- 프로모션 종료일: [날짜]\n- 계약 갱신 마감: [거래처명] — [날짜]\n- 직원 교육 이수 기한: [날짜]\n\n▶ 다음 주 예정\n- 정기 시설 점검: [날짜]\n- 월간 보고서 제출: [날짜]` },
+      { title: "⏰ 긴급 확인 항목", type: "action", content: `□ 프로모션 종료 전 마지막 안내 발송\n□ 계약 갱신 의사 확인 연락\n□ 미이수 직원 교육 일정 재배정` },
+      { title: "💡 리마인드 자동화 제안", type: "recommendation", content: `- 반복 일정은 리마인드 보드에 등록하여 자동 알림\n- 계약 갱신은 30일 전부터 단계별 알림 설정\n- 교육/점검은 월초 일괄 등록 권장` },
     ],
     "업종별 체크리스트": [
       { title: "✅ 일일 운영 체크리스트", type: "checklist", content: `${biz} 업종 기준 일일 점검 항목:\n\n□ 시설 점검\n   - 운영 시설 청결 상태 확인\n   - 장비/기자재 작동 점검\n   - 안전 시설 확인\n\n□ 고객 관리\n   - 오늘 예약/방문 고객 리스트 확인\n   - 특이사항 고객 별도 메모\n   - 문의/불만 응대 현황 점검\n\n□ 매출 관리\n   - 전일 매출 확인 및 목표 대비 점검\n   - 프로모션 실적 확인\n   - 결제 관련 이슈 점검` },
