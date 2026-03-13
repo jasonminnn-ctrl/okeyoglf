@@ -286,9 +286,22 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
               {/* Action Buttons - only in result area */}
               <div className="flex flex-wrap gap-2">
                 {resultActions.save.visible && (
-                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled}>
-                    <Bookmark className="h-3 w-3" /> 결과 저장
+                  <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled || !!savedResultId}>
+                    <Bookmark className="h-3 w-3" /> {savedResultId ? "저장됨" : "결과 저장"}
                   </Button>
+                )}
+                {savedResultId && (
+                  <>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
+                      <Download className="h-3 w-3" /> 다운로드
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setSavedResultId(result!.id); setDrawerOpen(true); }}>
+                      <ExternalLink className="h-3 w-3" /> 저장된 결과 열기
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate("/saved")}>
+                      <Bookmark className="h-3 w-3" /> 저장된 결과 목록
+                    </Button>
+                  </>
                 )}
                 {resultActions.copy.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
