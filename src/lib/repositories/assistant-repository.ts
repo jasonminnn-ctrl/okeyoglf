@@ -250,3 +250,63 @@ export async function updateChecklistItem(id: string, updates: Partial<Assistant
 export async function deleteChecklistItem(id: string): Promise<void> {
   await supabase.from("assistant_checklist_items" as any).delete().eq("id", id);
 }
+
+// ── Operator Recommendations (customer-facing supply) ──
+
+export interface OperatorRecommendation {
+  id: string;
+  title: string;
+  description: string | null;
+  recommendation_type: string;
+  category: string;
+  priority: string;
+  target_business_types: string[];
+  target_org_id: string | null;
+  target_branch_code: string | null;
+  is_active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  link_url: string | null;
+  link_label: string | null;
+  memo: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Fetch active operator recommendations filtered by category and business type.
+ * Applies: is_active, date range, business type matching.
+ * target_org_id / target_branch_code filtering is done client-side for now
+ * since the current user's org context is managed in-app.
+ */
+export async function fetchRecommendations(
+  category?: string,
+  businessTypeLabel?: string,
+): Promise<OperatorRecommendation[]> {
+  let query = supabase
+    .from("operator_recommendations" as any)
+    .select("*")
+    .eq("is_active", true)
+    .order("priority", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (category && category !== "all") {
+    // Include category-specific + "general" items
+    query = query.in("category", [category, "general"]);
+  }
+
+  const { data, error } = await query;
+  if (error) { console.error("fetchRecommendations error", error); return []; }
+
+  const today = new Date().toISOString().slice(0, 10);
+  return ((data ?? []) as unknown as OperatorRecommendation[]).filter(r => {
+    // Date range filter
+    if (r.start_date && r.start_date > today) return false;
+    if (r.end_date && r.end_date < today) return false;
+    // Business type filter (empty = all types)
+    if (businessTypeLabel && r.target_business_types?.length > 0) {
+      if (!r.target_business_types.includes(businessTypeLabel)) return false;
+    }
+    return true;
+  });
+}
