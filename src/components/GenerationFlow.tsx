@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard } from "lucide-react";
+import { Loader2, Sparkles, Copy, Check, Bookmark, RefreshCw, MessageSquare, FileText, ArrowLeft, Lock, CreditCard, Download, ExternalLink } from "lucide-react";
 import { ContextSummary } from "@/components/ContextSummary";
 import { useBusinessContext } from "@/contexts/BusinessContext";
 import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
+import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
+import { ExportDialog } from "@/components/ExportDialog";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
