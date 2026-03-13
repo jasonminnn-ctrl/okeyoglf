@@ -545,7 +545,7 @@ export async function getOrderEvents(
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []) as ImwebOrderEventRow[];
+  return (data ?? []) as unknown as ImwebOrderEventRow[];
 }
 
 export async function upsertOrderEvent(
