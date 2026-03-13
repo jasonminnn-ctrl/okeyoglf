@@ -274,14 +274,23 @@ export interface OperatorRecommendation {
 }
 
 /**
- * Fetch active operator recommendations filtered by category and business type.
- * Applies: is_active, date range, business type matching.
- * target_org_id / target_branch_code filtering is done client-side for now
- * since the current user's org context is managed in-app.
+ * Fetch active operator recommendations filtered by category, business type,
+ * org_id, and branch_code.
+ *
+ * Targeting rules:
+ * - target_org_id NULL → visible to all orgs; non-null → only matching org
+ * - target_branch_code NULL → visible to all branches; non-null → only matching branch
+ * - target_business_types empty → all types; non-empty → must include viewer's type
+ *
+ * NOTE: target_org_id / target_branch_code filtering is done client-side because
+ * the current user's org context is resolved in-app (AuthContext → profiles.org_id).
+ * A future optimisation could push this into an RPC or server-side filter.
  */
 export async function fetchRecommendations(
   category?: string,
   businessTypeLabel?: string,
+  viewerOrgId?: string | null,
+  viewerBranchCode?: string | null,
 ): Promise<OperatorRecommendation[]> {
   let query = supabase
     .from("operator_recommendations" as any)
@@ -291,7 +300,6 @@ export async function fetchRecommendations(
     .order("created_at", { ascending: false });
 
   if (category && category !== "all") {
-    // Include category-specific + "general" items
     query = query.in("category", [category, "general"]);
   }
 
@@ -306,6 +314,14 @@ export async function fetchRecommendations(
     // Business type filter (empty = all types)
     if (businessTypeLabel && r.target_business_types?.length > 0) {
       if (!r.target_business_types.includes(businessTypeLabel)) return false;
+    }
+    // Org targeting: null = all orgs, non-null = exact match only
+    if (r.target_org_id) {
+      if (!viewerOrgId || r.target_org_id !== viewerOrgId) return false;
+    }
+    // Branch targeting: null = all branches, non-null = exact match only
+    if (r.target_branch_code) {
+      if (!viewerBranchCode || r.target_branch_code !== viewerBranchCode) return false;
     }
     return true;
   });

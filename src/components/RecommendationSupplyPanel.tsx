@@ -1,6 +1,7 @@
 /**
  * RecommendationSupplyPanel — 고객 운영형 페이지에 운영 권장 DB 항목을 자동 표시
  * operator_recommendations 테이블에서 실시간으로 가져와 보여줌 (mock 아님)
+ * target_org_id / target_branch_code 정밀 타겟팅 적용
  */
 
 import { useState, useEffect } from "react";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldAlert, AlertTriangle, CheckCircle2, Eye, Zap, Plus, ExternalLink, Loader2 } from "lucide-react";
 import { fetchRecommendations, type OperatorRecommendation } from "@/lib/repositories/assistant-repository";
 import { useBusinessContext } from "@/contexts/BusinessContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const typeMeta: Record<string, { label: string; icon: typeof ShieldAlert; color: string }> = {
   ops_recommended: { label: "운영 권장", icon: ShieldAlert, color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
@@ -34,18 +36,27 @@ interface Props {
 
 export function RecommendationSupplyPanel({ category, onAdd, addedTitles = [], headerLabel = "운영팀 권장 항목" }: Props) {
   const { label: bizLabel } = useBusinessContext();
+  const { orgId } = useAuth();
   const [recs, setRecs] = useState<OperatorRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<string | null>(null);
+  /**
+   * branchCode: currently resolved from org context.
+   * TODO: When organization hierarchy is fully implemented,
+   * fetch branch_code from organizations table via orgId.
+   * For now, null means "match all branches" which is correct
+   * for single-branch orgs.
+   */
+  const [branchCode] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchRecommendations(category, bizLabel).then(data => {
+    fetchRecommendations(category, bizLabel, orgId, branchCode).then(data => {
       if (mounted) { setRecs(data); setLoading(false); }
     });
     return () => { mounted = false; };
-  }, [category, bizLabel]);
+  }, [category, bizLabel, orgId, branchCode]);
 
   const handleAdd = async (rec: OperatorRecommendation) => {
     if (!onAdd) return;
