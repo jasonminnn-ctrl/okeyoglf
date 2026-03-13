@@ -35,6 +35,7 @@ interface ChatMessage {
   content: string;
   result?: GenerationResult;
   timestamp: string;
+  cardKey?: string | null;
 }
 
 interface AIWorkspaceProps {
