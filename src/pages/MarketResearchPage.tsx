@@ -697,7 +697,7 @@ function ResearchResultCard({
               <Download className="h-3 w-3" /> 내보내기
             </Button>
           </div>
-        )
+        )}
       </CardContent>
     </Card>
   );
