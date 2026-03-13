@@ -42,6 +42,18 @@ interface AIWorkspaceProps {
   onPromptConsumed?: () => void;
 }
 
+// ── cardKey → pipelineKey mapping ──
+const CARD_KEY_TO_PIPELINE: Record<string, string> = {
+  "오늘의 할 일": "ai-assistant/daily-tasks",
+  "이번 주 추천 액션": "ai-assistant/weekly-actions",
+  "놓치고 있는 운영 항목": "ai-assistant/ops-check",
+  "캠페인 추천": "ai-assistant/campaign-planner",
+  "일정/마감 리마인드": "ai-assistant/reminder-board",
+  "업종별 체크리스트": "ai-assistant/checklist",
+};
+
+const DEFAULT_PIPELINE_KEY = "ai-assistant/daily-tasks";
+
 // ──────────────────────────────────
 // Result Section renderer
 // ──────────────────────────────────
