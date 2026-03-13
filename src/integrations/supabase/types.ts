@@ -905,6 +905,63 @@ export type Database = {
           },
         ]
       }
+      operator_notices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          important: boolean
+          is_active: boolean
+          link_label: string | null
+          link_url: string | null
+          notice_type: string
+          org_id: string | null
+          priority: number
+          published_at: string | null
+          summary: string | null
+          target_business_types: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          important?: boolean
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          notice_type?: string
+          org_id?: string | null
+          priority?: number
+          published_at?: string | null
+          summary?: string | null
+          target_business_types?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          important?: boolean
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          notice_type?: string
+          org_id?: string | null
+          priority?: number
+          published_at?: string | null
+          summary?: string | null
+          target_business_types?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           branch_code: string | null
