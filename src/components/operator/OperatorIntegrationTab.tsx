@@ -71,6 +71,7 @@ const providerIconMap: Record<ProviderKey, ComponentType<{ className?: string }>
 
 const statusIconMap: Record<IntegrationStatus, ComponentType<{ className?: string }>> = {
   connected: CheckCircle2,
+  test_connected: FlaskConical,
   pending: CircleDashed,
   disconnected: Link2,
   testing: FlaskConical,
