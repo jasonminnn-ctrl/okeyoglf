@@ -14,6 +14,318 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_campaigns: {
+        Row: {
+          benefit: string | null
+          channel: string | null
+          created_at: string
+          design_needs: string | null
+          end_date: string | null
+          id: string
+          linked_result_id: string | null
+          memo: string | null
+          org_id: string
+          purpose: string | null
+          source_type: string
+          start_date: string | null
+          status: string
+          target_segment: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          benefit?: string | null
+          channel?: string | null
+          created_at?: string
+          design_needs?: string | null
+          end_date?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id: string
+          purpose?: string | null
+          source_type?: string
+          start_date?: string | null
+          status?: string
+          target_segment?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          benefit?: string | null
+          channel?: string | null
+          created_at?: string
+          design_needs?: string | null
+          end_date?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id?: string
+          purpose?: string | null
+          source_type?: string
+          start_date?: string | null
+          status?: string
+          target_segment?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_campaigns_linked_result_id_fkey"
+            columns: ["linked_result_id"]
+            isOneToOne: false
+            referencedRelation: "saved_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_campaigns_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_checklist_items: {
+        Row: {
+          checked_at: string | null
+          checklist_id: string
+          created_at: string
+          id: string
+          is_checked: boolean
+          label: string
+          memo: string | null
+          org_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          checked_at?: string | null
+          checklist_id: string
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          label: string
+          memo?: string | null
+          org_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          checked_at?: string | null
+          checklist_id?: string
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          label?: string
+          memo?: string | null
+          org_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_checklist_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_checklists: {
+        Row: {
+          checklist_type: string
+          created_at: string
+          focus_area: string | null
+          id: string
+          linked_result_id: string | null
+          memo: string | null
+          org_id: string
+          source_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          checklist_type?: string
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id: string
+          source_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          checklist_type?: string
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id?: string
+          source_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_checklists_linked_result_id_fkey"
+            columns: ["linked_result_id"]
+            isOneToOne: false
+            referencedRelation: "saved_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_checklists_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_reminders: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          is_recurring: boolean
+          linked_result_id: string | null
+          memo: string | null
+          org_id: string
+          recurrence_rule: string | null
+          reminder_type: string
+          source_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id: string
+          recurrence_rule?: string | null
+          reminder_type?: string
+          source_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id?: string
+          recurrence_rule?: string | null
+          reminder_type?: string
+          source_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_reminders_linked_result_id_fkey"
+            columns: ["linked_result_id"]
+            isOneToOne: false
+            referencedRelation: "saved_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_reminders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_tasks: {
+        Row: {
+          assignee: string | null
+          category: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          linked_result_id: string | null
+          memo: string | null
+          org_id: string
+          priority: string
+          source_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id: string
+          priority?: string
+          source_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          linked_result_id?: string | null
+          memo?: string | null
+          org_id?: string
+          priority?: string
+          source_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_tasks_linked_result_id_fkey"
+            columns: ["linked_result_id"]
+            isOneToOne: false
+            referencedRelation: "saved_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_requests: {
         Row: {
           assigned_to: string | null

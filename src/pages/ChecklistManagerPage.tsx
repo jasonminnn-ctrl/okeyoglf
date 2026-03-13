@@ -1,0 +1,271 @@
+/**
+ * ChecklistManagerPage — 업종별 체크리스트를 실제 체크 가능한 관리형 구조로 운영
+ * CSV 다운로드 지원
+ */
+
+import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ClipboardCheck, Plus, ArrowLeft, Loader2, Trash2, Download, PlusCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { BusinessContextBanner } from "@/components/BusinessContextBanner";
+import {
+  fetchChecklists, insertChecklist, deleteChecklist,
+  fetchChecklistItems, insertChecklistItem, updateChecklistItem, deleteChecklistItem,
+  type AssistantChecklist, type AssistantChecklistItem,
+} from "@/lib/repositories/assistant-repository";
+import { buildCsv, downloadCsv } from "@/lib/csv-export";
+import { toast } from "@/hooks/use-toast";
+
+export default function ChecklistManagerPage() {
+  const navigate = useNavigate();
+  const [checklists, setChecklists] = useState<AssistantChecklist[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [items, setItems] = useState<AssistantChecklistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addItemText, setAddItemText] = useState("");
+  const [form, setForm] = useState({ title: "", checklist_type: "daily", focus_area: "" });
+
+  const loadChecklists = useCallback(async () => {
+    setLoading(true);
+    setChecklists(await fetchChecklists());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadChecklists(); }, [loadChecklists]);
+
+  const loadItems = useCallback(async (id: string) => {
+    setItemsLoading(true);
+    setItems(await fetchChecklistItems(id));
+    setItemsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (selectedId) loadItems(selectedId);
+    else setItems([]);
+  }, [selectedId, loadItems]);
+
+  const handleAddChecklist = async () => {
+    if (!form.title.trim()) return;
+    const created = await insertChecklist({
+      title: form.title,
+      checklist_type: form.checklist_type,
+      focus_area: form.focus_area || null,
+      source_type: "user_created",
+    });
+    setForm({ title: "", checklist_type: "daily", focus_area: "" });
+    setAddOpen(false);
+    toast({ title: "체크리스트 생성 완료" });
+    await loadChecklists();
+    if (created) setSelectedId(created.id);
+  };
+
+  const handleDeleteChecklist = async (id: string) => {
+    await deleteChecklist(id);
+    if (selectedId === id) { setSelectedId(null); setItems([]); }
+    setChecklists(prev => prev.filter(c => c.id !== id));
+    toast({ title: "삭제 완료" });
+  };
+
+  const handleAddItem = async () => {
+    if (!addItemText.trim() || !selectedId) return;
+    await insertChecklistItem({
+      checklist_id: selectedId,
+      label: addItemText.trim(),
+      sort_order: items.length,
+    });
+    setAddItemText("");
+    loadItems(selectedId);
+  };
+
+  const handleToggle = async (item: AssistantChecklistItem) => {
+    const checked = !item.is_checked;
+    await updateChecklistItem(item.id, {
+      is_checked: checked,
+      checked_at: checked ? new Date().toISOString() : null,
+    } as any);
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_checked: checked, checked_at: checked ? new Date().toISOString() : null } : i));
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    await deleteChecklistItem(id);
+    setItems(prev => prev.filter(i => i.id !== id));
+  };
+
+  const selectedChecklist = checklists.find(c => c.id === selectedId);
+  const checkedCount = items.filter(i => i.is_checked).length;
+  const progress = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
+
+  const handleCsvDownload = () => {
+    if (!selectedChecklist || items.length === 0) return;
+    const csv = buildCsv(items, [
+      { header: "항목", accessor: i => i.label },
+      { header: "완료", accessor: i => i.is_checked ? "✅" : "☐" },
+      { header: "완료시각", accessor: i => i.checked_at || "" },
+      { header: "메모", accessor: i => i.memo || "" },
+    ]);
+    downloadCsv(csv, `${selectedChecklist.title}_체크리스트.csv`);
+    toast({ title: "CSV 다운로드 완료" });
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in max-w-4xl">
+      <div>
+        <Button variant="ghost" size="sm" onClick={() => navigate("/ai-assistant")} className="mb-2 -ml-2 text-xs text-muted-foreground">
+          <ArrowLeft className="h-3 w-3 mr-1" /> AI 비서
+        </Button>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <ClipboardCheck className="h-6 w-6 text-emerald-400" />
+          체크리스트 관리
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">업종별 체크리스트를 실제 체크 가능한 구조로 관리합니다</p>
+      </div>
+
+      <BusinessContextBanner module="AI 비서" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Checklist list */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium">체크리스트 목록</p>
+            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)} className="text-xs gap-1 h-7">
+              <Plus className="h-3 w-3" /> 새 목록
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>
+          ) : checklists.length === 0 ? (
+            <Card className="bg-card/50 border-border/50">
+              <CardContent className="py-8 text-center">
+                <p className="text-xs text-muted-foreground">체크리스트가 없습니다</p>
+              </CardContent>
+            </Card>
+          ) : checklists.map(cl => (
+            <button
+              key={cl.id}
+              onClick={() => setSelectedId(cl.id)}
+              className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                selectedId === cl.id ? "border-primary/50 bg-primary/5" : "border-border/30 bg-card/50 hover:bg-muted/20"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{cl.title}</span>
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-red-400"
+                  onClick={e => { e.stopPropagation(); handleDeleteChecklist(cl.id); }}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-[9px]">{cl.checklist_type}</Badge>
+                {cl.focus_area && <Badge variant="outline" className="text-[9px]">{cl.focus_area}</Badge>}
+                {cl.source_type === "ai_generated" && <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20">AI</Badge>}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Right: Items */}
+        <div className="lg:col-span-2 space-y-4">
+          {selectedChecklist ? (
+            <>
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">{selectedChecklist.title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">{checkedCount}/{items.length}</Badge>
+                      <Button size="sm" variant="outline" onClick={handleCsvDownload} disabled={items.length === 0} className="text-xs gap-1 h-7">
+                        <Download className="h-3 w-3" /> CSV
+                      </Button>
+                    </div>
+                  </div>
+                  <Progress value={progress} className="h-1.5 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-1.5 pt-2">
+                  {itemsLoading ? (
+                    <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>
+                  ) : items.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-6">항목을 추가하세요</p>
+                  ) : items.map(item => (
+                    <div key={item.id} className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-muted/10 group">
+                      <Checkbox checked={item.is_checked} onCheckedChange={() => handleToggle(item)} />
+                      <span className={`flex-1 text-sm ${item.is_checked ? "line-through text-muted-foreground" : ""}`}>{item.label}</span>
+                      {item.checked_at && <span className="text-[9px] text-muted-foreground">{new Date(item.checked_at).toLocaleDateString("ko-KR")}</span>}
+                      <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400"
+                        onClick={() => handleDeleteItem(item.id)}>
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {/* Quick add item */}
+                  <div className="flex gap-2 pt-2 border-t border-border/30 mt-2">
+                    <Input
+                      placeholder="항목 추가..."
+                      value={addItemText}
+                      onChange={e => setAddItemText(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleAddItem()}
+                      className="text-sm h-8"
+                    />
+                    <Button size="sm" variant="outline" onClick={handleAddItem} disabled={!addItemText.trim()} className="h-8 text-xs gap-1">
+                      <PlusCircle className="h-3 w-3" /> 추가
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card className="bg-card/50 border-border/50 h-full min-h-[300px] flex items-center justify-center">
+              <CardContent className="text-center">
+                <ClipboardCheck className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">좌측에서 체크리스트를 선택하세요</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Add Checklist Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="text-base">새 체크리스트</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <Input placeholder="체크리스트 제목" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="text-sm" />
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={form.checklist_type} onValueChange={v => setForm(p => ({ ...p, checklist_type: v }))}>
+                <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily" className="text-xs">일일</SelectItem>
+                  <SelectItem value="weekly" className="text-xs">주간</SelectItem>
+                  <SelectItem value="monthly" className="text-xs">월간</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={form.focus_area} onValueChange={v => setForm(p => ({ ...p, focus_area: v }))}>
+                <SelectTrigger className="text-xs"><SelectValue placeholder="영역 (선택)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="facility" className="text-xs">시설 관리</SelectItem>
+                  <SelectItem value="customer" className="text-xs">고객 관리</SelectItem>
+                  <SelectItem value="sales" className="text-xs">매출 관리</SelectItem>
+                  <SelectItem value="staff" className="text-xs">직원 관리</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)} className="text-xs">취소</Button>
+            <Button size="sm" onClick={handleAddChecklist} disabled={!form.title.trim()} className="text-xs">생성</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

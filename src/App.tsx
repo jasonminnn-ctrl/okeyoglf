@@ -31,6 +31,10 @@ import NotFound from "@/pages/NotFound";
 import DailyTasksPage from "@/pages/DailyTasksPage";
 import WeeklyActionsPage from "@/pages/WeeklyActionsPage";
 import ChecklistPage from "@/pages/ChecklistPage";
+import OpsCheckPage from "@/pages/OpsCheckPage";
+import CampaignPlannerPage from "@/pages/CampaignPlannerPage";
+import ReminderBoardPage from "@/pages/ReminderBoardPage";
+import ChecklistManagerPage from "@/pages/ChecklistManagerPage";
 import ResponseScriptPage from "@/pages/ResponseScriptPage";
 import ReRegistrationPage from "@/pages/ReRegistrationPage";
 import PromotionPlanPage from "@/pages/PromotionPlanPage";
@@ -63,6 +67,10 @@ const App = () => (
                       <Route path="/ai-assistant/daily-tasks" element={<DailyTasksPage />} />
                       <Route path="/ai-assistant/weekly-actions" element={<WeeklyActionsPage />} />
                       <Route path="/ai-assistant/checklist" element={<ChecklistPage />} />
+                      <Route path="/ai-assistant/ops-check" element={<OpsCheckPage />} />
+                      <Route path="/ai-assistant/campaign-planner" element={<CampaignPlannerPage />} />
+                      <Route path="/ai-assistant/reminder-board" element={<ReminderBoardPage />} />
+                      <Route path="/ai-assistant/checklist-manager" element={<ChecklistManagerPage />} />
                       <Route path="/ai-operations" element={<AIOperationsPage />} />
                       <Route path="/ai-operations/diagnosis" element={<DiagnosisPage />} />
                       <Route path="/ai-sales" element={<AISalesPage />} />
