@@ -92,6 +92,21 @@ export const pipelineConfigs: Record<string, PipelineConfig> = {
     outputStyle: "checklist", maxSections: 3,
     allowConsultantEscalation: false, saveCategory: "AI 비서 결과",
   },
+  "ai-assistant/ops-check": {
+    module: "AI 비서", subtool: "놓치고 있는 운영 항목",
+    outputStyle: "structured", maxSections: 4,
+    allowConsultantEscalation: false, saveCategory: "운영 점검 결과",
+  },
+  "ai-assistant/campaign-planner": {
+    module: "AI 비서", subtool: "캠페인 추천",
+    outputStyle: "structured", maxSections: 4,
+    allowConsultantEscalation: false, saveCategory: "캠페인 결과",
+  },
+  "ai-assistant/reminder-board": {
+    module: "AI 비서", subtool: "일정/마감 리마인드",
+    outputStyle: "structured", maxSections: 3,
+    allowConsultantEscalation: false, saveCategory: "리마인드 결과",
+  },
   // AI 운영팀
   "ai-operations/diagnosis": {
     module: "AI 운영팀", subtool: "AI 진단실",
