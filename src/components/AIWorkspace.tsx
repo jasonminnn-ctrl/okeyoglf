@@ -263,10 +263,10 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
       {/* Chat Area */}
       <div ref={scrollRef} className="flex-1 min-h-[200px] max-h-[400px] overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-            <Sparkles className="h-10 w-10 text-muted-foreground/20 mb-3" />
-            <p className="text-sm text-muted-foreground">위 카드를 클릭하거나 직접 입력하세요</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">AI가 {label} 업종 맞춤 결과를 생성합니다</p>
+          <div className="flex flex-col items-center justify-center h-full min-h-[150px] text-center">
+            <Sparkles className="h-8 w-8 text-muted-foreground/20 mb-2" />
+            <p className="text-xs text-muted-foreground">추가 요청이나 수정이 필요하면 입력하세요</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1">위 도구 카드에서 시작하거나 자유형 질문 가능</p>
           </div>
         )}
 
