@@ -11,6 +11,7 @@ import OperatorKpiBoard from "@/components/operator/OperatorKpiBoard";
 import OperatorResultsBoard from "@/components/operator/OperatorResultsBoard";
 import OperatorResearchBoard from "@/components/operator/OperatorResearchBoard";
 import OperatorNoticeTab from "@/components/operator/OperatorNoticeTab";
+import OperatorRecommendationTab from "@/components/operator/OperatorRecommendationTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
