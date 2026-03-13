@@ -387,7 +387,7 @@ export async function getImwebSiteConnections(
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as ImwebSiteConnectionRow[];
+  return (data ?? []) as unknown as ImwebSiteConnectionRow[];
 }
 
 export async function getImwebMemberSyncSummary(
