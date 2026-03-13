@@ -590,6 +590,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_feature_override: {
+        Args: { _org_id: string }
+        Returns: boolean
+      }
+      can_access_org: { Args: { _org_id: string }; Returns: boolean }
+      current_profile_org_id: { Args: never; Returns: string }
       deduct_credit: {
         Args: {
           _actor_type?: string
@@ -618,6 +624,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_operator_user: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "customer" | "operator"
