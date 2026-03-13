@@ -88,8 +88,11 @@ export type Database = {
       }
       assistant_checklist_items: {
         Row: {
+          assignee_name: string | null
           checked_at: string | null
           checklist_id: string
+          completed_by_name: string | null
+          completed_by_user_id: string | null
           created_at: string
           id: string
           is_checked: boolean
@@ -100,8 +103,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assignee_name?: string | null
           checked_at?: string | null
           checklist_id: string
+          completed_by_name?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           id?: string
           is_checked?: boolean
@@ -112,8 +118,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assignee_name?: string | null
           checked_at?: string | null
           checklist_id?: string
+          completed_by_name?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           id?: string
           is_checked?: boolean
@@ -264,6 +273,9 @@ export type Database = {
         Row: {
           assignee: string | null
           category: string
+          completed_at: string | null
+          completed_by_name: string | null
+          completed_by_user_id: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -272,6 +284,7 @@ export type Database = {
           memo: string | null
           org_id: string
           priority: string
+          risk_source: string
           source_type: string
           status: string
           title: string
@@ -280,6 +293,9 @@ export type Database = {
         Insert: {
           assignee?: string | null
           category?: string
+          completed_at?: string | null
+          completed_by_name?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -288,6 +304,7 @@ export type Database = {
           memo?: string | null
           org_id: string
           priority?: string
+          risk_source?: string
           source_type?: string
           status?: string
           title: string
@@ -296,6 +313,9 @@ export type Database = {
         Update: {
           assignee?: string | null
           category?: string
+          completed_at?: string | null
+          completed_by_name?: string | null
+          completed_by_user_id?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -304,6 +324,7 @@ export type Database = {
           memo?: string | null
           org_id?: string
           priority?: string
+          risk_source?: string
           source_type?: string
           status?: string
           title?: string
