@@ -215,17 +215,17 @@ export default function OperatorIntegrationTab() {
     };
   }, [authLoading, orgId]);
 
-  const imwebStatus = imwebSummary?.syncStatus ?? "disconnected";
-  const membershipStatus = membershipMappings.some((item) => item.isActive)
-    ? "connected"
+  const imwebStatus = imwebSummary?.syncStatus === "connected" ? "test_connected" as IntegrationStatus : (imwebSummary?.syncStatus ?? "disconnected") as IntegrationStatus;
+  const membershipStatus: IntegrationStatus = membershipMappings.some((item) => item.isActive)
+    ? "test_connected"
     : "pending";
-  const pointStatus = pointMappings.some((item) => item.isActive)
-    ? "connected"
+  const pointStatus: IntegrationStatus = pointMappings.some((item) => item.isActive)
+    ? "test_connected"
     : "pending";
-  const syncStatus = exceptionItems.some((item) => item.status === "error")
+  const syncStatus: IntegrationStatus = exceptionItems.some((item) => item.status === "error")
     ? "error"
     : syncHistories.some((item) => item.status === "connected")
-      ? "connected"
+      ? "test_connected"
       : "pending";
 
   const integrations: IntegrationItem[] = useMemo(
