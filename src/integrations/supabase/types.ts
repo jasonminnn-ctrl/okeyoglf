@@ -224,6 +224,354 @@ export type Database = {
           },
         ]
       }
+      imweb_member_links: {
+        Row: {
+          created_at: string
+          email: string | null
+          external_member_id: string
+          external_provider: string
+          first_linked_at: string | null
+          id: string
+          last_synced_at: string | null
+          link_status: string
+          linked_profile_id: string | null
+          member_name: string | null
+          note: string | null
+          org_id: string
+          phone: string | null
+          site_connection_id: string
+          sync_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          external_member_id: string
+          external_provider?: string
+          first_linked_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          link_status?: string
+          linked_profile_id?: string | null
+          member_name?: string | null
+          note?: string | null
+          org_id: string
+          phone?: string | null
+          site_connection_id: string
+          sync_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          external_member_id?: string
+          external_provider?: string
+          first_linked_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          link_status?: string
+          linked_profile_id?: string | null
+          member_name?: string | null
+          note?: string | null
+          org_id?: string
+          phone?: string | null
+          site_connection_id?: string
+          sync_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imweb_member_links_linked_profile_id_fkey"
+            columns: ["linked_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imweb_member_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imweb_member_links_site_connection_id_fkey"
+            columns: ["site_connection_id"]
+            isOneToOne: false
+            referencedRelation: "imweb_site_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imweb_order_events: {
+        Row: {
+          created_at: string
+          currency_code: string
+          event_type: string
+          external_member_id: string | null
+          external_order_id: string | null
+          external_product_code: string | null
+          external_product_name: string | null
+          external_provider: string
+          id: string
+          idempotency_key: string | null
+          order_status: string | null
+          ordered_at: string | null
+          org_id: string
+          paid_amount: number | null
+          payload: Json
+          processed_at: string | null
+          processed_by: string | null
+          processing_error: string | null
+          processing_status: string
+          retry_count: number
+          site_connection_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          event_type: string
+          external_member_id?: string | null
+          external_order_id?: string | null
+          external_product_code?: string | null
+          external_product_name?: string | null
+          external_provider?: string
+          id?: string
+          idempotency_key?: string | null
+          order_status?: string | null
+          ordered_at?: string | null
+          org_id: string
+          paid_amount?: number | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          retry_count?: number
+          site_connection_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          event_type?: string
+          external_member_id?: string | null
+          external_order_id?: string | null
+          external_product_code?: string | null
+          external_product_name?: string | null
+          external_provider?: string
+          id?: string
+          idempotency_key?: string | null
+          order_status?: string | null
+          ordered_at?: string | null
+          org_id?: string
+          paid_amount?: number | null
+          payload?: Json
+          processed_at?: string | null
+          processed_by?: string | null
+          processing_error?: string | null
+          processing_status?: string
+          retry_count?: number
+          site_connection_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imweb_order_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imweb_order_events_site_connection_id_fkey"
+            columns: ["site_connection_id"]
+            isOneToOne: false
+            referencedRelation: "imweb_site_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imweb_point_credit_mappings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          external_point_product_code: string
+          external_point_product_name: string
+          grant_mode: string
+          id: string
+          is_active: boolean
+          mapped_credit_amount: number
+          note: string | null
+          org_id: string
+          site_connection_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          external_point_product_code: string
+          external_point_product_name: string
+          grant_mode?: string
+          id?: string
+          is_active?: boolean
+          mapped_credit_amount: number
+          note?: string | null
+          org_id: string
+          site_connection_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          external_point_product_code?: string
+          external_point_product_name?: string
+          grant_mode?: string
+          id?: string
+          is_active?: boolean
+          mapped_credit_amount?: number
+          note?: string | null
+          org_id?: string
+          site_connection_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imweb_point_credit_mappings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imweb_point_credit_mappings_site_connection_id_fkey"
+            columns: ["site_connection_id"]
+            isOneToOne: false
+            referencedRelation: "imweb_site_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imweb_product_membership_mappings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          external_product_code: string
+          external_product_name: string
+          id: string
+          is_active: boolean
+          mapped_membership_code: Database["public"]["Enums"]["membership_code"]
+          mapped_membership_label: string | null
+          note: string | null
+          org_id: string
+          site_connection_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          external_product_code: string
+          external_product_name: string
+          id?: string
+          is_active?: boolean
+          mapped_membership_code: Database["public"]["Enums"]["membership_code"]
+          mapped_membership_label?: string | null
+          note?: string | null
+          org_id: string
+          site_connection_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          external_product_code?: string
+          external_product_name?: string
+          id?: string
+          is_active?: boolean
+          mapped_membership_code?: Database["public"]["Enums"]["membership_code"]
+          mapped_membership_label?: string | null
+          note?: string | null
+          org_id?: string
+          site_connection_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imweb_product_membership_mappings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imweb_product_membership_mappings_site_connection_id_fkey"
+            columns: ["site_connection_id"]
+            isOneToOne: false
+            referencedRelation: "imweb_site_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imweb_site_connections: {
+        Row: {
+          connection_status: string
+          created_at: string
+          external_provider: string
+          id: string
+          last_error: string | null
+          last_event_at: string | null
+          last_event_type: string | null
+          last_synced_at: string | null
+          note: string | null
+          org_id: string
+          site_code: string
+          updated_at: string
+          webhook_registered: boolean
+          webhook_url: string | null
+        }
+        Insert: {
+          connection_status?: string
+          created_at?: string
+          external_provider?: string
+          id?: string
+          last_error?: string | null
+          last_event_at?: string | null
+          last_event_type?: string | null
+          last_synced_at?: string | null
+          note?: string | null
+          org_id: string
+          site_code: string
+          updated_at?: string
+          webhook_registered?: boolean
+          webhook_url?: string | null
+        }
+        Update: {
+          connection_status?: string
+          created_at?: string
+          external_provider?: string
+          id?: string
+          last_error?: string | null
+          last_event_at?: string | null
+          last_event_type?: string | null
+          last_synced_at?: string | null
+          note?: string | null
+          org_id?: string
+          site_code?: string
+          updated_at?: string
+          webhook_registered?: boolean
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imweb_site_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           branch_code: string | null
@@ -608,6 +956,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_my_org_id: { Args: never; Returns: string }
       grant_credit: {
         Args: {
           _amount: number
