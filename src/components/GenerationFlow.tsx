@@ -10,6 +10,7 @@ import { useMembership } from "@/contexts/MembershipContext";
 import { useResultStore } from "@/contexts/ResultStoreContext";
 import { ResultDetailDrawer } from "@/components/ResultDetailDrawer";
 import { ExportDialog } from "@/components/ExportDialog";
+import { buildPlainTextExport, downloadAsTextFile, buildFileName } from "@/lib/export-utils";
 import { buildContextSummary, generateMockResult, pipelineConfigs } from "@/lib/ai-generation";
 import type { GenerationResult, GenerationResultSection, PipelineConfig } from "@/lib/ai-generation";
 import type { FeatureKey } from "@/lib/membership";
@@ -199,6 +200,34 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
     toast({ title: "전담 컨설턴트 전환", description: "전담 컨설턴트에게 요청이 전달되었습니다 (데모)" });
   };
 
+  /** Build an ExportableResult shape from the current GenerationResult */
+  const toExportable = useCallback(() => {
+    if (!result || !config) return null;
+    return {
+      title: result.title,
+      businessType: result.businessType,
+      module: result.module,
+      subtool: result.subtool,
+      sections: result.sections,
+      createdAt: result.createdAt,
+      status: result.status,
+      version: 1,
+      category: config.saveCategory,
+      sourceNote: result.sourceNote,
+      referenceNote: result.referenceNote,
+    };
+  }, [result, config]);
+
+  /** Direct TXT download — no save required */
+  const handleDirectDownload = () => {
+    const exportable = toExportable();
+    if (!exportable) return;
+    const content = buildPlainTextExport(exportable);
+    const fileName = buildFileName(exportable, "txt");
+    downloadAsTextFile(content, fileName);
+    toast({ title: "다운로드 완료", description: `${fileName} 파일이 다운로드되었습니다` });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -283,18 +312,28 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
 
               <Separator />
 
-              {/* Action Buttons - only in result area */}
+              {/* Action Buttons - available immediately after generation */}
               <div className="flex flex-wrap gap-2">
+                {/* Instant TXT Download — always available */}
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleDirectDownload}>
+                  <Download className="h-3 w-3" /> TXT 다운로드
+                </Button>
+
+                {/* Export Dialog — always available */}
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
+                  <Download className="h-3 w-3" /> 내보내기
+                </Button>
+
+                {/* Save */}
                 {resultActions.save.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleSave} disabled={!resultActions.save.enabled || !!savedResultId}>
                     <Bookmark className="h-3 w-3" /> {savedResultId ? "저장됨" : "결과 저장"}
                   </Button>
                 )}
+
+                {/* Post-save actions */}
                 {savedResultId && (
                   <>
-                    <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setExportOpen(true)}>
-                      <Download className="h-3 w-3" /> 다운로드
-                    </Button>
                     <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => { setSavedResultId(result!.id); setDrawerOpen(true); }}>
                       <ExternalLink className="h-3 w-3" /> 저장된 결과 열기
                     </Button>
@@ -303,6 +342,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     </Button>
                   </>
                 )}
+
+                {/* Copy */}
                 {resultActions.copy.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleCopyAll} disabled={!resultActions.copy.enabled}>
                     {resultActions.copy.enabled ? <Copy className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -310,6 +351,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     {!resultActions.copy.enabled && <span className="text-[9px] text-muted-foreground ml-0.5">{resultActions.copy.lockReason}</span>}
                   </Button>
                 )}
+
+                {/* Regenerate */}
                 {resultActions.regenerate.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleRegenerate} disabled={!resultActions.regenerate.enabled}>
                     {resultActions.regenerate.enabled ? <RefreshCw className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -319,6 +362,8 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
                     )}
                   </Button>
                 )}
+
+                {/* Consultant */}
                 {resultActions.consultantTransfer.visible && (
                   <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleConsultant} disabled={!resultActions.consultantTransfer.enabled}>
                     {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -349,10 +394,14 @@ export function GenerationFlow({ pipelineKey, featureKey, title, description, ic
       {/* Result Detail Drawer */}
       <ResultDetailDrawer open={drawerOpen} onOpenChange={setDrawerOpen} resultId={savedResultId} />
 
-      {/* Export Dialog */}
-      {savedResultId && (() => {
-        const savedItem = getResultById(savedResultId);
-        return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} /> : null;
+      {/* Export Dialog — works with both saved and unsaved results */}
+      {(() => {
+        if (savedResultId) {
+          const savedItem = getResultById(savedResultId);
+          return savedItem ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={savedItem as any} savedResultId={savedResultId} /> : null;
+        }
+        const exportable = toExportable();
+        return exportable ? <ExportDialog open={exportOpen} onOpenChange={setExportOpen} result={exportable} /> : null;
       })()}
     </div>
   );

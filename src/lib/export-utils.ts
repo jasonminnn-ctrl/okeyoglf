@@ -5,12 +5,33 @@
  */
 
 import type { SavedResult } from "@/contexts/ResultStoreContext";
+import type { GenerationResult, GenerationResultSection } from "@/lib/ai-generation";
 
 // ──────────────────────────────────
 // Format types
 // ──────────────────────────────────
 
 export type ExportFormat = "txt" | "doc" | "pdf" | "ppt";
+
+/**
+ * Minimal shape accepted by export helpers — works with both
+ * SavedResult (saved) and GenerationResult (unsaved).
+ */
+export interface ExportableResult {
+  title: string;
+  businessType: string;
+  module?: string;
+  subtool?: string;
+  sourceMenu?: string;
+  sourceTool?: string;
+  sections: GenerationResultSection[];
+  createdAt: string;
+  status: string;
+  version?: number;
+  category?: string;
+  sourceNote?: string;
+  referenceNote?: string;
+}
 
 export interface FormatOption {
   format: ExportFormat;
@@ -35,8 +56,8 @@ const categoryFormatMap: Record<string, ExportFormat[]> = {
   "전담 컨설턴트 결과": ["pdf", "doc"],
 };
 
-export function getRecommendedFormats(result: SavedResult): FormatOption[] {
-  const recommended = categoryFormatMap[result.category] ?? ["txt", "doc"];
+export function getRecommendedFormats(result: ExportableResult): FormatOption[] {
+  const recommended = categoryFormatMap[result.category ?? ""] ?? ["txt", "doc"];
   const primary = recommended[0] ?? "txt";
 
   const allFormats: FormatOption[] = [
@@ -84,7 +105,7 @@ export function getRecommendedFormats(result: SavedResult): FormatOption[] {
 // TXT generation & download (real)
 // ──────────────────────────────────
 
-export function buildPlainTextExport(result: SavedResult): string {
+export function buildPlainTextExport(result: ExportableResult): string {
   const lines: string[] = [];
   lines.push(`# ${result.title}`);
   lines.push(`업종: ${result.businessType}`);
@@ -133,7 +154,7 @@ export function downloadAsTextFile(content: string, fileName: string) {
 // Safe filename
 // ──────────────────────────────────
 
-export function buildFileName(result: SavedResult, format: ExportFormat): string {
+export function buildFileName(result: ExportableResult, format: ExportFormat): string {
   const safe = result.title
     .replace(/[^\w가-힣\s-]/g, "")
     .replace(/\s+/g, "_")
@@ -145,7 +166,7 @@ export function buildFileName(result: SavedResult, format: ExportFormat): string
 // Share text builder
 // ──────────────────────────────────
 
-export function buildShareText(result: SavedResult): string {
+export function buildShareText(result: ExportableResult): string {
   const lines: string[] = [];
   lines.push(`📄 ${result.title}`);
   lines.push(`업종: ${result.businessType}`);

@@ -8,14 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileText, File, FileSpreadsheet, Check } from "lucide-react";
-import { useResultStore, type SavedResult } from "@/contexts/ResultStoreContext";
-import { getRecommendedFormats, buildPlainTextExport, downloadAsTextFile, buildFileName, type ExportFormat } from "@/lib/export-utils";
+import { useResultStore } from "@/contexts/ResultStoreContext";
+import { getRecommendedFormats, buildPlainTextExport, downloadAsTextFile, buildFileName, type ExportFormat, type ExportableResult } from "@/lib/export-utils";
 import { toast } from "@/hooks/use-toast";
 
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  result: SavedResult;
+  /** Accepts both SavedResult and GenerationResult-compatible shapes */
+  result: ExportableResult;
+  /** If provided, marks the result as exported in the store */
+  savedResultId?: string;
 }
 
 const formatIcons: Record<ExportFormat, React.ReactNode> = {
@@ -25,7 +28,7 @@ const formatIcons: Record<ExportFormat, React.ReactNode> = {
   ppt: <FileSpreadsheet className="h-4 w-4" />,
 };
 
-export function ExportDialog({ open, onOpenChange, result }: ExportDialogProps) {
+export function ExportDialog({ open, onOpenChange, result, savedResultId }: ExportDialogProps) {
   const { markResultExported } = useResultStore();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat | null>(null);
   const formats = getRecommendedFormats(result);
@@ -41,12 +44,15 @@ export function ExportDialog({ open, onOpenChange, result }: ExportDialogProps) 
       downloadAsTextFile(content, fileName);
     }
 
-    markResultExported(result.id, {
-      id: `exp-${Date.now()}`,
-      format: selectedFormat,
-      fileName,
-      exportedAt: new Date().toISOString(),
-    });
+    // Only record export history if result is saved
+    if (savedResultId) {
+      markResultExported(savedResultId, {
+        id: `exp-${Date.now()}`,
+        format: selectedFormat,
+        fileName,
+        exportedAt: new Date().toISOString(),
+      });
+    }
 
     toast({
       title: isReal ? "다운로드 완료" : "내보내기 요청 기록",
