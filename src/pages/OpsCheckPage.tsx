@@ -145,10 +145,7 @@ export default function OpsCheckPage() {
     return null;
   };
 
-  const filteredTasks = tab === "all" ? tasks
-    : tab === "ai" ? tasks.filter(t => t.risk_source === "ai_suggested")
-    : tab === "ops" ? tasks.filter(t => t.risk_source === "ops_recommended")
-    : tasks.filter(t => t.risk_source === "user_created" || !t.risk_source);
+  const filteredTasks = filterBySourceTab(tasks, tab);
 
   const handleCsvExport = () => {
     downloadCsv(buildCsv(filteredTasks, exportColumns), `운영점검_${new Date().toISOString().slice(0, 10)}.csv`);
