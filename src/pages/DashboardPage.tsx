@@ -233,12 +233,15 @@ export default function DashboardPage() {
             <div className="space-y-1">
               {recentGenerated.length > 0 ? (
                 recentGenerated.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-3.5 w-3.5 text-primary/50" />
+                  <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0 cursor-pointer hover:bg-muted/20 rounded px-1 transition-colors" onClick={() => handleOpenResult(r.id)}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CheckCircle className="h-3.5 w-3.5 text-primary/50 flex-shrink-0" />
                       <span className="text-sm truncate">{r.title}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(r.updatedAt)}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-muted-foreground">{formatDate(r.updatedAt)}</span>
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    </div>
                   </div>
                 ))
               ) : (
