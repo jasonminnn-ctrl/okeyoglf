@@ -207,8 +207,11 @@ export function AIWorkspace({ injectedPrompt, onPromptConsumed }: AIWorkspacePro
         content: "",
         result: genResult,
         timestamp: new Date().toISOString(),
+        cardKey: currentCardKey,
       };
       setMessages(prev => [...prev, assistantMsg]);
+      // Reset cardKey after consumption so next free-form input is generic
+      setLastCardKey(null);
     } catch {
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
