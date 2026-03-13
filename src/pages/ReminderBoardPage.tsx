@@ -102,6 +102,12 @@ export default function ReminderBoardPage() {
     return null;
   };
 
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    await insertReminder({ title: rec.title, memo: rec.description, reminder_type: "general", source_type: "ops_recommended" });
+    toast({ title: "운영 권장 리마인드 추가 완료" });
+    load();
+  };
+
   const filteredReminders = filterBySourceTab(reminders, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredReminders, exportColumns), `리마인드_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
