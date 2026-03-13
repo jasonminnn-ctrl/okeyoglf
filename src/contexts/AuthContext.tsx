@@ -77,10 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const loadingFailsafe = window.setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, 4000);
 
-    // 1. Listen for auth changes FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!mounted) return;
+    const resolveSession = async (session: Session | null) => {
       try {
         if (session) {
           const authUser = await buildAuthUser(session);
@@ -89,29 +90,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (mounted) setUser(null);
         }
       } catch (err) {
-        console.error("AuthContext: buildAuthUser failed", err);
+        console.error("AuthContext: resolveSession failed", err);
         if (mounted) setUser(null);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-      if (mounted) setIsLoading(false);
+    };
+
+    // 1) auth listener first (do not await directly in callback)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      void resolveSession(session);
     });
 
-    // 2. Then get existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      try {
-        if (session) {
-          const authUser = await buildAuthUser(session);
-          if (mounted) setUser(authUser);
+    // 2) then existing session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        void resolveSession(session);
+      })
+      .catch((err) => {
+        console.error("AuthContext: getSession failed", err);
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
         }
-      } catch (err) {
-        console.error("AuthContext: getSession buildAuthUser failed", err);
-        if (mounted) setUser(null);
-      }
-      if (mounted) setIsLoading(false);
-    });
+      });
 
     return () => {
       mounted = false;
+      window.clearTimeout(loadingFailsafe);
       subscription.unsubscribe();
     };
   }, []);
