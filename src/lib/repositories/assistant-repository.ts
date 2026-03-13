@@ -86,6 +86,9 @@ export interface AssistantChecklistItem {
   checked_at: string | null;
   sort_order: number;
   memo: string | null;
+  assignee_name: string | null;
+  completed_by_user_id: string | null;
+  completed_by_name: string | null;
   created_at: string;
   updated_at: string;
 }
