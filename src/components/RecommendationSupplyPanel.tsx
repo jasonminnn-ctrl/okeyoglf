@@ -36,7 +36,7 @@ interface Props {
 
 export function RecommendationSupplyPanel({ category, onAdd, addedTitles = [], headerLabel = "운영팀 권장 항목" }: Props) {
   const { label: bizLabel } = useBusinessContext();
-  const { orgId } = useAuth();
+  const { orgId, user } = useAuth();
   const [recs, setRecs] = useState<OperatorRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -52,11 +52,11 @@ export function RecommendationSupplyPanel({ category, onAdd, addedTitles = [], h
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchRecommendations(category, bizLabel, orgId, branchCode).then(data => {
+    fetchRecommendations(category, bizLabel, orgId, branchCode, user?.id ?? null).then(data => {
       if (mounted) { setRecs(data); setLoading(false); }
     });
     return () => { mounted = false; };
-  }, [category, bizLabel, orgId, branchCode]);
+  }, [category, bizLabel, orgId, branchCode, user?.id]);
 
   const handleAdd = async (rec: OperatorRecommendation) => {
     if (!onAdd) return;
