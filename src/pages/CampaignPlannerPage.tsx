@@ -15,7 +15,8 @@ import { Megaphone, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
-import { fetchCampaigns, insertCampaign, updateCampaign, deleteCampaign, type AssistantCampaign } from "@/lib/repositories/assistant-repository";
+import { fetchCampaigns, insertCampaign, updateCampaign, deleteCampaign, type AssistantCampaign, type OperatorRecommendation } from "@/lib/repositories/assistant-repository";
+import { RecommendationSupplyPanel } from "@/components/RecommendationSupplyPanel";
 import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
 import { OperationalExportMenu } from "@/components/OperationalExportMenu";
 import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
@@ -94,6 +95,12 @@ export default function CampaignPlannerPage() {
     return null;
   };
 
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    await insertCampaign({ title: rec.title, purpose: rec.description, source_type: "ops_recommended" });
+    toast({ title: "운영 권장 캠페인 추가 완료" });
+    load();
+  };
+
   const filteredCampaigns = filterBySourceTab(campaigns, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredCampaigns, exportColumns), `캠페인_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
@@ -149,6 +156,15 @@ export default function CampaignPlannerPage() {
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 캠페인 추가</Button>
         </div>
       </div>
+
+      {tab === "ops" && (
+        <RecommendationSupplyPanel
+          category="campaign"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={campaigns.filter(c => c.source_type === "ops_recommended").map(c => c.title)}
+          headerLabel="운영 권장 캠페인"
+        />
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>

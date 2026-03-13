@@ -16,7 +16,8 @@ import { CalendarClock, Plus, ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { OperationalSourceTabs, filterBySourceTab } from "@/components/OperationalSourceTabs";
 import { useNavigate } from "react-router-dom";
 import { BusinessContextBanner } from "@/components/BusinessContextBanner";
-import { fetchReminders, insertReminder, updateReminder, deleteReminder, type AssistantReminder } from "@/lib/repositories/assistant-repository";
+import { fetchReminders, insertReminder, updateReminder, deleteReminder, type AssistantReminder, type OperatorRecommendation } from "@/lib/repositories/assistant-repository";
+import { RecommendationSupplyPanel } from "@/components/RecommendationSupplyPanel";
 import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
 import { OperationalExportMenu } from "@/components/OperationalExportMenu";
 import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
@@ -101,6 +102,12 @@ export default function ReminderBoardPage() {
     return null;
   };
 
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    await insertReminder({ title: rec.title, memo: rec.description, reminder_type: "general", source_type: "ops_recommended" });
+    toast({ title: "운영 권장 리마인드 추가 완료" });
+    load();
+  };
+
   const filteredReminders = filterBySourceTab(reminders, tab);
 
   const handleCsvExport = () => { downloadCsv(buildCsv(filteredReminders, exportColumns), `리마인드_${new Date().toISOString().slice(0, 10)}.csv`); toast({ title: "CSV 다운로드 완료" }); };
@@ -147,6 +154,15 @@ export default function ReminderBoardPage() {
           <Button size="sm" onClick={() => setAddOpen(true)} className="text-xs gap-1.5"><Plus className="h-3 w-3" /> 리마인드 추가</Button>
         </div>
       </div>
+
+      {tab === "ops" && (
+        <RecommendationSupplyPanel
+          category="reminder"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={reminders.filter(r => r.source_type === "ops_recommended").map(r => r.title)}
+          headerLabel="운영 권장 리마인드"
+        />
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-primary animate-spin" /></div>

@@ -20,8 +20,9 @@ import { BusinessContextBanner } from "@/components/BusinessContextBanner";
 import {
   fetchChecklists, insertChecklist, updateChecklist, deleteChecklist,
   fetchChecklistItems, insertChecklistItem, updateChecklistItem, deleteChecklistItem,
-  type AssistantChecklist, type AssistantChecklistItem,
+  type AssistantChecklist, type AssistantChecklistItem, type OperatorRecommendation,
 } from "@/lib/repositories/assistant-repository";
+import { RecommendationSupplyPanel } from "@/components/RecommendationSupplyPanel";
 import { OperationalAIAssistantPanel, type ProcessingResult } from "@/components/OperationalAIAssistantPanel";
 import { OperationalExportMenu } from "@/components/OperationalExportMenu";
 import { OperationalMetaBadges } from "@/components/OperationalMetaBadges";
@@ -155,7 +156,20 @@ export default function ChecklistManagerPage() {
     return null;
   };
 
-  // Checklist detail
+  /** Add checklist from operator_recommendations DB */
+  const handleAddFromRecommendation = async (rec: OperatorRecommendation) => {
+    const created = await insertChecklist({
+      title: rec.title,
+      memo: rec.description,
+      checklist_type: "daily",
+      source_type: "ops_recommended",
+    } as any);
+    toast({ title: "운영 권장 체크리스트 추가 완료" });
+    await loadChecklists();
+    if (created) setSelectedId(created.id);
+  };
+
+
   const openChecklistDetail = (cl: AssistantChecklist) => {
     setDetailChecklist(cl);
     setDetailEdits({ title: cl.title, memo: cl.memo || "", focus_area: cl.focus_area || "" });
@@ -206,6 +220,15 @@ export default function ChecklistManagerPage() {
           config={{ totalCount: checklists.length, aiLabel: "AI 추가", opsLabel: "운영 기본" }}
         />
       </div>
+
+      {sourceTab === "ops" && (
+        <RecommendationSupplyPanel
+          category="checklist"
+          onAdd={handleAddFromRecommendation}
+          addedTitles={checklists.filter(c => c.source_type === "ops_recommended").map(c => c.title)}
+          headerLabel="운영 권장 체크리스트"
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Checklist list */}
