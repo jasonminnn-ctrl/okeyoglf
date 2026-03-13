@@ -106,8 +106,8 @@ export default function OpsCheckPage() {
     const updates: any = { status };
     if (status === "done") {
       updates.completed_at = new Date().toISOString();
-      updates.completed_by_name = profile?.display_name || profile?.email || "사용자";
-      updates.completed_by_user_id = profile?.id || null;
+      updates.completed_by_name = user?.name || user?.email || "사용자";
+      updates.completed_by_user_id = user?.id || null;
     } else {
       updates.completed_at = null;
       updates.completed_by_name = null;

@@ -103,8 +103,8 @@ export default function ChecklistManagerPage() {
     const updates: any = {
       is_checked: checked,
       checked_at: checked ? new Date().toISOString() : null,
-      completed_by_name: checked ? (profile?.display_name || profile?.email || "사용자") : null,
-      completed_by_user_id: checked ? (profile?.id || null) : null,
+      completed_by_name: checked ? (user?.name || user?.email || "사용자") : null,
+      completed_by_user_id: checked ? (user?.id || null) : null,
     };
     await updateChecklistItem(item.id, updates);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, ...updates } : i));
