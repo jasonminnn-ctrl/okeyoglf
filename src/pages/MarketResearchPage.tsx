@@ -665,19 +665,39 @@ function ResearchResultCard({
 
         <Separator />
 
-        <div className="flex items-center gap-2 pt-1">
-          {resultActions.save.visible && (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.save.enabled} onClick={onSave}>
-              <Bookmark className="h-3 w-3" /> 결과 저장
+        {hasResult ? (
+          <ResultActionBar
+            exportable={{
+              title: `시장조사 — ${template.title} (${researchLabel})`,
+              businessType: researchLabel,
+              module: "시장조사",
+              subtool: template.title,
+              sections: [
+                { title: "조사 요약", type: "summary" as const, content: `${researchLabel} 업종 기준 ${template.title} 완료.\n\n⚠️ AI 내부 분석 기반 결과이며, 외부 데이터 수집은 추후 연동 예정입니다.` },
+                { title: "분석 결과", type: "detail" as const, content: `업종: ${researchLabel}\n지역: ${regionValue}\n키워드: ${keywordValue}\n범위: ${template.title}\n수집: ${count}건` },
+                { title: "인사이트", type: "recommendation" as const, content: "외부 수집 데이터 연동 시 상세 인사이트 보강 예정." },
+              ],
+              createdAt: new Date().toISOString(),
+              status: "생성 완료",
+              version: 1,
+              category: "시장조사 결과",
+              sourceNote: "OkeyGolf AI 리서치 엔진 기반 생성 (외부 수집 미연동)",
+            }}
+            onSave={onSave}
+            onConsultantTransfer={onConsultantTransfer}
+            isSaved={isSaved}
+            onOpenSaved={onOpenSaved}
+          />
+        ) : (
+          <div className="flex items-center gap-2 pt-1">
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 opacity-50" disabled>
+              <Bookmark className="h-3 w-3" /> 저장
             </Button>
-          )}
-          {resultActions.consultantTransfer.visible && (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" disabled={!hasResult || !resultActions.consultantTransfer.enabled} onClick={onConsultantTransfer}>
-              {resultActions.consultantTransfer.enabled ? <MessageSquare className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-              전담 컨설턴트 전환
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 opacity-50" disabled>
+              <Download className="h-3 w-3" /> 내보내기
             </Button>
-          )}
-        </div>
+          </div>
+        )
       </CardContent>
     </Card>
   );
