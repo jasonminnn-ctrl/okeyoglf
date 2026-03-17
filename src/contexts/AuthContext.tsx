@@ -99,7 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // 1) auth listener first (do not await directly in callback)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" && hadSessionRef.current) {
+        hadSessionRef.current = false;
+        toast.error("세션이 만료되었습니다. 다시 로그인해 주세요.", { duration: 6000 });
+      }
+      if (session) hadSessionRef.current = true;
       void resolveSession(session);
     });
 
