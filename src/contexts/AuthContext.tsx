@@ -4,9 +4,10 @@
  * Maintains same public API as mock version for backward compat.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export type UserRole = "customer" | "operator";
 
@@ -74,6 +75,7 @@ async function buildAuthUser(session: Session): Promise<AuthUser> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hadSessionRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -98,7 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // 1) auth listener first (do not await directly in callback)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" && hadSessionRef.current) {
+        hadSessionRef.current = false;
+        toast.error("세션이 만료되었습니다. 다시 로그인해 주세요.", { duration: 6000 });
+      }
+      if (session) hadSessionRef.current = true;
       void resolveSession(session);
     });
 
