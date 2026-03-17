@@ -75,6 +75,7 @@ async function buildAuthUser(session: Session): Promise<AuthUser> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hadSessionRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
