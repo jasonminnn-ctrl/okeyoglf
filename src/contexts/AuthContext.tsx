@@ -4,9 +4,10 @@
  * Maintains same public API as mock version for backward compat.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export type UserRole = "customer" | "operator";
 
